@@ -1,4 +1,4 @@
-import { useAuthorities } from "../context/AuthContext";
+import { useAuthorities } from "../../context/AuthContext";
 import React from "react";
 import { JSONTree } from "react-json-tree";
 import { Link } from "react-router-dom";
@@ -13,7 +13,7 @@ export default function HomePage() {
 <div>
      
       </div>
-      <div>
+      <div className=" text-orange-400 font-bold">
       HomePage <br />
       <Link to="admin">Go to admin Page</Link> <br />
       <Link to="user">Go to user Page</Link> <br />

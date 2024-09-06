@@ -7,7 +7,7 @@ import Unauthorized from "./pages/Unauthorized";
 import UserPage from "./pages/UserPage";
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
+import HomePage from "./pages/home/HomePage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import MainLayout from "./components/layout/MainLayout";
