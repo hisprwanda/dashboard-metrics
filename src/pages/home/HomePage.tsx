@@ -1,3 +1,4 @@
+import OrganisationUnitMultiSelect from "../../components/OrganisationUnitTree/OrganisationUnitSelector";
 import { useAuthorities } from "../../context/AuthContext";
 import React from "react";
 import { JSONTree } from "react-json-tree";
@@ -11,9 +12,11 @@ export default function HomePage() {
 <div className="flex flex-row   h-screen bg-gray-100">
 
 <div>
+
      
       </div>
       <div className=" text-orange-400 font-bold">
+      <OrganisationUnitMultiSelect/>
       HomePage <br />
       <Link to="admin">Go to admin Page</Link> <br />
       <Link to="user">Go to user Page</Link> <br />
