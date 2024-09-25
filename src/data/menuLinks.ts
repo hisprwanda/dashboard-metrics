@@ -14,5 +14,11 @@ export const menuItems = [
     {
         name: "Settings",
         link: "settings"
+    },
+    {
+        name: "data-sources",
+        link: "data-sources"
     }
+
+    
 ];
