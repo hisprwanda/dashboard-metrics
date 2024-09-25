@@ -38,12 +38,12 @@ const OrganisationUnitMultiSelect = () => {
           className="w-full"
           label="Search Organization Unit"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.value || '')} 
+          onChange={(e) => setSearchTerm(e.value || '')}
           placeholder="Type to search..."
         />
       </div>
 
-     
+
 
       {/* Organization Unit Tree */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6 shadow-inner">
@@ -61,8 +61,8 @@ const OrganisationUnitMultiSelect = () => {
         )}
       </div>
 
-       {/* Select field for organization unit level */}
-       <div className="mb-6">
+      {/* Select field for organization unit level */}
+      <div className="mb-6">
         <SingleSelectField
           className="w-full"
           label="Choose an Organisation Unit Level"
@@ -70,7 +70,7 @@ const OrganisationUnitMultiSelect = () => {
           selected={selectedLevel ? String(selectedLevel) : undefined}
           placeholder="Select level"
         >
-          {orgUnitLevels.map((level: { id: string; displayName: string; level: number }) => (
+          {orgUnitLevels.map((level: { id: string; displayName: string; level: number; }) => (
             <SingleSelectOption key={level.id} value={String(level.level)} label={level.displayName} />
           ))}
         </SingleSelectField>
