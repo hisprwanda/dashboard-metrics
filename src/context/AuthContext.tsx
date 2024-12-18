@@ -40,8 +40,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [data]);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error loading user authorities</div>;
+  // if (loading) return <div>Loading...</div>;
+  // if (error) return <div>Error loading user authorities</div>;
 
   return (
     <AuthContext.Provider value={{ userDatails, authorities }}>

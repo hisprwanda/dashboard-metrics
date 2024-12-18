@@ -35,12 +35,12 @@ export const useBaseUrl = () => {
 
     const { loading, error, data } = useDataQuery(query);
 
-    if (loading) {
-        return "loading...";
-    }
-    if (error) {
-        return "error in fetching baseurl...";
-    }
+    // if (loading) {
+    //     return "loading...";
+    // }
+    // if (error) {
+    //     return "error in fetching baseurl...";
+    // }
 
     return data?.baseUrl?.contextPath;
 };

@@ -7,8 +7,14 @@ import { twMerge } from "tailwind-merge"
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+export function capitalizeFirstChar(input: string): string {
+  if (!input) return input; // Handle empty or null strings
+  return input.charAt(0).toUpperCase() + input.slice(1);
+}
 
-
+export function  formatDate (date: Date | null) : string {
+  return date ? date.toLocaleDateString() : "N/A"; // Format date or return "N/A" if null
+};
 
 // Function to encrypt password
 export const encryptCredentials = (password: string) => {
