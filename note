@@ -1,0 +1,34 @@
+
+
+DHIS2 given instance url  filter  all dashboard  id, name displayName,favorite , created, lastUpdated, createdBy, lastUpdatedBy
+
+https://online.hisprwanda.org/eir/api/dashboards?paging=false&fields=id,name,displayName,favorite,created,lastUpdated,createdBy[id,displayName],lastUpdatedBy[id,displayName]
+
+
+
+DHIS2 given instance url  set pagination off and filter  all users  id, username, name displayName,phoneNumber , jobTitle and all organisationUnits he she belong
+
+https://online.hisprwanda.org/eir/api/users?paging=false&filter=username:eq:bmafende&fields=id,username,name,displayName,phoneNumber,jobTitle,userCredentials[userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]
+
+https://online.hisprwanda.org/eir/api/users?filter=userCredentials.username%3Ain%3A%5B%5D&fields=id%2CdisplayName%2CuserCredentials%5BuserRoles%5Bid%2CdisplayName%5D%5D%2CuserGroups%5Bid%2CdisplayName%5D%2CorganisationUnits%5Bid%2CdisplayName%5D&paging=false
+
+
+https://online.hisprwanda.org/eir/api/users?paging=false&fields=id,username,name,displayName,phoneNumber,jobTitle,userCredentials[userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]
+
+
+
+
+https://online.hisprwanda.org/eir/api/users?paging=false&fields=id,username,name,displayName,phoneNumber,jobTitle,organisationUnits[id,displayName] 
+
+
+DHIS2 given instance url  set pagination off and lists a given sql view data, list timestamp, username and favoriteuid header data only 
+https://online.hisprwanda.org/eir/api/sqlViews/gO9r9r4Vc9l/data?paging=false&criteria=favoriteuid%3At2k7bfmqbBa&filter=timestamp%3Age%3A2020-11-01&filter=timestamp%3Ale%3A2024-12-03
+
+
+https://online.hisprwanda.org/eir/api/sqlViews/gO9r9r4Vc9l/data?paging=false&criteria=favoriteuid%3At2k7bfmqbBa&filter=timestamp:ge:2020-11-01&filter=timestamp:le:2024-12-03
+
+
+
+
+https://online.hisprwanda.org/eir/api/dashboards?fields=id,displayName,items[visualization[id,displayName]]&paging=false
+
