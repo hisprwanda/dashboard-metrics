@@ -16,6 +16,14 @@ export function  formatDate (date: Date | null) : string {
   return date ? date.toLocaleDateString() : "N/A"; // Format date or return "N/A" if null
 };
 
+export const formatDateToYYYYMMDD = (date:Date) => {
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // Function to encrypt password
 export const encryptCredentials = (password: string) => {
   return CryptoJS.AES.encrypt(password, secretKey).toString();

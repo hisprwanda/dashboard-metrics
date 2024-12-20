@@ -1,12 +1,11 @@
 import {
-    AtedBy,
-    Dashboard,
-    DashboardConverted,
-    DashboardItem,
-    Visualization,
-  } from "../../../types/dashboardsType";
-  import { useDashboardsInfo } from "../../../hooks/dashboards";
-
+  AtedBy,
+  Dashboard,
+  DashboardConverted,
+  DashboardItem,
+  Visualization,
+} from "../../../types/dashboardsType";
+import { useDashboardsInfo } from "../../../hooks/dashboards";
 
 import { ActionIcon, Tooltip } from "@mantine/core";
 import { useEffect, useMemo, useState } from "react";
@@ -20,41 +19,37 @@ import { capitalizeFirstChar } from "../../../lib/utils";
 import TableActions from "./table-actions";
 
 export default function DataTable() {
+  const { loading, error, data } = useDashboardsInfo();
 
-    const { loading, error, data } = useDashboardsInfo();
+  const transformedDashboards: DashboardConverted[] = Array.isArray(
+    data?.dashboards?.dashboards
+  )
+    ? data.dashboards.dashboards.map((dashboard) => {
+        const visualizations: Visualization[] = dashboard.dashboardItems
+          .filter(
+            (item) =>
+              item.visualization &&
+              item.visualization.id &&
+              item.visualization.displayName
+          )
+          .map((item) => ({
+            id: item?.visualization?.id as string,
+            displayName: item?.visualization?.displayName as string,
+          }));
 
-    const transformedDashboards: DashboardConverted[] = Array.isArray(
-      data?.dashboards?.dashboards
-    )
-      ? data.dashboards.dashboards.map((dashboard) => {
-          const visualizations: Visualization[] = dashboard.dashboardItems
-            .filter(
-              (item) =>
-                item.visualization &&
-                item.visualization.id &&
-                item.visualization.displayName
-            ) 
-            .map((item) => ({
-              id: item?.visualization?.id as string,
-              displayName: item?.visualization?.displayName as string,
-            }));
-  
-          return {
-            name: dashboard.name as string,
-            created: new Date(dashboard.created),
-            lastUpdated: new Date(dashboard.lastUpdated),
-            createdBy: dashboard.createdBy as AtedBy,
-            lastUpdatedBy: dashboard.lastUpdatedBy as AtedBy,
-            displayName: dashboard.displayName as string,
-            favorite: dashboard.favorite as boolean,
-            id: dashboard.id as string,
-            visualizations,
-          };
-        })
-      : []; 
-
-
-
+        return {
+          name: dashboard.name as string,
+          created: new Date(dashboard.created),
+          lastUpdated: new Date(dashboard.lastUpdated),
+          createdBy: dashboard.createdBy as AtedBy,
+          lastUpdatedBy: dashboard.lastUpdatedBy as AtedBy,
+          displayName: dashboard.displayName as string,
+          favorite: dashboard.favorite as boolean,
+          id: dashboard.id as string,
+          visualizations,
+        };
+      })
+    : [];
 
   const columns = useMemo<MRT_ColumnDef<DashboardConverted>[]>(
     () => [
@@ -97,12 +92,9 @@ export default function DataTable() {
         header: "createdBy",
         size: 40,
       },
-
     ],
     []
   );
-
-
 
   const table = useMantineReactTable({
     columns,
@@ -128,10 +120,7 @@ export default function DataTable() {
     //positionActionsColumn: "first",
     enableRowActions: true,
     renderRowActions: ({ row }) => (
-      <TableActions
-        row={row.original}
-        data={transformedDashboards}
-      />
+      <TableActions row={row.original} data={transformedDashboards} />
     ),
     // renderTopToolbarCustomActions: ({ table }) => (
     //   <div className="content-start flex flex-row gap-10">
@@ -162,4 +151,3 @@ export default function DataTable() {
     </>
   );
 }
-

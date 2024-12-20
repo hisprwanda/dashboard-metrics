@@ -897,6 +897,9 @@ video {
 .h-\[36px\] {
   height: 36px;
 }
+.h-\[79vh\] {
+  height: 79vh;
+}
 .h-\[var\(--radix-select-trigger-height\)\] {
   height: var(--radix-select-trigger-height);
 }
@@ -1307,6 +1310,9 @@ video {
 .overflow-x-hidden {
   overflow-x: hidden;
 }
+.overflow-y-scroll {
+  overflow-y: scroll;
+}
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1314,6 +1320,9 @@ video {
 }
 .whitespace-nowrap {
   white-space: nowrap;
+}
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
 }
 .rounded {
   border-radius: 0.25rem;
