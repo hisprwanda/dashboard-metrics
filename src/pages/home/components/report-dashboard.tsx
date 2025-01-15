@@ -129,5 +129,7 @@ export default function DashboardReport({ row, value }: DashboardReportProps) {
     }
   }, [visitDetails, userData]);
 
-  return <DashboardUserDetails linkedUsers={linkedUsers} row={row} />;
+  return (
+    <DashboardUserDetails linkedUsers={linkedUsers} row={row} value={value} />
+  );
 }

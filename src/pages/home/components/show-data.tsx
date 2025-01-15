@@ -5,7 +5,7 @@ import { FaEye } from "react-icons/fa6";
 import { RiCloseLargeFill } from "react-icons/ri";
 import { formatDate } from "../../../lib/utils";
 import DatePicker from "./date-picker";
-import DashboardReport from "./dashboard-report";
+import DashboardReport from "./report-dashboard";
 import { DateValueType } from "@/types/dashboard-reportType";
 
 export interface DataSourceRowProps {
@@ -25,7 +25,7 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
     setValue(newValue || { startDate: null, endDate: null });
   };
 
-  return ( 
+  return (
     <AlertDialog.Root open={open} onOpenChange={setOpen}>
       <AlertDialog.Trigger asChild>
         <button className="w-[40px] bg-transparent p-1 focus:outline-none focus:shadow-outline text-stext hover:text-slate-600 hover:bg-transparent">
