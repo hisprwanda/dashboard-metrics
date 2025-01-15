@@ -26,10 +26,6 @@ export const useDashboardsInfo = (): UseDashboardsInfoReturn => {
   return { loading, error, data };
 };
 
-// export interface UseUsernamesByDateRangeParams {
-//   value: DateValueType;
-//   favoriteuid: string;
-// }
 
  export interface Params {
     datetime: DateValueType;
@@ -40,27 +36,36 @@ export const usesqlViewDataReport = ({
   datetime,
   criteria,
 }: Params) => {
-
-//const criteria = `favoriteuid%${encodeURIComponent(favoriteuid)}`;
-  // const query = {
-  //   sqlViewData: {
-  //     resource: 'sqlViews/gO9r9r4Vc9l/data',
-  //     params: {
-  //       paging: "false",
-  //       criteria,
-  //       filter: [
-  //         `timestamp:ge:${formatDateToYYYYMMDD(value.startDate?value.startDate:new Date())}`,
-  //         `timestamp:le:${formatDateToYYYYMMDD(value.endDate?value.endDate:new Date())}`,
-  //         // `timestamp:ge:2020-11-01`,
-  //         // `timestamp:le:2024-12-03`,
-  //       ]
-  //     },
-  //   },
-  // };
-
   const query = {
     sqlViewData: {
       resource: 'sqlViews/gO9r9r4Vc9l/data',
+      params: ({
+        datetime,
+        criteria,
+      }: Params) => ({
+        paging: "false",
+        criteria:criteria,
+        filter: [
+          `timestamp:ge:${formatDateToYYYYMMDD(datetime.startDate?datetime.startDate:new Date())}`,
+          `timestamp:le:${formatDateToYYYYMMDD(datetime.endDate?datetime.endDate:new Date())}`,
+          // `timestamp:ge:2020-11-01`,
+          // `timestamp:le:2024-12-03`,
+        ]
+      }),
+    },
+  };
+  // const { loading, error, data,refetch } = useDataQuery(query);
+  const { loading, error, data, refetch } = useDataQuery(query, { lazy: true, enabled: false });
+  return { loading, error, data,refetch };
+};
+
+export const usesqlVisualizationDataReport = ({
+  datetime,
+  criteria,
+}: Params) => {
+  const query = {
+    sqlViewData: {
+      resource: 'sqlViews/MfeSi4i0vCP/data',
       params: ({
         datetime,
         criteria,

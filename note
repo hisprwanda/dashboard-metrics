@@ -1,3 +1,8 @@
+SELECT timestamp, username, favoriteuid, eventtype FROM datastatisticsevent WHERE eventtype = 'VISUALIZATION_VIEW' or eventtype = 'VISUALIZATION_VIEW' ;
+
+SELECT timestamp, username, favoriteuid, eventtype FROM datastatisticsevent WHERE eventtype = 'DASHBOARD_VIEW'  ;
+SELECT timestamp, username, favoriteuid, eventtype FROM datastatisticsevent WHERE eventtype = 'VISUALIZATION_VIEW';
+
 
 
 DHIS2 given instance url  filter  all dashboard  id, name displayName,favorite , created, lastUpdated, createdBy, lastUpdatedBy
@@ -25,8 +30,10 @@ DHIS2 given instance url  set pagination off and lists a given sql view data, li
 https://online.hisprwanda.org/eir/api/sqlViews/gO9r9r4Vc9l/data?paging=false&criteria=favoriteuid%3At2k7bfmqbBa&filter=timestamp%3Age%3A2020-11-01&filter=timestamp%3Ale%3A2024-12-03
 
 
-https://online.hisprwanda.org/eir/api/sqlViews/gO9r9r4Vc9l/data?paging=false&criteria=favoriteuid%3At2k7bfmqbBa&filter=timestamp:ge:2020-11-01&filter=timestamp:le:2024-12-03
+https://online.hisprwanda.org/eir/api/sqlViews/gO9r9r4Vc9l/data?paging=false&criteria=favoriteuid:3At2k7bfmqbBa&filter=timestamp:ge:2020-11-01&filter=timestamp:le:2024-12-03
 
+
+https://online.hisprwanda.org/eir/api/sqlViews/gO9r9r4Vc9l/data?paging=false&criteria=favoriteuid:3At2k7bfmqbBa&filter=timestamp:ge:2020-11-01&filter=timestamp:le:2024-12-03&filter=eventtype:eq:active
 
 
 

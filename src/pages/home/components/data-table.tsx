@@ -101,11 +101,8 @@ export default function DataTable() {
     data: transformedDashboards,
     enableFullScreenToggle: false,
     enableDensityToggle: false,
-    // enableColumnVirtualization: true,
-    // enableRowVirtualization: true,
     initialState: {
       sorting: [{ id: "Instance", desc: false }],
-      //pagination: { pageSize: 5, pageIndex: 0 },
       density: "xs",
       columnPinning: {
         left: ["mrt-row-actions"],
@@ -117,29 +114,10 @@ export default function DataTable() {
         minHeight: "300px",
       },
     },
-    //positionActionsColumn: "first",
     enableRowActions: true,
     renderRowActions: ({ row }) => (
       <TableActions row={row.original} data={transformedDashboards} />
     ),
-    // renderTopToolbarCustomActions: ({ table }) => (
-    //   <div className="content-start flex flex-row gap-10">
-    //     <Tooltip label="Refresh Data">
-    //       <ActionIcon onClick={() => refetch()}>
-    //         <IconRefresh />
-    //       </ActionIcon>
-    //     </Tooltip>
-
-    //     {transformedData && (
-    //       <NewData
-    //         refetch={refetch}
-    //         dataSource={
-    //           transformedData.length > 0 ? transformedData : defaultData
-    //         }
-    //       />
-    //     )}
-    //   </div>
-    // ),
     state: {
       isLoading: loading,
     },
