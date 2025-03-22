@@ -1,9 +1,26 @@
-import React from 'react';
-import { InputField, SingleSelectField, SingleSelectOption, OrganisationUnitTree, Button, CircularLoader } from '@dhis2/ui';
-import { useOrgUnitData } from '../../services/fetchOrgunitData';
-import { useOrgUnitSelection } from '../../hooks/useOrgUnitSelection';
+"use client";
 
-const OrganisationUnitMultiSelect = () => {
+import { useState, useEffect } from "react";
+import {
+  InputField,
+  SingleSelectField,
+  SingleSelectOption,
+  OrganisationUnitTree,
+  Button,
+  CircularLoader,
+} from "@dhis2/ui";
+import { useOrgUnitData } from "../../services/fetchOrgunitData";
+import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
+
+interface OrganisationUnitMultiSelectProps {
+  selectedOrgUnits?: string[];
+  onSubmit: (selectedPaths: string[], selectedNames: string[]) => void;
+}
+
+const OrganisationUnitMultiSelect = ({
+  selectedOrgUnits: initialSelectedOrgUnits = [],
+  onSubmit,
+}: OrganisationUnitMultiSelectProps) => {
   const { loading, error, data } = useOrgUnitData();
   const orgUnits = data?.orgUnits?.organisationUnits || [];
   const orgUnitLevels = data?.orgUnitLevels?.organisationUnitLevels || [];
@@ -18,7 +35,45 @@ const OrganisationUnitMultiSelect = () => {
     handleOrgUnitClick,
     handleDeselectAll,
     filteredOrgUnitPaths,
+    setSelectedOrgUnits,
   } = useOrgUnitSelection(orgUnits);
+
+  // Get names of selected org units
+  const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (initialSelectedOrgUnits.length > 0) {
+      setSelectedOrgUnits(initialSelectedOrgUnits);
+    }
+  }, [initialSelectedOrgUnits, setSelectedOrgUnits]);
+
+  useEffect(() => {
+    const names = selectedOrgUnits
+      .map((path) => {
+        const unit = findOrgUnitByPath(orgUnits, path);
+        return unit ? unit.displayName : "";
+      })
+      .filter(Boolean);
+
+    setSelectedOrgUnitNames(names);
+  }, [selectedOrgUnits, orgUnits]);
+
+  const findOrgUnitByPath = (units: any[], path: string): any => {
+    for (const unit of units) {
+      if (unit.path === path) {
+        return unit;
+      }
+      if (unit.children && unit.children.length > 0) {
+        const found = findOrgUnitByPath(unit.children, path);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const handleSubmitClick = () => {
+    onSubmit(selectedOrgUnits, selectedOrgUnitNames);
+  };
 
   if (loading) {
     return <CircularLoader />;
@@ -29,37 +84,45 @@ const OrganisationUnitMultiSelect = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-2xl font-semibold mb-4 text-center">Select Organization Units</h2>
-
+    <div className="container mx-auto bg-white rounded-lg">
       {/* Search input field */}
       <div className="mb-4">
         <InputField
           className="w-full"
           label="Search Organization Unit"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.value || '')}
+          onChange={(e) => setSearchTerm(e.value || "")}
           placeholder="Type to search..."
         />
       </div>
 
-
-
       {/* Organization Unit Tree */}
-      <div className="bg-gray-50 p-4 rounded-lg mb-6 shadow-inner">
+      <div className="bg-gray-50 p-4 rounded-lg mb-6 shadow-inner max-h-[300px] overflow-auto">
         {currentUserOrgUnit && (
           <OrganisationUnitTree
             roots={[currentUserOrgUnit.id]}
             selected={selectedOrgUnits}
             onChange={({ path }) => handleOrgUnitClick(path)}
             singleSelection={false}
-            renderNodeLabel={({ node }) => (
-              <span className="text-blue-600 font-medium">{node.displayName}</span>
-            )}
+            renderNodeLabel={({ node }) => <span className="text-blue-600 font-medium">{node.displayName}</span>}
             filter={filteredOrgUnitPaths.length ? filteredOrgUnitPaths : undefined}
           />
         )}
       </div>
+
+      {/* Selected org units display */}
+      {selectedOrgUnitNames.length > 0 && (
+        <div className="mb-4 p-2 bg-blue-50 rounded-md">
+          <p className="font-medium mb-1">Selected units:</p>
+          <div className="flex flex-wrap gap-1">
+            {selectedOrgUnitNames.map((name, index) => (
+              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs">
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Select field for organization unit level */}
       <div className="mb-6">
@@ -87,7 +150,7 @@ const OrganisationUnitMultiSelect = () => {
 
         <Button
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-full"
-          onClick={() => console.log('Selected org units:', selectedOrgUnits)}
+          onClick={handleSubmitClick}
         >
           Submit Selected Org Units
         </Button>
@@ -96,4 +159,5 @@ const OrganisationUnitMultiSelect = () => {
   );
 };
 
-export default OrganisationUnitMultiSelect;
+export default OrganisationUnitMultiSelect
+

@@ -7,6 +7,7 @@ import { formatDate } from "../../../lib/utils";
 import DatePicker from "./date-picker";
 import DashboardReport from "./report-dashboard";
 import { DateValueType } from "@/types/dashboard-reportType";
+import OrgUnitPicker from "./org-unit-picker";
 
 export interface DataSourceRowProps {
   row: DashboardConverted;
@@ -43,6 +44,9 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
                   onChange={handleValueChange}
                   maxDate={MAX_DATE}
                 />
+              </div>
+              <div>
+                <OrgUnitPicker />
               </div>
               <h3 className="text-sm font-semibold text-gray-900">
                 {formatDate(value?.startDate)} - {formatDate(value?.endDate)}

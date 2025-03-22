@@ -12,11 +12,13 @@ interface DashboardUserDetailsComponentProps {
   linkedUsers: LinkedUser[];
   row: DashboardConverted;
   value: DateValueType;
+  loading: boolean;
 }
 export default function DashboardUserDetails({
   linkedUsers,
   row,
   value,
+  loading,
 }: DashboardUserDetailsComponentProps) {
   const columns = useMemo<MRT_ColumnDef<LinkedUser>[]>(
     () => [
@@ -89,11 +91,11 @@ export default function DashboardUserDetails({
   const table = useMantineReactTable({
     columns,
     data: linkedUsers,
+    state: { isLoading: loading },
     enableFullScreenToggle: false,
-    enableDensityToggle: false,
     initialState: {
       sorting: [{ id: "Instance", desc: false }],
-      pagination: { pageSize: 200, pageIndex: 0 },
+      // pagination: { pageSize: 20, pageIndex: 0 },
       density: "xs",
       columnPinning: {
         left: [
@@ -143,6 +145,10 @@ export default function DashboardUserDetails({
       </div>
     ),
   });
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
   return (
     <div className="w-full min-h-[85vh] overflow-y-scroll bg-gradient-to-r from-white to-gray-50 shadow-lg rounded-xl p-6 mx-auto border border-gray-300 hover:shadow-2xl transition-shadow duration-300">
       <div className=" h-[79vh] overflow-y-scroll">

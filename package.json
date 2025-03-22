@@ -7,8 +7,7 @@
   "scripts": {
     "build:css": "postcss src/styles/index.css -o src/index.css",
     "watch:css": "postcss src/styles/index.css -o src/index.css -w",
-    "build": "build:css & d2-app-scripts build",
-    "prestart": "mkdir -p .d2/shell/src && cp -R src/* .d2/shell/src",
+    "build": "concurrently \"yarn build:css\" \"d2-app-scripts build\"",
     "start": "watch:css & d2-app-scripts start",
     "test": "d2-app-scripts test",
     "deploy": "d2-app-scripts deploy"
