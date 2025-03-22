@@ -9,22 +9,27 @@ import {
   Button,
   CircularLoader,
 } from "@dhis2/ui";
-import { useOrgUnitData } from "../../services/fetchOrgunitData";
 import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
 
 interface OrganisationUnitMultiSelectProps {
   selectedOrgUnits?: string[];
   onSubmit: (selectedPaths: string[], selectedNames: string[]) => void;
+  preloadedData?: any; // Add prop for preloaded data
+  isLoading?: boolean; // Add prop for loading state
+  loadError?: any; // Add prop for error state
 }
 
 const OrganisationUnitMultiSelect = ({
   selectedOrgUnits: initialSelectedOrgUnits = [],
   onSubmit,
+  preloadedData,
+  isLoading = false,
+  loadError = null,
 }: OrganisationUnitMultiSelectProps) => {
-  const { loading, error, data } = useOrgUnitData();
-  const orgUnits = data?.orgUnits?.organisationUnits || [];
-  const orgUnitLevels = data?.orgUnitLevels?.organisationUnitLevels || [];
-  const currentUserOrgUnit = data?.currentUser?.organisationUnits?.[0];
+  // Use the preloaded data instead of fetching it again
+  const orgUnits = preloadedData?.orgUnits?.organisationUnits || [];
+  const orgUnitLevels = preloadedData?.orgUnitLevels?.organisationUnitLevels || [];
+  const currentUserOrgUnit = preloadedData?.currentUser?.organisationUnits?.[0];
 
   const {
     selectedOrgUnits,
@@ -72,15 +77,24 @@ const OrganisationUnitMultiSelect = ({
   };
 
   const handleSubmitClick = () => {
+    // Log selected org units for debugging
+    console.log("Selected org units:", selectedOrgUnits);
+    console.log("Selected org unit names:", selectedOrgUnitNames);
+
     onSubmit(selectedOrgUnits, selectedOrgUnitNames);
   };
 
-  if (loading) {
-    return <CircularLoader />;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <CircularLoader />
+        <p className="ml-2">Loading organization units...</p>
+      </div>
+    );
   }
 
-  if (error) {
-    return <p className="text-red-500">Error: {error.message}</p>;
+  if (loadError) {
+    return <p className="text-red-500 p-4">Error: {loadError.message}</p>;
   }
 
   return (
