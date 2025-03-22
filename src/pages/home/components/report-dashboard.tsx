@@ -1,94 +1,70 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import { usesqlViewDataReport } from "../../../hooks/dashboards";
-import { useDataQuery } from "@dhis2/app-runtime";
-import { DataSourceRowProps } from "./show-data";
-import {
-  DateValueType,
-  LinkedUser,
-  VisitDetails,
-} from "@/types/dashboard-reportType";
+import { useFilteredUsers } from "../../../hooks/users";
+import type { DateValueType, LinkedUser, VisitDetails } from "@/types/dashboard-reportType";
 import DashboardUserDetails from "./dashboard-user-details";
-import { DashboardConverted } from "@/types/dashboardsType";
+import type { DashboardConverted } from "@/types/dashboardsType";
 
 export interface DashboardReportProps {
   row: DashboardConverted;
   value: DateValueType;
+  selectedOrgUnitPaths: string[];
 }
 
-export default function DashboardReport({ row, value }: DashboardReportProps) {
+export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] }: DashboardReportProps) {
   const [uniqueUsernames, setUniqueUsernames] = useState<string[]>([]);
+  const [visitDetails, setVisitDetails] = useState<VisitDetails[]>([]);
+  const [linkedUsers, setLinkedUsers] = useState<LinkedUser[]>([]);
 
   const favoriteuid = row.id;
   const criteria = `favoriteuid%${encodeURIComponent(favoriteuid)}`;
 
-  const { loading, error, data, refetch } = usesqlViewDataReport({
+  const {
+    loading: dashboardLoading,
+    error: dashboardError,
+    data: dashboardData,
+    refetch: refetchDashboard,
+  } = usesqlViewDataReport({
     datetime: value,
     criteria,
   });
 
   useEffect(() => {
     if (value) {
-      refetch({ criteria, datetime: value });
+      refetchDashboard({ criteria, datetime: value });
     }
-  }, [value, refetch]);
+  }, [value, refetchDashboard, criteria]);
 
   useEffect(() => {
-    const usernameColumnIndex = data?.sqlViewData?.listGrid?.headers?.findIndex(
-      (header: { column: string; }) => header?.column === "username"
+    const usernameColumnIndex = dashboardData?.sqlViewData?.listGrid?.headers?.findIndex(
+      (header: { column: string; }) => header?.column === "username",
     );
 
-    const uniqueUsernamesArray = Array.from(
-      new Set<string>(
-        data?.sqlViewData?.listGrid?.rows?.map(
-          (row: Record<string, any>) => row[usernameColumnIndex]
-        )
-      )
-    );
-    setUniqueUsernames(uniqueUsernamesArray);
-  }, [data]);
+    if (usernameColumnIndex !== undefined && usernameColumnIndex >= 0) {
+      const uniqueUsernamesArray = Array.from(
+        new Set<string>(
+          dashboardData?.sqlViewData?.listGrid?.rows?.map((row: Record<string, any>) => row[usernameColumnIndex]),
+        ),
+      ).filter(Boolean);
 
-  const query = {
-    users: {
-      resource: "users",
-      params: ({ usernames }: { usernames: string[]; }) => ({
-        paging: false,
-        filter: `userCredentials.username:in:[${usernames.join(",")}]`,
-        fields:
-          "id,username,name,displayName,phoneNumber,jobTitle,userCredentials[userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]",
-      }),
-    },
-  };
-
-  const {
-    data: userData,
-    loading: userLoading,
-    error: userError,
-    refetch: refetchUsers,
-  } = useDataQuery(query, { variables: { usernames: uniqueUsernames } });
-
-  useEffect(() => {
-    if (uniqueUsernames.length > 0) {
-      refetchUsers({ usernames: uniqueUsernames });
+      setUniqueUsernames(uniqueUsernamesArray);
     }
-  }, [uniqueUsernames, refetchUsers]);
+  }, [dashboardData]);
 
-  const [visitDetails, setVisitDetails] = useState<VisitDetails[]>([]);
   useEffect(() => {
-    if (data) {
-      const rows = data?.sqlViewData?.listGrid?.rows;
+    if (dashboardData?.sqlViewData?.listGrid?.rows) {
+      const rows = dashboardData.sqlViewData.listGrid.rows;
       const formattedRows = rows.map((row: string[]) => {
         const [timestamp, username] = row;
         return { timestamp, username };
       });
 
       const groupedData: Record<string, VisitDetails> = formattedRows.reduce(
-        (
-          acc: Record<string, VisitDetails>,
-          row: { timestamp: string; username: string; }
-        ) => {
+        (acc: Record<string, VisitDetails>, row: { timestamp: string; username: string; }) => {
           const { timestamp, username } = row;
 
-          // Initialize the accumulator for a new username
           if (!acc[username]) {
             acc[username] = { username, visits: 0, lastVisit: timestamp };
           }
@@ -100,41 +76,54 @@ export default function DashboardReport({ row, value }: DashboardReportProps) {
 
           return acc;
         },
-        {} as Record<string, VisitDetails>
+        {} as Record<string, VisitDetails>,
       );
 
-      const sortedData = Object.values(groupedData).sort(
-        (a, b) => b.visits - a.visits
-      );
+      const sortedData = Object.values(groupedData).sort((a, b) => b.visits - a.visits);
 
       setVisitDetails(sortedData);
     }
-  }, [data]);
+  }, [dashboardData]);
 
-  const [linkedUsers, setLinkedUsers] = useState<LinkedUser[]>([]);
+  const {
+    data: filteredUserData,
+    loading: userLoading,
+    error: userError,
+    refetch: refetchUsers,
+  } = useFilteredUsers(uniqueUsernames, selectedOrgUnitPaths);
+
   useEffect(() => {
-    if (visitDetails.length > 0 && userData?.users?.users?.length > 0) {
-      const Users = userData.users.users
-        .filter((user: { username: string; }) =>
-          visitDetails.find((v) => v.username === user.username)
-        )
+    if (uniqueUsernames.length > 0) {
+      refetchUsers({
+        usernames: uniqueUsernames,
+        orgUnitPaths: selectedOrgUnitPaths,
+      });
+    }
+  }, [uniqueUsernames, selectedOrgUnitPaths, refetchUsers]);
+
+  useEffect(() => {
+    if (visitDetails.length > 0 && filteredUserData?.users?.users?.length > 0) {
+      const Users = filteredUserData.users.users
+        .filter((user: { username: string; }) => visitDetails.find((v) => v.username === user.username))
         .map((user: { username: string; }) => {
-          const details = visitDetails.find(
-            (v) => v.username === user.username
-          );
+          const details = visitDetails.find((v) => v.username === user.username);
           return { ...user, ...details };
         });
 
       setLinkedUsers(Users);
+    } else {
+      setLinkedUsers([]);
     }
-  }, [visitDetails, userData]);
+  }, [visitDetails, filteredUserData]);
 
   return (
     <DashboardUserDetails
       linkedUsers={linkedUsers}
       row={row}
       value={value}
-      loading={loading || userLoading}
+      loading={dashboardLoading || userLoading}
+      hasOrgUnitFilter={selectedOrgUnitPaths.length > 0}
     />
   );
 }
+

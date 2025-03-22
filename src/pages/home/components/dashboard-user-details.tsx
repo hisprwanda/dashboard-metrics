@@ -10,10 +10,16 @@ interface DashboardUserDetailsComponentProps {
   row: DashboardConverted;
   value: DateValueType;
   loading: boolean;
+  hasOrgUnitFilter: boolean;
 }
 
-export default function DashboardUserDetails({ linkedUsers, row, value, loading }: DashboardUserDetailsComponentProps) {
-  // Ensure we have a safe default for linkedUsers when data is loading
+export default function DashboardUserDetails({
+  linkedUsers,
+  row,
+  value,
+  loading,
+  hasOrgUnitFilter = false,
+}: DashboardUserDetailsComponentProps) {
   const safeLinkedUsers = loading ? [] : linkedUsers;
 
   const columns = useMemo<MRT_ColumnDef<LinkedUser>[]>(
@@ -101,7 +107,11 @@ export default function DashboardUserDetails({ linkedUsers, row, value, loading 
     },
     renderEmptyRowsFallback: () => (
       <div className="flex justify-center items-center h-40 text-gray-500">
-        {loading ? "" : "No user visit details available."}
+        {loading
+          ? ""
+          : hasOrgUnitFilter && linkedUsers.length === 0
+            ? "No users from the selected organization units visited this dashboard in the selected period."
+            : "No user visit details available."}
       </div>
     ),
     renderTopToolbarCustomActions: ({ table }) => (

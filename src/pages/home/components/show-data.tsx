@@ -1,12 +1,14 @@
-import React, { useState } from "react";
-import { DashboardConverted } from "@/types/dashboardsType";
+"use client";
+
+import { useState } from "react";
+import type { DashboardConverted } from "@/types/dashboardsType";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { FaEye } from "react-icons/fa6";
 import { RiCloseLargeFill } from "react-icons/ri";
 import { formatDate } from "../../../lib/utils";
 import DatePicker from "./date-picker";
 import DashboardReport from "./report-dashboard";
-import { DateValueType } from "@/types/dashboard-reportType";
+import type { DateValueType } from "@/types/dashboard-reportType";
 import OrgUnitPicker from "./org-unit-picker";
 
 export interface DataSourceRowProps {
@@ -22,8 +24,14 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
     startDate: currentDate,
     endDate: currentDate,
   });
+  const [selectedOrgUnitPaths, setSelectedOrgUnitPaths] = useState<string[]>([]);
+
   const handleValueChange = (newValue: DateValueType | null) => {
     setValue(newValue || { startDate: null, endDate: null });
+  };
+
+  const handleOrgUnitsChange = (paths: string[], names: string[]) => {
+    setSelectedOrgUnitPaths(paths);
   };
 
   return (
@@ -39,14 +47,10 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
           <AlertDialog.Title className="text-mauve12 -mt-4 font-medium">
             <div className="flex justify-between items-center py-2">
               <div className="w-[300px] flex items-start justify-between gap-20 ">
-                <DatePicker
-                  value={value}
-                  onChange={handleValueChange}
-                  maxDate={MAX_DATE}
-                />
+                <DatePicker value={value} onChange={handleValueChange} maxDate={MAX_DATE} />
               </div>
               <div>
-                <OrgUnitPicker />
+                <OrgUnitPicker onOrgUnitsChange={handleOrgUnitsChange} />
               </div>
               <h3 className="text-sm font-semibold text-gray-900">
                 {formatDate(value?.startDate)} - {formatDate(value?.endDate)}
@@ -62,9 +66,10 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
               </AlertDialog.Cancel>
             </div>
           </AlertDialog.Title>
-          <DashboardReport row={row} value={value} />
+          <DashboardReport row={row} value={value} selectedOrgUnitPaths={selectedOrgUnitPaths} />
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog.Root>
   );
 }
+
