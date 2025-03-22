@@ -34,7 +34,7 @@ export default function DashboardReport({ row, value }: DashboardReportProps) {
 
   useEffect(() => {
     const usernameColumnIndex = data?.sqlViewData?.listGrid?.headers?.findIndex(
-      (header: { column: string }) => header?.column === "username"
+      (header: { column: string; }) => header?.column === "username"
     );
 
     const uniqueUsernamesArray = Array.from(
@@ -50,7 +50,7 @@ export default function DashboardReport({ row, value }: DashboardReportProps) {
   const query = {
     users: {
       resource: "users",
-      params: ({ usernames }: { usernames: string[] }) => ({
+      params: ({ usernames }: { usernames: string[]; }) => ({
         paging: false,
         filter: `userCredentials.username:in:[${usernames.join(",")}]`,
         fields:
@@ -84,7 +84,7 @@ export default function DashboardReport({ row, value }: DashboardReportProps) {
       const groupedData: Record<string, VisitDetails> = formattedRows.reduce(
         (
           acc: Record<string, VisitDetails>,
-          row: { timestamp: string; username: string }
+          row: { timestamp: string; username: string; }
         ) => {
           const { timestamp, username } = row;
 
@@ -115,10 +115,10 @@ export default function DashboardReport({ row, value }: DashboardReportProps) {
   useEffect(() => {
     if (visitDetails.length > 0 && userData?.users?.users?.length > 0) {
       const Users = userData.users.users
-        .filter((user: { username: string }) =>
+        .filter((user: { username: string; }) =>
           visitDetails.find((v) => v.username === user.username)
         )
-        .map((user: { username: string }) => {
+        .map((user: { username: string; }) => {
           const details = visitDetails.find(
             (v) => v.username === user.username
           );
@@ -130,6 +130,11 @@ export default function DashboardReport({ row, value }: DashboardReportProps) {
   }, [visitDetails, userData]);
 
   return (
-    <DashboardUserDetails linkedUsers={linkedUsers} row={row} value={value} />
+    <DashboardUserDetails
+      linkedUsers={linkedUsers}
+      row={row}
+      value={value}
+      loading={loading || userLoading}
+    />
   );
 }
