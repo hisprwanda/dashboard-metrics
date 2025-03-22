@@ -3,7 +3,19 @@
 import type { DateValueType, LinkedUser } from "@/types/dashboard-reportType";
 import type { DashboardConverted } from "@/types/dashboardsType";
 import { useMemo } from "react";
-import { MantineReactTable, type MRT_ColumnDef, useMantineReactTable } from "mantine-react-table";
+import { MantineReactTable, type MRT_ColumnDef, useMantineReactTable, type MRT_Row } from "mantine-react-table";
+import { Button, Group } from "@mantine/core";
+import { IconFileSpreadsheet, IconFile } from "@tabler/icons-react";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+// Import the autoTable type
+import "jspdf-autotable";
+// Add the type definition for autoTable
+declare module "jspdf" {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 interface DashboardUserDetailsComponentProps {
   linkedUsers: LinkedUser[];
@@ -20,6 +32,7 @@ export default function DashboardUserDetails({
   loading,
   hasOrgUnitFilter = false,
 }: DashboardUserDetailsComponentProps) {
+  // Ensure we have a safe default for linkedUsers when data is loading
   const safeLinkedUsers = loading ? [] : linkedUsers;
 
   const columns = useMemo<MRT_ColumnDef<LinkedUser>[]>(
@@ -85,6 +98,116 @@ export default function DashboardUserDetails({
     [],
   );
 
+  // Function to prepare data for export
+  const prepareDataForExport = (rows: MRT_Row<LinkedUser>[]) => {
+    return rows.map((row) => {
+      const userData = row.original;
+
+      // Format the date for export
+      let lastVisitDate = "-";
+      if (userData.lastVisit) {
+        const date = new Date(userData.lastVisit);
+        lastVisitDate = date.toLocaleDateString("en-CA");
+      }
+
+      return {
+        Name: userData.username || "",
+        Roles: userData.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "",
+        "User Groups": userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
+        Organisations: userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
+        "Access Frequency": userData.visits || 0,
+        "Last Visit": lastVisitDate,
+      };
+    });
+  };
+
+  // Export to Excel/XLSX
+  const handleExportXLSX = (rows: MRT_Row<LinkedUser>[]) => {
+    const exportData = prepareDataForExport(rows);
+
+    // Create a new workbook
+    const wb = XLSX.utils.book_new();
+
+    // Create metadata in the correct format for proper cell placement
+    const metadataArray = [
+      ["Dashboard", row?.displayName || "-"],
+      [
+        "Period",
+        `${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
+      ],
+      ["Export Date", new Date().toLocaleDateString("en-CA")],
+    ];
+
+    // Convert array to worksheet (this ensures proper cell placement)
+    const metadataWs = XLSX.utils.aoa_to_sheet(metadataArray);
+    XLSX.utils.book_append_sheet(wb, metadataWs, "Dashboard Info");
+
+    // Convert data to worksheet
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, "User Access Data");
+
+    // Generate XLSX file and trigger download
+    XLSX.writeFile(wb, `Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
+  // Export to PDF
+  const handleExportPDF = (rows: MRT_Row<LinkedUser>[]) => {
+    const exportData = prepareDataForExport(rows);
+
+    // Create PDF document (landscape)
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
+
+    // Add title
+    doc.setFontSize(16);
+    doc.text(`Dashboard: ${row?.displayName || "-"}`, 14, 15);
+
+    // Add period info
+    doc.setFontSize(12);
+    doc.text(
+      `Period: ${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
+      14,
+      22,
+    );
+    doc.text(`Export Date: ${new Date().toLocaleDateString("en-CA")}`, 14, 29);
+
+    // Prepare table data
+    const tableData = exportData.map((item) => [
+      item["Name"],
+      item["Roles"],
+      item["User Groups"],
+      item["Organisations"],
+      item["Access Frequency"].toString(),
+      item["Last Visit"],
+    ]);
+
+    // Add table to PDF - using the properly typed autoTable method
+    doc.autoTable({
+      head: [["Name", "Roles", "User Groups", "Organisations", "Access Frequency", "Last Visit"]],
+      body: tableData,
+      startY: 35,
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 50 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 25 },
+      },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      alternateRowStyles: { fillColor: [242, 242, 242] },
+    });
+
+    // Save PDF
+    doc.save(`Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.pdf`);
+  };
+
   const table = useMantineReactTable({
     columns,
     data: safeLinkedUsers,
@@ -115,27 +238,53 @@ export default function DashboardUserDetails({
       </div>
     ),
     renderTopToolbarCustomActions: ({ table }) => (
-      <div className="content-start flex flex-row gap-10">
-        <div className="w-6/12 p-4">
-          <ul>
-            <li className="flex justify-between py-2 border-b-2 border-indigo-200">
-              <span className="font-semibold">Dashboard : &nbsp;&nbsp;</span>
-              <span> {row?.displayName || "-"} </span>
-            </li>
-          </ul>
+      <div className="flex flex-col w-full gap-2">
+        <div className="content-start flex flex-row gap-10">
+          <div className="w-6/12 p-4">
+            <ul>
+              <li className="flex justify-between py-2 border-b-2 border-indigo-200">
+                <span className="font-semibold">Dashboard : &nbsp;&nbsp;</span>
+                <span> {row?.displayName || "-"} </span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="w-6/12 p-4">
+            <ul>
+              <li className="flex justify-between py-2 border-b-2 border-indigo-200">
+                <span className="font-semibold">Period : &nbsp;&nbsp;</span>
+                <span>
+                  {value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} -{" "}
+                  {value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}{" "}
+                </span>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <div className="w-6/12 p-4">
-          <ul>
-            <li className="flex justify-between py-2 border-b-2 border-indigo-200">
-              <span className="font-semibold">Period : &nbsp;&nbsp;</span>
-              <span>
-                {value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} -{" "}
-                {value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}{" "}
-              </span>
-            </li>
-          </ul>
-        </div>
+        {/* Export buttons */}
+        <Group position="right" spacing="xs" className="px-4">
+          <Button
+            disabled={table.getRowModel().rows.length === 0 || loading}
+            onClick={() => handleExportXLSX(table.getRowModel().rows)}
+            leftIcon={<IconFileSpreadsheet size={18} />}
+            color="green"
+            variant="filled"
+            size="sm"
+          >
+            Export to Excel
+          </Button>
+          <Button
+            disabled={table.getRowModel().rows.length === 0 || loading}
+            onClick={() => handleExportPDF(table.getRowModel().rows)}
+            leftIcon={<IconFile size={18} />}
+            color="red"
+            variant="filled"
+            size="sm"
+          >
+            Export to PDF
+          </Button>
+        </Group>
       </div>
     ),
   });
