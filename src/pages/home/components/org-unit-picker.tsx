@@ -7,18 +7,28 @@ import { X } from "lucide-react";
 import { useOrgUnitData } from "../../../services/fetchOrgunitData";
 import { CircularLoader } from "@dhis2/ui";
 
-export default function OrgUnitPicker() {
+interface OrgUnitPickerProps {
+  onOrgUnitsChange?: (paths: string[], names: string[]) => void;
+}
+
+export default function OrgUnitPicker({ onOrgUnitsChange }: OrgUnitPickerProps) {
   const [open, setOpen] = useState(false);
   const [selectedOrgUnits, setSelectedOrgUnits] = useState<string[]>([]);
   const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
 
-  // Preload the organization unit data
   const { loading, error, data } = useOrgUnitData();
 
   const handleSubmit = (units: string[], names: string[]) => {
     setSelectedOrgUnits(units);
     setSelectedOrgUnitNames(names);
     setOpen(false);
+
+    if (onOrgUnitsChange) {
+      onOrgUnitsChange(units, names);
+    }
+
+    console.log("Selected org unit paths:", units);
+    console.log("Selected org unit names:", names);
   };
 
   const displayText = selectedOrgUnitNames.length > 0 ? selectedOrgUnitNames.join(", ") : "Select Organisation Unit";
