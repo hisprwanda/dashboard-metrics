@@ -7,15 +7,8 @@ import { MantineReactTable, type MRT_ColumnDef, useMantineReactTable, type MRT_R
 import { Button, Group } from "@mantine/core";
 import { IconFileSpreadsheet, IconFile } from "@tabler/icons-react";
 import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-// Import the autoTable type
-import "jspdf-autotable";
-// Add the type definition for autoTable
-declare module "jspdf" {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface DashboardUserDetailsComponentProps {
   linkedUsers: LinkedUser[];
@@ -154,58 +147,76 @@ export default function DashboardUserDetails({
 
   // Export to PDF
   const handleExportPDF = (rows: MRT_Row<LinkedUser>[]) => {
-    const exportData = prepareDataForExport(rows);
+    try {
+      // Create PDF document (landscape)
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
 
-    // Create PDF document (landscape)
-    const doc = new jsPDF({
-      orientation: "landscape",
-      unit: "mm",
-      format: "a4",
-    });
+      // Add title and metadata before the table
+      doc.setFontSize(16);
+      doc.text(`Dashboard: ${row?.displayName || "-"}`, 14, 15);
 
-    // Add title
-    doc.setFontSize(16);
-    doc.text(`Dashboard: ${row?.displayName || "-"}`, 14, 15);
+      doc.setFontSize(12);
+      doc.text(
+        `Period: ${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
+        14,
+        22,
+      );
+      doc.text(`Export Date: ${new Date().toLocaleDateString("en-CA")}`, 14, 29);
 
-    // Add period info
-    doc.setFontSize(12);
-    doc.text(
-      `Period: ${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
-      14,
-      22,
-    );
-    doc.text(`Export Date: ${new Date().toLocaleDateString("en-CA")}`, 14, 29);
+      // Get table headers from columns
+      const tableHeaders = ["Name", "Roles", "User Groups", "Organisations", "Access Frequency", "Last Visit"];
 
-    // Prepare table data
-    const tableData = exportData.map((item) => [
-      item["Name"],
-      item["Roles"],
-      item["User Groups"],
-      item["Organisations"],
-      item["Access Frequency"].toString(),
-      item["Last Visit"],
-    ]);
+      // Prepare table data from rows
+      const tableData = rows.map((row) => {
+        const userData = row.original;
 
-    // Add table to PDF - using the properly typed autoTable method
-    doc.autoTable({
-      head: [["Name", "Roles", "User Groups", "Organisations", "Access Frequency", "Last Visit"]],
-      body: tableData,
-      startY: 35,
-      styles: { fontSize: 9, cellPadding: 3 },
-      columnStyles: {
-        0: { cellWidth: 30 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 50 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 25 },
-      },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-      alternateRowStyles: { fillColor: [242, 242, 242] },
-    });
+        // Format the date for export
+        let lastVisitDate = "-";
+        if (userData.lastVisit) {
+          const date = new Date(userData.lastVisit);
+          lastVisitDate = date.toLocaleDateString("en-CA");
+        }
 
-    // Save PDF
-    doc.save(`Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.pdf`);
+        return [
+          userData.username || "",
+          userData.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "",
+          userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
+          userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
+          (userData.visits || 0).toString(),
+          lastVisitDate,
+        ];
+      });
+
+      // Generate the table
+      autoTable(doc, {
+        head: [tableHeaders],
+        body: tableData,
+        startY: 35,
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 50 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 25 },
+        },
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+        alternateRowStyles: { fillColor: [242, 242, 242] },
+      });
+
+      // Save PDF
+      doc.save(`Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.pdf`);
+
+      console.log("PDF export completed successfully");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("Failed to export PDF. See console for details.");
+    }
   };
 
   const table = useMantineReactTable({
@@ -265,24 +276,24 @@ export default function DashboardUserDetails({
         {/* Export buttons */}
         <Group position="right" spacing="xs" className="px-4">
           <Button
-            disabled={table.getRowModel().rows.length === 0 || loading}
-            onClick={() => handleExportXLSX(table.getRowModel().rows)}
+            disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
+            onClick={() => handleExportXLSX(table.getPrePaginationRowModel().rows)}
             leftIcon={<IconFileSpreadsheet size={18} />}
             color="green"
             variant="filled"
             size="sm"
           >
-            Export to Excel
+            Export All to Excel
           </Button>
           <Button
-            disabled={table.getRowModel().rows.length === 0 || loading}
-            onClick={() => handleExportPDF(table.getRowModel().rows)}
+            disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
+            onClick={() => handleExportPDF(table.getPrePaginationRowModel().rows)}
             leftIcon={<IconFile size={18} />}
             color="red"
             variant="filled"
             size="sm"
           >
-            Export to PDF
+            Export All to PDF
           </Button>
         </Group>
       </div>
