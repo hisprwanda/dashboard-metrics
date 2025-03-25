@@ -10,13 +10,13 @@ export default function Header() {
   const { loading, error, data } = useSystemInfo();
   const baseUrl = useBaseUrl();
 
-  // if (loading) {
-  //   return <CircularLoader />;
-  // }
+  if (loading) {
+    return <CircularLoader />;
+  }
 
-  // if (error) {
-  //   return <p className="text-red-500">Error: {error.message}</p>;
-  // }
+  if (error) {
+    return <p className="text-red-500">Error: {error.message}</p>;
+  }
 
   return (
     <nav className='bg-dhisMainBlue text-white flex items-center justify-between '>
@@ -28,13 +28,13 @@ export default function Header() {
             </div>
           </a>
           <Link to={'/'} className='text-[14px] font-[500] border-r-[1px] border-dhisGrey50 p-[12px] min-w-[30vw]'>
-            <p>{data?.title?.applicationTitle? data?.title?.applicationTitle +' | Dashboard  Insights':''}</p>
+            <p>{data?.title?.applicationTitle} - Data Analytics Lab</p>
           </Link>
         </div>
         <menu>
           {menuItems.map((menuItem, index) => (
             <NavLink
-              to={`/${menuItem?.link}`}
+              to={`/${menuItem.link}`}
               key={index}
               className={({ isActive }) =>
                 `p-[12px] ${isActive ? 'bg-[#1A557F]' : 'hover:bg-[#1A557F]'}`
