@@ -19,10 +19,15 @@ export interface DataSourceRowProps {
 export default function ShowData({ row, data }: DataSourceRowProps) {
   const [open, setOpen] = useState(false);
   const MAX_DATE = new Date();
-  const currentDate = new Date();
-  const [value, setValue] = useState<DateValueType>({
-    startDate: currentDate,
-    endDate: currentDate,
+  const [value, setValue] = useState<DateValueType>(() => {
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    return {
+      startDate: sevenDaysAgo,
+      endDate: today,
+    };
   });
   const [selectedOrgUnitPaths, setSelectedOrgUnitPaths] = useState<string[]>([]);
 
