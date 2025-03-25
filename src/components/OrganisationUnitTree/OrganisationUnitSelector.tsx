@@ -12,6 +12,7 @@ import {
 } from "@dhis2/ui";
 import { useDataQuery } from "@dhis2/app-runtime";
 import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
+import OrganizationUnitLevels from "./OrganizationUnitLevels";
 
 interface OrganisationUnitMultiSelectProps {
   selectedOrgUnits?: string[];
@@ -68,25 +69,6 @@ const OrganisationUnitMultiSelect = ({
     refetch: searchOrgUnits,
   } = useDataQuery(searchQuery, { lazy: true });
 
-  // Query for getting org units by level
-  const levelQuery = {
-    orgUnitsByLevel: {
-      resource: "organisationUnits",
-      params: ({ level }: { level: number; }) => ({
-        fields: "id,displayName,path,level",
-        filter: `level:eq:${level}`,
-        paging: false,
-      }),
-    },
-  };
-
-  const {
-    loading: levelLoading,
-    error: levelError,
-    data: levelData,
-    refetch: getOrgUnitsByLevel,
-  } = useDataQuery(levelQuery, { lazy: true });
-
   // Handle search - only trigger after 3 characters
   useEffect(() => {
     if (searchTerm.length >= 3) {
@@ -105,22 +87,6 @@ const OrganisationUnitMultiSelect = ({
       setSearchResultUnits(results);
     }
   }, [searchData, isSearching]);
-
-  // Handle level selection
-  useEffect(() => {
-    if (selectedLevel !== null) {
-      getOrgUnitsByLevel({ level: selectedLevel });
-    }
-  }, [selectedLevel, getOrgUnitsByLevel]);
-
-  // Update selected org units when level results come in
-  useEffect(() => {
-    if (levelData && selectedLevel !== null) {
-      const levelResults = levelData.orgUnitsByLevel.organisationUnits || [];
-      const paths = levelResults.map((unit: any) => unit.path);
-      setSelectedOrgUnits(paths);
-    }
-  }, [levelData, selectedLevel, setSelectedOrgUnits]);
 
   useEffect(() => {
     if (initialSelectedOrgUnits.length > 0) {
@@ -228,7 +194,7 @@ const OrganisationUnitMultiSelect = ({
         )}
 
         {/* Loading indicator */}
-        {(searchLoading || levelLoading) && (
+        {(searchLoading) && (
           <div className="flex justify-center items-center mt-4">
             <CircularLoader small />
             <p className="ml-2 text-sm text-gray-500">{searchLoading ? "Searching..." : "Loading units by level..."}</p>
@@ -250,21 +216,15 @@ const OrganisationUnitMultiSelect = ({
         </div>
       )}
 
-      {/* Select field for organization unit level */}
+
       <div className="mb-6">
-        <SingleSelectField
-          className="w-full"
-          label="Choose an Organisation Unit Level"
-          onChange={({ selected }) => setSelectedLevel(Number(selected))}
-          selected={selectedLevel ? String(selectedLevel) : undefined}
-          placeholder="Select level"
-          loading={levelLoading}
-          error={levelError?.message}
-        >
-          {orgUnitLevels.map((level: { id: string; displayName: string; level: number; }) => (
-            <SingleSelectOption key={level.id} value={String(level.level)} label={level.displayName} />
-          ))}
-        </SingleSelectField>
+        <OrganizationUnitLevels
+          selectedLevels={selectedLevel ? [selectedLevel] : []}
+          onLevelsChange={(levels) => setSelectedLevel(levels[0])}
+          orgUnitLevels={orgUnitLevels}
+          isLoading={false}
+          error={null}
+        />
       </div>
 
       {/* Buttons */}
