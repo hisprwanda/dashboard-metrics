@@ -12,6 +12,7 @@ import {
 } from "@dhis2/ui";
 import { useDataQuery } from "@dhis2/app-runtime";
 import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
+import OrganizationUnitLevels from "./OrganizationUnitLevels";
 
 interface OrganisationUnitMultiSelectProps {
   selectedOrgUnits?: string[];
@@ -263,20 +264,14 @@ const OrganisationUnitMultiSelect = ({
       )}
 
       {/* Select field for organization unit level */}
-      <div className="mb-6">
-        <SingleSelectField
-          className="w-full"
-          label="Choose an Organisation Unit Level"
-          onChange={({ selected }) => setSelectedLevel(Number(selected))}
-          selected={selectedLevel ? String(selectedLevel) : undefined}
-          placeholder="Select level"
-          loading={levelLoading}
-          error={levelError?.message}
-        >
-          {orgUnitLevels.map((level: { id: string; displayName: string; level: number; }) => (
-            <SingleSelectOption key={level.id} value={String(level.level)} label={level.displayName} />
-          ))}
-        </SingleSelectField>
+      <div className="mb-5">
+        <OrganizationUnitLevels
+          selectedLevels={selectedLevel !== null ? [selectedLevel] : []}
+          onLevelsChange={(levels) => setSelectedLevel(levels[0] || null)}
+          orgUnitLevels={orgUnitLevels}
+          isLoading={levelLoading}
+          error={levelError}
+        />
       </div>
 
       {/* Buttons */}

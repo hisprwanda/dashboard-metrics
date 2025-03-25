@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { MultiSelectField, MultiSelectOption, CircularLoader } from "@dhis2/ui";
 
 interface OrganizationUnitLevelsProps {
@@ -15,7 +15,6 @@ interface OrganizationUnitLevelsProps {
 const OrganizationUnitLevels: React.FC<OrganizationUnitLevelsProps> = ({
   selectedLevels,
   onLevelsChange,
-  disabled = false,
   orgUnitLevels = [],
   isLoading = false,
   error = null,
@@ -33,10 +32,11 @@ const OrganizationUnitLevels: React.FC<OrganizationUnitLevelsProps> = ({
     return <p className="text-red-500">Error: {error.message}</p>;
   }
 
+  console.log({ orgUnitLevels });
+
   return (
     <MultiSelectField
-      disabled={disabled}
-      className="w-full z-50 bg-white"
+      className="w-full z-[100] bg-white"
       label="Choose Organisation Unit Levels"
       onChange={handleChange}
       selected={selectedLevels.map(String)}
