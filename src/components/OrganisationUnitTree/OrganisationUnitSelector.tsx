@@ -47,8 +47,7 @@ const OrganisationUnitMultiSelect = ({
   // Get names of selected org units
   const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<string[]>([]);
-  const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
+  const [searchResultUnits, setSearchResultUnits] = useState<any[]>([]);
 
   // Query for searching org units - this is the DHIS2 way to search
   const searchQuery = {
@@ -95,10 +94,17 @@ const OrganisationUnitMultiSelect = ({
       searchOrgUnits({ searchText: searchTerm });
     } else {
       setIsSearching(false);
-      setSearchResults([]);
-      setExpandedPaths([]);
+      setSearchResultUnits([]);
     }
   }, [searchTerm, searchOrgUnits]);
+
+  // Process search results
+  useEffect(() => {
+    if (searchData && isSearching) {
+      const results = searchData.orgUnitsSearch.organisationUnits || [];
+      setSearchResultUnits(results);
+    }
+  }, [searchData, isSearching]);
 
   // Handle level selection
   useEffect(() => {
@@ -106,36 +112,6 @@ const OrganisationUnitMultiSelect = ({
       getOrgUnitsByLevel({ level: selectedLevel });
     }
   }, [selectedLevel, getOrgUnitsByLevel]);
-
-  // Process search results to get paths and parent paths for expansion
-  useEffect(() => {
-    if (searchData && isSearching) {
-      const results = searchData.orgUnitsSearch.organisationUnits || [];
-
-      // Get paths of search results
-      const resultPaths = results.map((unit: any) => unit.path);
-      setSearchResults(resultPaths);
-
-      // Get parent paths for expansion
-      const parentPaths: string[] = [];
-      results.forEach((unit: any) => {
-        // Split the path and reconstruct parent paths
-        const pathParts = unit.path.split("/").filter(Boolean);
-        let currentPath = "";
-
-        pathParts.forEach((part: string) => {
-          currentPath += "/" + part;
-          if (currentPath !== unit.path) {
-            // Don't include the unit's own path
-            parentPaths.push(currentPath);
-          }
-        });
-      });
-
-      // Set unique parent paths for expansion
-      setExpandedPaths([...new Set(parentPaths)]);
-    }
-  }, [searchData, isSearching]);
 
   // Update selected org units when level results come in
   useEffect(() => {
@@ -211,39 +187,47 @@ const OrganisationUnitMultiSelect = ({
         {searchTerm.length > 0 && searchTerm.length < 3 && (
           <p className="text-sm text-orange-500 mt-1">Please type at least 3 characters to search</p>
         )}
-        {isSearching && searchResults.length === 0 && !searchLoading && (
+        {isSearching && searchResultUnits.length === 0 && !searchLoading && (
           <NoticeBox title="No results found" warning className="mt-2">
             No organization units match your search criteria
           </NoticeBox>
         )}
-        {isSearching && searchResults.length > 0 && !searchLoading && (
-          <p className="text-sm text-green-600 mt-1">Found {searchResults.length} matching organization unit(s)</p>
+        {isSearching && searchResultUnits.length > 0 && !searchLoading && (
+          <p className="text-sm text-green-600 mt-1">Found {searchResultUnits.length} matching organization unit(s)</p>
         )}
       </div>
 
       {/* Organization Unit Tree */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6 shadow-inner max-h-[300px] overflow-auto">
-        {currentUserOrgUnit && (
+        {/* Show search results tree when searching */}
+        {isSearching && searchResultUnits.length > 0 && (
+          <div>
+            <p className="text-sm font-medium mb-2">Search Results:</p>
+            <OrganisationUnitTree
+              roots={searchResultUnits.map((unit) => unit.id)}
+              selected={selectedOrgUnits}
+              onChange={({ path }) => handleOrgUnitClick(path)}
+              singleSelection={false}
+              renderNodeLabel={({ node }) => <span className="text-green-600 font-medium">{node.displayName}</span>}
+              initiallyExpanded={searchResultUnits.map((unit) => unit.path)}
+              disableSelection={false}
+            />
+          </div>
+        )}
+
+        {/* Show regular tree when not searching */}
+        {(!isSearching || searchResultUnits.length === 0) && currentUserOrgUnit && (
           <OrganisationUnitTree
             roots={[currentUserOrgUnit.id]}
             selected={selectedOrgUnits}
             onChange={({ path }) => handleOrgUnitClick(path)}
             singleSelection={false}
-            renderNodeLabel={({ node }) => {
-              // Highlight search results
-              const isSearchResult = searchResults.includes(node.path);
-              return (
-                <span className={`font-medium ${isSearchResult ? "text-green-600 font-bold" : "text-blue-600"}`}>
-                  {node.displayName}
-                  {isSearchResult && searchTerm.length >= 3 && " ✓"}
-                </span>
-              );
-            }}
-            filter={isSearching ? searchResults : undefined}
-            initiallyExpanded={expandedPaths}
+            renderNodeLabel={({ node }) => <span className="text-blue-600 font-medium">{node.displayName}</span>}
             disableSelection={false}
           />
         )}
+
+        {/* Loading indicator */}
         {(searchLoading || levelLoading) && (
           <div className="flex justify-center items-center mt-4">
             <CircularLoader small />
