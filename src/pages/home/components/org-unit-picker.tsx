@@ -59,8 +59,8 @@ export default function OrgUnitPicker({ onOrgUnitsChange }: OrgUnitPickerProps) 
           </button>
         </AlertDialog.Trigger>
         <AlertDialog.Portal>
-          <AlertDialog.Overlay className="bg-blackA6 data-[state=open]:animate-overlayShow fixed inset-0 z-10" />
-          <AlertDialog.Content className="z-10 fixed top-[50%] left-[50%] max-h-[95vh] w-[600px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-white shadow-[0px_10px_38px_-10px_rgba(0,0,0,0.35),0px_10px_20px_-15px_rgba(0,0,0,0.2)] focus:outline-none">
+          <AlertDialog.Overlay className="bg-blackA6 data-[state=open]:animate-overlayShow fixed inset-0" />
+          <AlertDialog.Content className="fixed top-[50%] left-[50%] max-h-[95vh] w-[600px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-white shadow-[0px_10px_38px_-10px_rgba(0,0,0,0.35),0px_10px_20px_-15px_rgba(0,0,0,0.2)] focus:outline-none">
             <div className="flex justify-between items-center py-2 px-4 border-b">
               <h3 className="text-lg font-medium">Select Organisation Units</h3>
               <AlertDialog.Cancel asChild>

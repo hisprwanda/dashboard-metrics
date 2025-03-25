@@ -36,14 +36,14 @@ const OrganizationUnitLevels: React.FC<OrganizationUnitLevelsProps> = ({
 
   return (
     <MultiSelectField
-      className="w-full z-[100] bg-white"
+      className="w-full z-50 bg-white"
       label="Choose Organisation Unit Levels"
       onChange={handleChange}
       selected={selectedLevels.map(String)}
       placeholder="Select levels"
     >
       {orgUnitLevels.map((level: any) => (
-        <MultiSelectOption key={level.id} value={String(level.level)} label={level.displayName} />
+        <MultiSelectOption key={level.id} value={String(level.level)} label={level.displayName} className="z-50" />
       ))}
     </MultiSelectField>
   );
