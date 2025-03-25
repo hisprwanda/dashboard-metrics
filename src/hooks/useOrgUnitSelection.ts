@@ -1,18 +1,13 @@
 "use client";
 
-import { filterOrgUnits } from "../lib/helper";
 import type { OrgUnit } from "@/types/organisationUnit";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export const useOrgUnitSelection = (orgUnits: OrgUnit[]) => {
   const [selectedOrgUnits, setSelectedOrgUnits] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
 
-  const filteredOrgUnitPaths = useMemo(
-    () => filterOrgUnits(orgUnits, searchTerm, selectedLevel),
-    [orgUnits, searchTerm, selectedLevel],
-  );
 
   const handleOrgUnitClick = (path: string) => {
     setSelectedOrgUnits((prevSelected) => {
@@ -24,15 +19,14 @@ export const useOrgUnitSelection = (orgUnits: OrgUnit[]) => {
     });
   };
 
+  // This effect selects org units by level
   useEffect(() => {
     if (selectedLevel !== null) {
-      const orgUnitsToSelect = orgUnits
-        .filter((orgUnit) => orgUnit.level === selectedLevel)
-        .map((orgUnit) => orgUnit.path);
-
-      setSelectedOrgUnits(orgUnitsToSelect); // Auto-select units at selected level
+      // We'll handle level selection differently in the component
+      // This approach doesn't work well with DHIS2's tree component
+      setSelectedOrgUnits([]);
     }
-  }, [selectedLevel, orgUnits]);
+  }, [selectedLevel]);
 
   const handleDeselectAll = () => {
     setSelectedOrgUnits([]);
@@ -47,7 +41,6 @@ export const useOrgUnitSelection = (orgUnits: OrgUnit[]) => {
     setSelectedLevel,
     handleOrgUnitClick,
     handleDeselectAll,
-    filteredOrgUnitPaths,
     setSelectedOrgUnits, // Expose the setter for external control
   };
 }
