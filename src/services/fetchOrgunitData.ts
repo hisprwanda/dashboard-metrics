@@ -1,26 +1,34 @@
+// file location: src/services/fetchOrgunitData.ts
 import { useDataQuery } from '@dhis2/app-runtime';
 
 // This service is responsible for fetching the current user and organization units
 export const useOrgUnitData = () => {
   const query = {
     currentUser: {
-      resource: 'me',
+      resource: "me",
       params: {
-        fields: ['organisationUnits[id, displayName]'],
+        fields: ["organisationUnits[id, displayName]"],
       },
     },
     orgUnits: {
-      resource: 'organisationUnits',
+      resource: "organisationUnits",
       params: {
-        fields: 'id,displayName,path,children[id,displayName,path,level],level',
-        paging: 'false',
+        fields: "id,displayName,path,children[id,displayName,path,level],level",
+        paging: "false",
       },
     },
     orgUnitLevels: {
-      resource: 'organisationUnitLevels',
+      resource: "organisationUnitLevels",
       params: {
-        fields: 'id,displayName,level',
-        paging: 'false',
+        fields: "id,displayName,level",
+        paging: "false",
+      },
+    },
+    orgUnitGroups: {
+      resource: "organisationUnitGroups",
+      params: {
+        fields: "id,displayName,organisationUnits[id,displayName]",
+        paging: "false",
       },
     },
   };

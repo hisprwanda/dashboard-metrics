@@ -41,7 +41,7 @@ export default function UserProfile() {
 
 
     return (
-        <div className='relative'>
+        <div className='relative z-40'>
             <div
                 className='p-[6px] cursor-pointer hover:bg-dhisDarkBlue'
                 onClick={toggleProfile}
