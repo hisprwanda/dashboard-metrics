@@ -67,7 +67,7 @@ export default function HeaderApps() {
         return <p className="text-red-500">Error: {error.message}</p>;
     }
     return (
-        <div className='relative'>
+        <div className='relative z-40 ' >
             <div
                 ref={iconRef}
                 className='p-[12px] cursor-pointer hover:bg-dhisDarkBlue'
