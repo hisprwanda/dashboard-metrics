@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  InputField,
-  SingleSelectField,
-  SingleSelectOption,
-  OrganisationUnitTree,
-  Button,
-  CircularLoader,
-  NoticeBox,
-} from "@dhis2/ui";
+import { InputField, OrganisationUnitTree, Button, CircularLoader, NoticeBox } from "@dhis2/ui";
 import { useDataQuery } from "@dhis2/app-runtime";
 import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
 import OrganizationUnitLevels from "./OrganizationUnitLevels";
@@ -34,21 +26,14 @@ const OrganisationUnitMultiSelect = ({
   const orgUnitLevels = preloadedData?.orgUnitLevels?.organisationUnitLevels || [];
   const currentUserOrgUnit = preloadedData?.currentUser?.organisationUnits?.[0];
 
-  const {
-    selectedOrgUnits,
-    searchTerm,
-    selectedLevel,
-    setSearchTerm,
-    setSelectedLevel,
-    handleOrgUnitClick,
-    handleDeselectAll,
-    setSelectedOrgUnits,
-  } = useOrgUnitSelection(orgUnits);
+  const { selectedOrgUnits, searchTerm, setSearchTerm, handleOrgUnitClick, handleDeselectAll, setSelectedOrgUnits } =
+    useOrgUnitSelection(orgUnits);
 
   // Get names of selected org units
   const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchResultUnits, setSearchResultUnits] = useState<any[]>([]);
+  const [selectedLevels, setSelectedLevels] = useState<number[]>([]);
 
   // Query for searching org units - this is the DHIS2 way to search
   const searchQuery = {
@@ -107,21 +92,30 @@ const OrganisationUnitMultiSelect = ({
     }
   }, [searchData, isSearching]);
 
-  // Handle level selection
-  useEffect(() => {
-    if (selectedLevel !== null) {
-      getOrgUnitsByLevel({ level: selectedLevel });
-    }
-  }, [selectedLevel, getOrgUnitsByLevel]);
+  // Handle level selection changes
+  const handleLevelsChange = (levels: number[]) => {
+    setSelectedLevels(levels);
+
+    // For each selected level, fetch the org units
+    levels.forEach((level) => {
+      getOrgUnitsByLevel({ level });
+    });
+  };
 
   // Update selected org units when level results come in
   useEffect(() => {
-    if (levelData && selectedLevel !== null) {
+    if (levelData) {
       const levelResults = levelData.orgUnitsByLevel.organisationUnits || [];
       const paths = levelResults.map((unit: any) => unit.path);
-      setSelectedOrgUnits(paths);
+
+      // Add to existing selection instead of replacing
+      setSelectedOrgUnits((prevSelected) => {
+        // Create a Set to avoid duplicates
+        const uniquePaths = new Set([...prevSelected, ...paths]);
+        return Array.from(uniquePaths);
+      });
     }
-  }, [levelData, selectedLevel, setSelectedOrgUnits]);
+  }, [levelData, setSelectedOrgUnits]);
 
   useEffect(() => {
     if (initialSelectedOrgUnits.length > 0) {
@@ -154,8 +148,6 @@ const OrganisationUnitMultiSelect = ({
   };
 
   const handleSubmitClick = () => {
-    console.log("Selected org units:", selectedOrgUnits);
-    console.log("Selected org unit names:", selectedOrgUnitNames);
     onSubmit(selectedOrgUnits, selectedOrgUnitNames);
   };
 
@@ -166,6 +158,7 @@ const OrganisationUnitMultiSelect = ({
 
     // Ensure the UI state is also reset
     setSelectedOrgUnitNames([]);
+    setSelectedLevels([]);
 
     // Log for debugging
     console.log("Deselected all org units");
@@ -266,8 +259,8 @@ const OrganisationUnitMultiSelect = ({
       {/* Select field for organization unit level */}
       <div className="mb-5">
         <OrganizationUnitLevels
-          selectedLevels={selectedLevel !== null ? [selectedLevel] : []}
-          onLevelsChange={(levels) => setSelectedLevel(levels[0] || null)}
+          selectedLevels={selectedLevels}
+          onLevelsChange={handleLevelsChange}
           orgUnitLevels={orgUnitLevels}
           isLoading={levelLoading}
           error={levelError}
@@ -278,7 +271,7 @@ const OrganisationUnitMultiSelect = ({
       <div className="flex justify-between items-center">
         <Button
           className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-full"
-          onClick={handleDeselectAllClick} // Use the new handler
+          onClick={handleDeselectAllClick}
           disabled={selectedOrgUnits.length === 0}
         >
           Deselect All

@@ -27,11 +27,13 @@ export default function OrgUnitPicker({ onOrgUnitsChange }: OrgUnitPickerProps) 
       onOrgUnitsChange(units, names);
     }
 
-    console.log("Selected org unit paths:", units);
-    console.log("Selected org unit names:", names);
+    // console.log("Selected org unit paths:", units);
+    // console.log("Selected org unit names:", names);
   };
 
-  const displayText = selectedOrgUnitNames.length > 0 ? selectedOrgUnitNames.join(", ") : "Select Organisation Unit";
+  const displayText = selectedOrgUnitNames.length > 0
+    ? selectedOrgUnitNames.slice(0, 4).join(", ") + (selectedOrgUnitNames.length > 4 ? ", ..." : "")
+    : "Select Organisation Unit";
 
   return (
     <div>
