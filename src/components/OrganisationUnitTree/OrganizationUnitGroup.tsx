@@ -5,13 +5,13 @@ import { useOrgUnitData } from '../../../../services/fetchOrgunitData';
 
 
 interface OrganizationUnitGroupProps {
-  isUseCurrentUserOrgUnits:boolean
+  isUseCurrentUserOrgUnits: boolean;
 }
 
-const OrganizationUnitGroup:React.FC<OrganizationUnitGroupProps> = ({isUseCurrentUserOrgUnits}) => {
-  const {selectedOrgUnitGroups,setSelectedOrgUnitGroups,currentUserInfoAndOrgUnitsData} = useAuthorities()
+const OrganizationUnitGroup: React.FC<OrganizationUnitGroupProps> = ({ isUseCurrentUserOrgUnits }) => {
+  const { selectedOrgUnitGroups, setSelectedOrgUnitGroups, currentUserInfoAndOrgUnitsData } = useAuthorities();
 
-      const {  error, loading } = useOrgUnitData();
+  const { error, loading } = useOrgUnitData();
 
 
 
@@ -27,24 +27,24 @@ const OrganizationUnitGroup:React.FC<OrganizationUnitGroupProps> = ({isUseCurren
 
   const handleChange = ({ selected }) => {
     setSelectedOrgUnitGroups(selected);
-    console.log("Selected Organisation Unit Groups:", selected);
+    // console.log("Selected Organisation Unit Groups:", selected);
   };
 
   return (<MultiSelectField
-        className="w-full z-50 bg-white"
-        disabled={isUseCurrentUserOrgUnits} 
-        label="Choose Organization Unit Groups"
-        onChange={handleChange} // Update the selected org unit groups
-        selected={selectedOrgUnitGroups}
-        placeholder="Select organization unit groups"
+    className="w-full z-50 bg-white"
+    disabled={isUseCurrentUserOrgUnits}
+    label="Choose Organization Unit Groups"
+    onChange={handleChange} // Update the selected org unit groups
+    selected={selectedOrgUnitGroups}
+    placeholder="Select organization unit groups"
 
-        
-      >
-        {orgUnitGroups.map((group) => (
-          <MultiSelectOption key={group.id} value={group.id} label={group.displayName} />
-        ))}
-      </MultiSelectField>
-  
+
+  >
+    {orgUnitGroups.map((group) => (
+      <MultiSelectOption key={group.id} value={group.id} label={group.displayName} />
+    ))}
+  </MultiSelectField>
+
 
 
 
