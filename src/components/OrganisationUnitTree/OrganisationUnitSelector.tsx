@@ -5,6 +5,7 @@ import { InputField, OrganisationUnitTree, Button, CircularLoader, NoticeBox } f
 import { useDataQuery } from "@dhis2/app-runtime";
 import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
 import OrganizationUnitLevels from "./OrganizationUnitLevels";
+import OrganizationUnitGroups from "./OrganizationUnitGroups";
 
 interface OrganisationUnitMultiSelectProps {
   selectedOrgUnits?: string[];
@@ -24,6 +25,7 @@ const OrganisationUnitMultiSelect = ({
   // Use the preloaded data
   const orgUnits = preloadedData?.orgUnits?.organisationUnits || [];
   const orgUnitLevels = preloadedData?.orgUnitLevels?.organisationUnitLevels || [];
+  const orgUnitGroups = preloadedData?.orgUnitGroups?.organisationUnitGroups || [];
   const currentUserOrgUnit = preloadedData?.currentUser?.organisationUnits?.[0];
 
   const { selectedOrgUnits, searchTerm, setSearchTerm, handleOrgUnitClick, handleDeselectAll, setSelectedOrgUnits } =
@@ -34,6 +36,7 @@ const OrganisationUnitMultiSelect = ({
   const [isSearching, setIsSearching] = useState(false);
   const [searchResultUnits, setSearchResultUnits] = useState<any[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<number[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
 
   // Query for searching org units - this is the DHIS2 way to search
   const searchQuery = {
@@ -73,6 +76,25 @@ const OrganisationUnitMultiSelect = ({
     refetch: getOrgUnitsByLevel,
   } = useDataQuery(levelQuery, { lazy: true });
 
+  // Query for getting org units by group
+  const groupQuery = {
+    orgUnitsByGroup: {
+      resource: "organisationUnits",
+      params: ({ groupId }: { groupId: string; }) => ({
+        fields: "id,displayName,path,level",
+        filter: `organisationUnitGroups.id:eq:${groupId}`,
+        paging: false,
+      }),
+    },
+  };
+
+  const {
+    loading: groupLoading,
+    error: groupError,
+    data: groupData,
+    refetch: getOrgUnitsByGroup,
+  } = useDataQuery(groupQuery, { lazy: true });
+
   // Handle search - only trigger after 3 characters
   useEffect(() => {
     if (searchTerm.length >= 3) {
@@ -102,6 +124,16 @@ const OrganisationUnitMultiSelect = ({
     });
   };
 
+  // Handle group selection changes
+  const handleGroupsChange = (groups: string[]) => {
+    setSelectedGroups(groups);
+
+    // For each selected group, fetch the org units
+    groups.forEach((groupId) => {
+      getOrgUnitsByGroup({ groupId });
+    });
+  };
+
   // Update selected org units when level results come in
   useEffect(() => {
     if (levelData) {
@@ -116,6 +148,21 @@ const OrganisationUnitMultiSelect = ({
       });
     }
   }, [levelData, setSelectedOrgUnits]);
+
+  // Update selected org units when group results come in
+  useEffect(() => {
+    if (groupData) {
+      const groupResults = groupData.orgUnitsByGroup.organisationUnits || [];
+      const paths = groupResults.map((unit: any) => unit.path);
+
+      // Add to existing selection instead of replacing
+      setSelectedOrgUnits((prevSelected) => {
+        // Create a Set to avoid duplicates
+        const uniquePaths = new Set([...prevSelected, ...paths]);
+        return Array.from(uniquePaths);
+      });
+    }
+  }, [groupData, setSelectedOrgUnits]);
 
   useEffect(() => {
     if (initialSelectedOrgUnits.length > 0) {
@@ -159,6 +206,7 @@ const OrganisationUnitMultiSelect = ({
     // Ensure the UI state is also reset
     setSelectedOrgUnitNames([]);
     setSelectedLevels([]);
+    setSelectedGroups([]);
 
     // Log for debugging
     console.log("Deselected all org units");
@@ -182,7 +230,7 @@ const OrganisationUnitMultiSelect = ({
       {/* Search input field */}
       <div className="mb-4">
         <InputField
-          className="w-full"
+          className="w-full text-sm font-medium mb-2"
           label="Search Organization Unit (type at least 3 characters)"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.value || "")}
@@ -234,10 +282,16 @@ const OrganisationUnitMultiSelect = ({
         )}
 
         {/* Loading indicator */}
-        {(searchLoading || levelLoading) && (
+        {(searchLoading || levelLoading || groupLoading) && (
           <div className="flex justify-center items-center mt-4">
             <CircularLoader small />
-            <p className="ml-2 text-sm text-gray-500">{searchLoading ? "Searching..." : "Loading units by level..."}</p>
+            <p className="ml-2 text-sm text-gray-500">
+              {searchLoading
+                ? "Searching..."
+                : levelLoading
+                  ? "Loading units by level..."
+                  : "Loading units by group..."}
+            </p>
           </div>
         )}
       </div>
@@ -258,12 +312,25 @@ const OrganisationUnitMultiSelect = ({
 
       {/* Select field for organization unit level */}
       <div className="mb-5">
+        <p className="text-sm font-medium mb-2">Select Organization Unit Levels:</p>
         <OrganizationUnitLevels
           selectedLevels={selectedLevels}
           onLevelsChange={handleLevelsChange}
           orgUnitLevels={orgUnitLevels}
           isLoading={levelLoading}
           error={levelError}
+        />
+      </div>
+
+      {/* Select field for organization unit groups */}
+      <div className="mb-5">
+        <p className="text-sm font-medium mb-2">Select Organization Unit Groups:</p>
+        <OrganizationUnitGroups
+          selectedGroups={selectedGroups}
+          onGroupsChange={handleGroupsChange}
+          orgUnitGroups={orgUnitGroups}
+          isLoading={groupLoading}
+          error={groupError}
         />
       </div>
 
@@ -290,5 +357,4 @@ const OrganisationUnitMultiSelect = ({
   );
 };
 
-export default OrganisationUnitMultiSelect
-
+export default OrganisationUnitMultiSelect;
