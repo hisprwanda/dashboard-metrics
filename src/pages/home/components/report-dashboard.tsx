@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usesqlViewDataReport } from "../../../hooks/dashboards";
+import { useSqlViewDataReport } from "../../../hooks/dashboards";
 import { useFilteredUsers } from "../../../hooks/users";
 import type { DateValueType, LinkedUser, VisitDetails } from "@/types/dashboard-reportType";
 import DashboardUserDetails from "./dashboard-user-details";
 import type { DashboardConverted } from "@/types/dashboardsType";
+import { useSystem } from "./../../../context/SystemContext";
 
 export interface DashboardReportProps {
   row: DashboardConverted;
@@ -17,6 +18,7 @@ export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] 
   const [uniqueUsernames, setUniqueUsernames] = useState<string[]>([]);
   const [visitDetails, setVisitDetails] = useState<VisitDetails[]>([]);
   const [linkedUsers, setLinkedUsers] = useState<LinkedUser[]>([]);
+  const { sqlViewUid } = useSystem();
 
   const favoriteuid = row.id;
   const criteria = `favoriteuid%${encodeURIComponent(favoriteuid)}`;
@@ -26,9 +28,10 @@ export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] 
     error: dashboardError,
     data: dashboardData,
     refetch: refetchDashboard,
-  } = usesqlViewDataReport({
+  } = useSqlViewDataReport({
     datetime: value,
     criteria,
+    sqlViewUid: sqlViewUid || "",
   });
 
   useEffect(() => {
