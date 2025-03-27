@@ -62,6 +62,13 @@ const createSqlViewMutation = {
   }),
 };
 
+// New mutation for maintenance endpoint to create SQL views in the database
+const createSqlViewsMutation = {
+  resource: 'maintenance/sqlViewsCreate',
+  type: 'create',
+  data: {},
+};
+
 const dataStoreMutation = {
   resource: "dataStore/dashboardMetrics/appID",
   type: "create",
@@ -72,6 +79,8 @@ const dataStoreMutation = {
 
 export const useSqlViewService = () => {
   const [createSqlView, { loading: createLoading, error: createError }] = useDataMutation(createSqlViewMutation);
+  // Added executeSqlViews mutation hook
+  const [executeSqlViews, { loading: executeLoading, error: executeError }] = useDataMutation(createSqlViewsMutation);
 
   const useCheckSqlViewExistsQuery = () => {
     return useDataQuery(checkSqlViewQuery, {
@@ -94,6 +103,10 @@ export const useSqlViewService = () => {
     createSqlView,
     createLoading,
     createError,
+    // Expose the new maintenance endpoint mutation
+    executeSqlViews,
+    executeLoading,
+    executeError,
     useSqlViewQuery,
     useCheckSqlViewExistsQuery,
   };
@@ -136,7 +149,7 @@ export const useInitializeSystem = () => {
   const [initializationAttempted, setInitializationAttempted] = useState(false);
 
   const { useDataStoreItem, saveDataStoreItem } = useDataStoreService();
-  const { createSqlView, useCheckSqlViewExistsQuery } = useSqlViewService();
+  const { createSqlView, executeSqlViews, useCheckSqlViewExistsQuery } = useSqlViewService();
 
   const { loading: dsLoading, data: dsData } = useDataStoreItem();
   const { data: sqlViewData, refetch: checkSqlView, loading: checkSqlViewLoading } = useCheckSqlViewExistsQuery();
@@ -199,10 +212,15 @@ export const useInitializeSystem = () => {
           throw new Error("Failed to get SQL view UID");
         }
 
-        // Execute the SQL view
-        // console.log("Executing SQL view:", uid);
-        // const executeResult = await executeSqlView(uid);
-        // console.log("SQL view execution result:", executeResult);
+        // New Step: Execute the SQL views creation via maintenance endpoint
+        console.log("Creating SQL views in database...");
+        try {
+          await executeSqlViews({});
+          console.log("SQL views created successfully");
+        } catch (err) {
+          console.error("Error creating SQL views:", err);
+          // Optionally, decide if you want to proceed or throw error here
+        }
 
         // Step 5: Save to datastore
         console.log("Saving to datastore...");
@@ -210,7 +228,7 @@ export const useInitializeSystem = () => {
           name: sqlParams.name,
           uid,
           isSqlViewCreated: true,
-          isSqlViewExecuted: false,
+          isSqlViewExecuted: true, // Updated to reflect that SQL view is executed
         });
 
         // Step 6: Save to state
@@ -230,6 +248,7 @@ export const useInitializeSystem = () => {
     dsLoading,
     checkSqlView,
     createSqlView,
+    executeSqlViews,
     saveDataStoreItem,
     initializationAttempted,
     checkSqlViewLoading,
