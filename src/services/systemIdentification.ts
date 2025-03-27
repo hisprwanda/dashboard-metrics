@@ -30,8 +30,8 @@ interface DHIS2Error {
 }
 
 const sqlParams: SqlViewParams = {
-  name: "ABABA Statistics about user access to dashboards and visualizations",
-  description: "ABABA Statistics about user access to dashboards and visualizations",
+  name: "Statistics about user access to dashboards and visualizations",
+  description: "Statistics about user access to dashboards and visualizations",
   type: "MATERIALIZED_VIEW",
   cacheStrategy: "CACHE_1_MINUTE",
   sqlQuery:
@@ -79,7 +79,6 @@ const dataStoreMutation = {
 
 export const useSqlViewService = () => {
   const [createSqlView, { loading: createLoading, error: createError }] = useDataMutation(createSqlViewMutation);
-  // Added executeSqlViews mutation hook
   const [executeSqlViews, { loading: executeLoading, error: executeError }] = useDataMutation(createSqlViewsMutation);
 
   const useCheckSqlViewExistsQuery = () => {
@@ -103,7 +102,6 @@ export const useSqlViewService = () => {
     createSqlView,
     createLoading,
     createError,
-    // Expose the new maintenance endpoint mutation
     executeSqlViews,
     executeLoading,
     executeError,
@@ -155,13 +153,11 @@ export const useInitializeSystem = () => {
   const { data: sqlViewData, refetch: checkSqlView, loading: checkSqlViewLoading } = useCheckSqlViewExistsQuery();
 
   useEffect(() => {
-    // Prevent multiple initialization attempts
     if (initializationAttempted) {
       return;
     }
 
     const init = async () => {
-      // Only run initialization when both queries have completed
       if (dsLoading || checkSqlViewLoading) {
         return;
       }
@@ -212,14 +208,13 @@ export const useInitializeSystem = () => {
           throw new Error("Failed to get SQL view UID");
         }
 
-        // New Step: Execute the SQL views creation via maintenance endpoint
+        // Step: Execute the SQL views creation via maintenance endpoint
         console.log("Creating SQL views in database...");
         try {
           await executeSqlViews({});
           console.log("SQL views created successfully");
         } catch (err) {
           console.error("Error creating SQL views:", err);
-          // Optionally, decide if you want to proceed or throw error here
         }
 
         // Step 5: Save to datastore
@@ -228,7 +223,7 @@ export const useInitializeSystem = () => {
           name: sqlParams.name,
           uid,
           isSqlViewCreated: true,
-          isSqlViewExecuted: true, // Updated to reflect that SQL view is executed
+          isSqlViewExecuted: true,
         });
 
         // Step 6: Save to state
