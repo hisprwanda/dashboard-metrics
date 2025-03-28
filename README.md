@@ -1,37 +1,87 @@
-This project was bootstrapped with [DHIS2 Application Platform](https://github.com/dhis2/app-platform).
+# Dashboard Metrics App
 
-## Available Scripts
+### Contents
 
-In the project directory, you can run:
+- [Introduction](#introduction)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+- [Development](#development)
+- [Building](#building)
+- [Deployment](#deployment)
 
-### `yarn start`
+## Introduction
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+The Dashboard Metrics App is a DHIS2 custom application developed by HISP Rwanda that provides analytics and tracking capabilities for dashboard usage within a DHIS2 instance. This tool helps organizations monitor and analyze how users interact with their dashboards, enabling better understanding of dashboard utilization patterns.
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+## Features
 
-### `yarn test`
+- **Dashboard Overview**: View comprehensive list of available dashboards
+- **Usage Analytics**: Track and analyze dashboard access patterns
+- **Advanced Filtering**:
+  - Time-based filtering of access data
+  - Organization unit-based filtering
+- **Export Capabilities**:
+  - Export analytics as Excel files
+  - Export analytics as PDF documents
 
-Launches the test runner and runs all available tests found in `/src`.<br />
+## Prerequisites
 
-See the section about [running tests](https://platform.dhis2.nu/#/scripts/test) for more information.
+This project requires:
 
-### `yarn build`
+- Node.js 16.x or later
+- Yarn 1.22.19 or later
+- DHIS2 instance
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Getting Started
 
-The build is minified and the filenames include the hashes.<br />
-A deployable `.zip` file can be found in `build/bundle`!
+Clone the repository and install dependencies:
 
-See the section about [building](https://platform.dhis2.nu/#/scripts/build) for more information.
+```bash
+git clone https://github.com/hisprwanda/dashboard-metrics
+cd dashboard-metrics
+yarn install
+```
 
-### `yarn deploy`
+## Development
 
-Deploys the built app in the `build` folder to a running DHIS2 instance.<br />
-This command will prompt you to enter a server URL as well as the username and password of a DHIS2 user with the App Management authority.<br/>
-You must run `yarn build` before running `yarn deploy`.<br />
+To start the development server:
 
-See the section about [deploying](https://platform.dhis2.nu/#/scripts/deploy) for more information.
+```bash
+yarn start --proxy 'https://your-dhis2-instance.org'
+```
+
+When the application starts, you will be prompted to enter:
+
+- Username
+- Password
+
+The application will be available at http://localhost:3000
+
+Note: Using the proxy flag helps avoid CORS issues during development. Replace 'https://your-dhis2-instance.org' with your actual DHIS2 instance URL.
+
+## Building
+
+Create a production build:
+
+```bash
+yarn build
+```
+
+The build files will be available in the `build` folder, with a deployable `.zip` file in `build/bundle`.
+
+## Deployment
+
+Deploy the built application to a DHIS2 instance:
+
+```bash
+yarn deploy
+```
+
+You will need to provide:
+
+- DHIS2 server URL
+- Username with app management authority
+- Password
+
+Note: Run `yarn build` before deploying.
