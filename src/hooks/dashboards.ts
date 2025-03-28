@@ -1,3 +1,5 @@
+
+
 import { DateValueType } from "@/types/dashboard-reportType";
 import { formatDateToYYYYMMDD } from "../lib/utils";
 import { Dashboards } from "@/types/dashboardsType";
@@ -7,7 +9,7 @@ import { useEffect, useState } from "react";
 export type UseDashboardsInfoReturn = {
   loading: boolean;
   error: Error | undefined;
-  data: { dashboards: Dashboards } | undefined;
+  data: { dashboards: Dashboards; } | undefined;
 };
 
 export const useDashboardsInfo = (): UseDashboardsInfoReturn => {
@@ -26,62 +28,33 @@ export const useDashboardsInfo = (): UseDashboardsInfoReturn => {
   return { loading, error, data };
 };
 
+export interface Params {
+  datetime: DateValueType;
+  criteria: string;
+  sqlViewUid: string;
+}
 
- export interface Params {
-    datetime: DateValueType;
-    criteria: string;
-  }
-
-export const usesqlViewDataReport = ({
-  datetime,
-  criteria,
-}: Params) => {
+export const useSqlViewDataReport = ({ datetime, criteria, sqlViewUid }: Params) => {
   const query = {
     sqlViewData: {
-      resource: 'sqlViews/gO9r9r4Vc9l/data',
-      params: ({
-        datetime,
-        criteria,
-      }: Params) => ({
+      resource: `sqlViews/${sqlViewUid}/data`,
+      params: {
         paging: "false",
-        criteria:criteria,
+        criteria,
         filter: [
-          `timestamp:ge:${formatDateToYYYYMMDD(datetime.startDate?datetime.startDate:new Date())}`,
-          `timestamp:le:${formatDateToYYYYMMDD(datetime.endDate?datetime.endDate:new Date())}`,
-          // `timestamp:ge:2020-11-01`,
-          // `timestamp:le:2024-12-03`,
-        ]
-      }),
+          `timestamp:ge:${formatDateToYYYYMMDD(
+            datetime.startDate ? datetime.startDate : new Date()
+          )}`,
+          `timestamp:le:${formatDateToYYYYMMDD(
+            datetime.endDate ? datetime.endDate : new Date()
+          )}`,
+        ],
+      },
     },
   };
-  // const { loading, error, data,refetch } = useDataQuery(query);
-  const { loading, error, data, refetch } = useDataQuery(query, { lazy: true, enabled: false });
-  return { loading, error, data,refetch };
-};
-
-export const usesqlVisualizationDataReport = ({
-  datetime,
-  criteria,
-}: Params) => {
-  const query = {
-    sqlViewData: {
-      resource: 'sqlViews/MfeSi4i0vCP/data',
-      params: ({
-        datetime,
-        criteria,
-      }: Params) => ({
-        paging: "false",
-        criteria:criteria,
-        filter: [
-          `timestamp:ge:${formatDateToYYYYMMDD(datetime.startDate?datetime.startDate:new Date())}`,
-          `timestamp:le:${formatDateToYYYYMMDD(datetime.endDate?datetime.endDate:new Date())}`,
-          // `timestamp:ge:2020-11-01`,
-          // `timestamp:le:2024-12-03`,
-        ]
-      }),
-    },
-  };
-  // const { loading, error, data,refetch } = useDataQuery(query);
-  const { loading, error, data, refetch } = useDataQuery(query, { lazy: true, enabled: false });
-  return { loading, error, data,refetch };
+  const { loading, error, data, refetch } = useDataQuery(query, {
+    lazy: true,
+    enabled: false,
+  });
+  return { loading, error, data, refetch };
 };
