@@ -19,7 +19,6 @@ export interface DataStoreItem {
   [key: string]: any;
 }
 
-// Define a type for DHIS2 API errors
 interface DHIS2Error {
   response?: {
     httpStatusCode?: number;
@@ -62,7 +61,6 @@ const createSqlViewMutation = {
   }),
 };
 
-// New mutation for maintenance endpoint to create SQL views in the database
 const createSqlViewsMutation = {
   resource: 'maintenance/sqlViewsCreate',
   type: 'create',
@@ -110,6 +108,11 @@ export const useSqlViewService = () => {
   };
 };
 
+const deleteDataStoreMutation = {
+  resource: "dataStore/dashboardMetrics/appID",
+  type: "delete"
+};
+
 export const useDataStoreService = () => {
   const useDataStoreItem = () => {
     const query = {
@@ -121,6 +124,18 @@ export const useDataStoreService = () => {
   };
 
   const [saveDataStoreItemMutation, { loading: mutateLoading, error: mutateError }] = useDataMutation(dataStoreMutation);
+
+  const [deleteDataStoreItemMutation, { loading: deleteLoading, error: deleteError }] =
+    useDataMutation(deleteDataStoreMutation);
+
+  const deleteDataStoreItem = async (): Promise<any> => {
+    try {
+      return await deleteDataStoreItemMutation({});
+    } catch (error) {
+      console.error("Error deleting from datastore:", error);
+      throw error;
+    }
+  };
 
   const saveDataStoreItem = async (key: string, data: DataStoreItem): Promise<any> => {
     try {
@@ -134,8 +149,11 @@ export const useDataStoreService = () => {
   return {
     useDataStoreItem,
     saveDataStoreItem,
+    deleteDataStoreItem,
     mutateLoading,
     mutateError,
+    deleteLoading,
+    deleteError,
   };
 };
 
@@ -146,7 +164,7 @@ export const useInitializeSystem = () => {
   const [error, setError] = useState<Error | null>(null);
   const [initializationAttempted, setInitializationAttempted] = useState(false);
 
-  const { useDataStoreItem, saveDataStoreItem } = useDataStoreService();
+  const { useDataStoreItem, saveDataStoreItem, deleteDataStoreItem } = useDataStoreService();
   const { createSqlView, executeSqlViews, useCheckSqlViewExistsQuery } = useSqlViewService();
 
   const { loading: dsLoading, data: dsData } = useDataStoreItem();
@@ -169,6 +187,23 @@ export const useInitializeSystem = () => {
         // Step 2: Check if appID exists in datastore
         if (dsData && dsData.datastore && dsData.datastore.uid) {
           console.log("Found existing SQL view in datastore:", dsData.datastore.uid);
+
+          const existingViewResponse = await checkSqlView();
+
+          if (existingViewResponse?.sqlViews?.sqlViews?.length > 0 &&
+            existingViewResponse.sqlViews.sqlViews[0].name === sqlParams.name) {
+            // SQL view exists and matches our name, use it
+            setSqlViewUid(dsData.datastore.uid);
+            setInitialized(true);
+            setLoading(false);
+            return;
+          } else {
+            // SQL view doesn't exist or name doesn't match, delete the datastore item
+            console.log("SQL view doesn't exist or name doesn't match, deleting datastore item");
+            await deleteDataStoreItem();
+            // Continue with the rest of the initialization
+          }
+
           setSqlViewUid(dsData.datastore.uid);
           setInitialized(true);
           setLoading(false);
