@@ -24,7 +24,7 @@ export const SystemProvider: React.FC<{ children: React.ReactNode; }> = ({ child
         }}
       >
         <CircularLoader />
-        <p>Initializing system, creating necessary items. Please wait...</p>
+        <p>Initializing system. Please wait...</p>
       </div>
     );
   }
