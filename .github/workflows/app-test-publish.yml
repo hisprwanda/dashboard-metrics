@@ -1,0 +1,37 @@
+name: Build and Deploy DHIS2 App
+
+env:
+  D2_PASSWORD: ${{secrets.D2_PASSWORD}}
+
+on:
+  # Triggers the workflow on push to main branch
+  push:
+    branches: [main]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository
+      - uses: actions/checkout@v3
+
+      # Sets up Node.js environment
+      - uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+          cache: yarn
+
+      # Install dependencies
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
+
+      # Build the app
+      - name: Build
+        run: yarn build
+
+      # Deploy to DHIS2 instance
+      - name: Deploy to DHIS2 instance
+        run: yarn d2-app-scripts deploy ${{secrets.DHIS2_BASE_URL}} --username ${{secrets.DHIS2_USERNAME}}
