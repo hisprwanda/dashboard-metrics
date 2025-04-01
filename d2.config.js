@@ -2,7 +2,8 @@ const config = {
     type: 'app',
     name: 'Dashboard Usage Metrics',
     title: 'Dashboard Usage Metrics',
-    description: 'An application to monitor and analyze dashboard usage, developed by HISP Rwanda, featuring an interactive dashboard which shows people who used the app and etc.',
+    description: 'The Dashboard Usage Metrics app provides analytics and tracking capabilities for dashboard usage within a DHIS2 instance. This tool helps organizations monitor and analyze how users interact with their dashboards, enabling better understanding of dashboard utilization patterns.',
+    minDHIS2Version: '2.39',
     entryPoints: {
         app: './src/App.tsx',
     },
