@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { DashboardConverted } from "@/types/dashboardsType";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { FaEye } from "react-icons/fa6";
@@ -31,13 +31,42 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
   });
   const [selectedOrgUnitPaths, setSelectedOrgUnitPaths] = useState<string[]>([]);
 
+  // Use ref to track previous value to prevent unnecessary re-renders
+  const prevValueRef = useRef<DateValueType | null>(null);
+  const reportKey = useRef<string>(`${Date.now()}`);
+
   const handleValueChange = (newValue: DateValueType | null) => {
-    setValue(newValue || { startDate: null, endDate: null });
+    // Skip if the value hasn't actually changed
+    if (
+      prevValueRef.current?.startDate?.getTime() === newValue?.startDate?.getTime() &&
+      prevValueRef.current?.endDate?.getTime() === newValue?.endDate?.getTime()
+    ) {
+      return;
+    }
+
+    // Update the ref
+    prevValueRef.current = newValue;
+
+    // Ensure we're setting a valid value and triggering a re-render
+    if (newValue && (newValue.startDate || newValue.endDate)) {
+      setValue(newValue);
+      // Generate a new key to force re-render of the report component
+      reportKey.current = `${Date.now()}`;
+    } else {
+      setValue({ startDate: null, endDate: null });
+    }
   };
 
   const handleOrgUnitsChange = (paths: string[], names: string[]) => {
     setSelectedOrgUnitPaths(paths);
+    // Generate a new key to force re-render of the report component
+    reportKey.current = `${Date.now()}`;
   };
+
+  // Update the ref when value changes
+  useEffect(() => {
+    prevValueRef.current = value;
+  }, [value]);
 
   return (
     <AlertDialog.Root open={open} onOpenChange={setOpen}>
@@ -71,10 +100,14 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
               </AlertDialog.Cancel>
             </div>
           </AlertDialog.Title>
-          <DashboardReport row={row} value={value} selectedOrgUnitPaths={selectedOrgUnitPaths} />
+          <DashboardReport
+            key={reportKey.current}
+            row={row}
+            value={value}
+            selectedOrgUnitPaths={selectedOrgUnitPaths}
+          />
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog.Root>
   );
 }
-

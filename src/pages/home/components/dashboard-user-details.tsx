@@ -4,11 +4,19 @@ import type { DateValueType, LinkedUser } from "@/types/dashboard-reportType";
 import type { DashboardConverted } from "@/types/dashboardsType";
 import { useMemo } from "react";
 import { MantineReactTable, type MRT_ColumnDef, useMantineReactTable, type MRT_Row } from "mantine-react-table";
-import { Button, Group } from "@mantine/core";
-import { IconFileSpreadsheet, IconFile } from "@tabler/icons-react";
+import { Button, Group, Badge, Text } from "@mantine/core";
+import { IconFileSpreadsheet, IconFile, IconUser } from "@tabler/icons-react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+
+interface DashboardStats {
+  totalVisits: number;
+  topUsers: { username: string; visits: number; firstName?: string; surname?: string; }[];
+  topDay: { date: Date | null; count: number; };
+  topWeek: { startDate: Date | null; endDate: Date | null; count: number; };
+  topMonth: { month: string; year: string; count: number; };
+}
 
 interface DashboardUserDetailsComponentProps {
   linkedUsers: LinkedUser[];
@@ -16,6 +24,7 @@ interface DashboardUserDetailsComponentProps {
   value: DateValueType;
   loading: boolean;
   hasOrgUnitFilter: boolean;
+  dashboardStats: DashboardStats;
 }
 
 export default function DashboardUserDetails({
@@ -24,6 +33,7 @@ export default function DashboardUserDetails({
   value,
   loading,
   hasOrgUnitFilter = false,
+  dashboardStats,
 }: DashboardUserDetailsComponentProps) {
   // Ensure we have a safe default for linkedUsers when data is loading
   const safeLinkedUsers = loading ? [] : linkedUsers;
@@ -32,17 +42,32 @@ export default function DashboardUserDetails({
     () => [
       {
         accessorFn: (row) => {
-          return row?.username || "";
+          const firstName = row?.firstName || "";
+          const surname = row?.surname || "";
+          const username = row?.username || "";
+
+          return firstName && surname ? `${firstName} ${surname} (${username})` : username;
         },
         header: "Name",
         size: 40,
-      },
-      {
-        accessorFn: (row) => {
-          return row?.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "";
+        Cell: ({ row }) => {
+          const firstName = row.original?.firstName || "";
+          const surname = row.original?.surname || "";
+          const username = row.original?.username || "";
+
+          return (
+            <div>
+              {firstName && surname ? (
+                <>
+                  <div>{`${firstName} ${surname}`}</div>
+                  <div className="text-xs text-gray-500">{username}</div>
+                </>
+              ) : (
+                username
+              )}
+            </div>
+          );
         },
-        header: "Roles",
-        size: 40,
       },
       {
         accessorFn: (row) => {
@@ -95,6 +120,10 @@ export default function DashboardUserDetails({
   const prepareDataForExport = (rows: MRT_Row<LinkedUser>[]) => {
     return rows.map((row) => {
       const userData = row.original;
+      const firstName = userData.firstName || "";
+      const surname = userData.surname || "";
+      const username = userData.username || "";
+      const displayName = firstName && surname ? `${firstName} ${surname} (${username})` : username;
 
       // Format the date for export
       let lastVisitDate = "-";
@@ -104,8 +133,7 @@ export default function DashboardUserDetails({
       }
 
       return {
-        Name: userData.username || "",
-        Roles: userData.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "",
+        Name: displayName,
         "User Groups": userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
         Organisations: userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
         "Access Frequency": userData.visits || 0,
@@ -129,6 +157,7 @@ export default function DashboardUserDetails({
         `${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
       ],
       ["Export Date", new Date().toLocaleDateString("en-CA")],
+      ["Total Visits", dashboardStats.totalVisits.toString()],
     ];
 
     // Convert array to worksheet (this ensures proper cell placement)
@@ -166,13 +195,18 @@ export default function DashboardUserDetails({
         22,
       );
       doc.text(`Export Date: ${new Date().toLocaleDateString("en-CA")}`, 14, 29);
+      doc.text(`Total Visits: ${dashboardStats.totalVisits}`, 14, 36);
 
       // Get table headers from columns
-      const tableHeaders = ["Name", "Roles", "User Groups", "Organisations", "Access Frequency", "Last Visit"];
+      const tableHeaders = ["Name", "User Groups", "Organisations", "Access Frequency", "Last Visit"];
 
       // Prepare table data from rows
       const tableData = rows.map((row) => {
         const userData = row.original;
+        const firstName = userData.firstName || "";
+        const surname = userData.surname || "";
+        const username = userData.username || "";
+        const displayName = firstName && surname ? `${firstName} ${surname} (${username})` : username;
 
         // Format the date for export
         let lastVisitDate = "-";
@@ -182,8 +216,7 @@ export default function DashboardUserDetails({
         }
 
         return [
-          userData.username || "",
-          userData.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "",
+          displayName,
           userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
           userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
           (userData.visits || 0).toString(),
@@ -195,15 +228,14 @@ export default function DashboardUserDetails({
       autoTable(doc, {
         head: [tableHeaders],
         body: tableData,
-        startY: 35,
+        startY: 42,
         styles: { fontSize: 9, cellPadding: 3 },
         columnStyles: {
-          0: { cellWidth: 30 },
+          0: { cellWidth: 40 },
           1: { cellWidth: 40 },
-          2: { cellWidth: 40 },
-          3: { cellWidth: 50 },
+          2: { cellWidth: 50 },
+          3: { cellWidth: 25 },
           4: { cellWidth: 25 },
-          5: { cellWidth: 25 },
         },
         headStyles: { fillColor: [41, 128, 185], textColor: 255 },
         alternateRowStyles: { fillColor: [242, 242, 242] },
@@ -216,6 +248,19 @@ export default function DashboardUserDetails({
     } catch (error) {
       console.error("Error exporting PDF:", error);
       alert("Failed to export PDF. See console for details.");
+    }
+  };
+
+  // Handle filtering by top user
+  const handleFilterByUser = (username: string) => {
+    const table = document.querySelector(".mantine-Table-root");
+    if (table) {
+      // Find the search input and set its value
+      const searchInput = table.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.value = username;
+        searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
     }
   };
 
@@ -249,41 +294,72 @@ export default function DashboardUserDetails({
       </div>
     ),
     renderTopToolbarCustomActions: ({ table }) => (
-      <div className="flex flex-col w-full gap-2">
-        <div className="content-start flex flex-row gap-10">
-          <div className="w-6/12 p-4">
-            <ul>
-              <li className="flex justify-between py-2 border-b-2 border-indigo-200">
-                <span className="font-semibold">Dashboard : &nbsp;&nbsp;</span>
-                <span> {row?.displayName || "-"} </span>
-              </li>
-            </ul>
+      <div className="w-full">
+        {/* Compact Dashboard Info Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-1 mb-2 bg-gray-50 rounded border border-gray-200">
+          <div className="flex items-center gap-2">
+            <Text size="sm" weight={500}>
+              Dashboard:
+            </Text>
+            <Text size="sm">{row?.displayName || "-"}</Text>
           </div>
 
-          <div className="w-6/12 p-4">
-            <ul>
-              <li className="flex justify-between py-2 border-b-2 border-indigo-200">
-                <span className="font-semibold">Period : &nbsp;&nbsp;</span>
-                <span>
-                  {value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} -{" "}
-                  {value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}{" "}
-                </span>
-              </li>
-            </ul>
+          <div className="flex items-center gap-2">
+            <Text size="sm" weight={500}>
+              Period:
+            </Text>
+            <Text size="sm">
+              {value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} -{" "}
+              {value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}
+            </Text>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Text size="sm" weight={500}>
+              Total Visits:
+            </Text>
+            <Badge color="blue">{dashboardStats.totalVisits}</Badge>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Text size="sm" weight={500}>
+              <IconUser size={14} className="inline mr-1" />
+              Top Users:
+            </Text>
+            <div className="flex flex-wrap gap-1">
+              {dashboardStats.topUsers.map((user, index) => (
+                <Badge
+                  key={index}
+                  size="sm"
+                  color="green"
+                  className="cursor-pointer hover:bg-green-600"
+                  onClick={() => handleFilterByUser(user.username)}
+                >
+                  {user.firstName && user.surname
+                    ? `${user.firstName} ${user.surname} (${user.visits})`
+                    : `${user.username} (${user.visits})`}
+                </Badge>
+              ))}
+              {dashboardStats.topUsers.length === 0 && (
+                <Text size="xs" color="dimmed">
+                  None
+                </Text>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Export buttons */}
-        <Group position="right" spacing="xs" className="px-4">
+        <Group position="right" spacing="xs" className="px-2">
           <Button
             disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
             onClick={() => handleExportXLSX(table.getPrePaginationRowModel().rows)}
             leftIcon={<IconFileSpreadsheet size={18} />}
             color="green"
             variant="filled"
-            size="sm"
+            size="xs"
           >
-            Export All to Excel
+            Export to Excel
           </Button>
           <Button
             disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
@@ -291,9 +367,9 @@ export default function DashboardUserDetails({
             leftIcon={<IconFile size={18} />}
             color="red"
             variant="filled"
-            size="sm"
+            size="xs"
           >
-            Export All to PDF
+            Export to PDF
           </Button>
         </Group>
       </div>
@@ -308,4 +384,3 @@ export default function DashboardUserDetails({
     </div>
   );
 }
-
