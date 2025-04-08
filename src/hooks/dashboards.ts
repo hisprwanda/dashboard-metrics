@@ -35,26 +35,31 @@ export interface Params {
 }
 
 export const useSqlViewDataReport = ({ datetime, criteria, sqlViewUid }: Params) => {
+  // Ensure we have valid dates before making the query
+  const startDate = datetime.startDate ? formatDateToYYYYMMDD(datetime.startDate) : formatDateToYYYYMMDD(new Date());
+  const endDate = datetime.endDate ? formatDateToYYYYMMDD(datetime.endDate) : formatDateToYYYYMMDD(new Date());
+
   const query = {
     sqlViewData: {
       resource: `sqlViews/${sqlViewUid}/data`,
       params: {
         paging: "false",
         criteria,
-        filter: [
-          `timestamp:ge:${formatDateToYYYYMMDD(
-            datetime.startDate ? datetime.startDate : new Date()
-          )}`,
-          `timestamp:le:${formatDateToYYYYMMDD(
-            datetime.endDate ? datetime.endDate : new Date()
-          )}`,
-        ],
+        filter: [`timestamp:ge:${startDate}`, `timestamp:le:${endDate}`],
       },
     },
   };
+
   const { loading, error, data, refetch } = useDataQuery(query, {
     lazy: true,
     enabled: false,
+    onComplete: (data: any) => {
+      console.log("Query completed successfully");
+    },
+    onError: (error: any) => {
+      console.error("Query error:", error);
+    },
   });
+
   return { loading, error, data, refetch };
 };
