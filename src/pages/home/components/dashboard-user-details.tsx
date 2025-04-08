@@ -1,11 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import type { DateValueType, LinkedUser } from "@/types/dashboard-reportType";
 import type { DashboardConverted } from "@/types/dashboardsType";
-import { useMemo } from "react";
 import { MantineReactTable, type MRT_ColumnDef, useMantineReactTable, type MRT_Row } from "mantine-react-table";
 import { Button, Group, Badge, Text } from "@mantine/core";
-import { IconFileSpreadsheet, IconFile, IconUser } from "@tabler/icons-react";
+import { IconFileSpreadsheet, IconFile, IconUser, IconEye } from "@tabler/icons-react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -71,22 +71,6 @@ export default function DashboardUserDetails({
       },
       {
         accessorFn: (row) => {
-          return row?.userGroups?.map((group) => group?.displayName).join(", ") || "";
-        },
-        id: "userGroups",
-        header: "User Groups",
-        size: 40,
-      },
-      {
-        accessorFn: (row) => {
-          return row?.organisationUnits?.map((org) => org?.displayName).join(", ") || "";
-        },
-        id: "organisations",
-        header: "Organisations",
-        size: 40,
-      },
-      {
-        accessorFn: (row) => {
           return row?.visits || 0;
         },
         id: "AccessFrequency",
@@ -111,6 +95,30 @@ export default function DashboardUserDetails({
         },
         Header: ({ column }) => <em>{column.columnDef.header}</em>,
         size: 50,
+      },
+      {
+        accessorFn: (row) => {
+          return row?.organisationUnits?.map((org) => org?.displayName).join(", ") || "";
+        },
+        id: "organisations",
+        header: "Organisations",
+        size: 40,
+      },
+      {
+        accessorFn: (row) => {
+          return row?.userGroups?.map((group) => group?.displayName).join(", ") || "";
+        },
+        id: "userGroups",
+        header: "User Groups",
+        size: 40,
+      },
+      {
+        accessorFn: (row) => {
+          return row?.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "";
+        },
+        id: "userRoles",
+        header: "Roles",
+        size: 40,
       },
     ],
     [],
@@ -269,10 +277,15 @@ export default function DashboardUserDetails({
     data: safeLinkedUsers,
     state: {
       isLoading: loading,
+      columnVisibility: {
+        userGroups: false,
+        userRoles: false,
+      },
     },
     enableFullScreenToggle: false,
+    enableHiding: true,
     initialState: {
-      sorting: [{ id: "AccessFrequency", desc: true }], // Sort by access frequency by default
+      sorting: [{ id: "AccessFrequency", desc: true }],
       density: "xs",
       columnPinning: {
         left: ["Name", "AccessFrequency", "lastVisit"],
@@ -320,10 +333,10 @@ export default function DashboardUserDetails({
             </Text>
             <Badge color="blue">{dashboardStats.totalVisits}</Badge>
           </div>
-          <br />
+
           <div className="flex items-center gap-2">
             <Text size="sm" weight={500}>
-              {/* <IconUser size={14} className="inline mr-1" /> */}
+              <IconUser size={14} className="inline mr-1" />
               Top Users:
             </Text>
             <div className="flex flex-wrap gap-1">
@@ -349,7 +362,7 @@ export default function DashboardUserDetails({
           </div>
         </div>
 
-        {/* Export buttons */}
+        {/* Export and Column Visibility buttons */}
         <Group position="right" spacing="xs" className="px-2">
           <Button
             disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
