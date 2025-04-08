@@ -30,6 +30,7 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
     };
   });
   const [selectedOrgUnitPaths, setSelectedOrgUnitPaths] = useState<string[]>([]);
+  const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
 
   // Use ref to track previous value to prevent unnecessary re-renders
   const prevValueRef = useRef<DateValueType | null>(null);
@@ -59,6 +60,7 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
 
   const handleOrgUnitsChange = (paths: string[], names: string[]) => {
     setSelectedOrgUnitPaths(paths);
+    setSelectedOrgUnitNames(names);
     // Generate a new key to force re-render of the report component
     reportKey.current = `${Date.now()}`;
   };
@@ -88,6 +90,11 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
               </div>
               <h3 className="text-sm font-semibold text-gray-900">
                 {formatDate(value?.startDate)} - {formatDate(value?.endDate)}
+                {selectedOrgUnitNames.length > 0 && (
+                  <span className="ml-2 text-xs text-blue-600">
+                    ({selectedOrgUnitNames.length} org unit{selectedOrgUnitNames.length !== 1 ? "s" : ""} selected)
+                  </span>
+                )}
               </h3>
               <AlertDialog.Cancel asChild>
                 <button

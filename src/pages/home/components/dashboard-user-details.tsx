@@ -320,10 +320,10 @@ export default function DashboardUserDetails({
             </Text>
             <Badge color="blue">{dashboardStats.totalVisits}</Badge>
           </div>
-
+          <br />
           <div className="flex items-center gap-2">
             <Text size="sm" weight={500}>
-              <IconUser size={14} className="inline mr-1" />
+              {/* <IconUser size={14} className="inline mr-1" /> */}
               Top Users:
             </Text>
             <div className="flex flex-wrap gap-1">

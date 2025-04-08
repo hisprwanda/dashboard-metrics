@@ -27,6 +27,7 @@ export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] 
   });
   const { sqlViewUid } = useSystem();
 
+  // Use refs to prevent infinite loops
   const prevValueRef = useRef<DateValueType | null>(null);
   const prevPathsRef = useRef<string[] | null>(null);
 
@@ -44,7 +45,9 @@ export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] 
     sqlViewUid: sqlViewUid || "",
   });
 
+  // Force refetch when date range changes, but prevent infinite loops
   useEffect(() => {
+    // Only refetch if the dates have actually changed
     const datesChanged =
       !prevValueRef.current ||
       prevValueRef.current.startDate?.getTime() !== value.startDate?.getTime() ||
@@ -52,10 +55,12 @@ export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] 
 
     if (value?.startDate && value?.endDate && datesChanged) {
       refetchDashboard({ criteria, datetime: value });
+      // Update the ref to current value
       prevValueRef.current = { ...value };
     }
   }, [value, refetchDashboard, criteria]);
 
+  // Extract unique usernames from dashboard data
   useEffect(() => {
     if (!dashboardData?.sqlViewData?.listGrid?.headers || !dashboardData?.sqlViewData?.listGrid?.rows) {
       return;
@@ -74,17 +79,69 @@ export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] 
     }
   }, [dashboardData]);
 
+  const {
+    data: filteredUserData,
+    loading: userLoading,
+    error: userError,
+    refetch: refetchUsers,
+  } = useFilteredUsers(uniqueUsernames, selectedOrgUnitPaths);
+
+  // Fetch user details when usernames change
+  useEffect(() => {
+    // Only refetch if the usernames or paths have actually changed
+    const pathsChanged = !prevPathsRef.current || prevPathsRef.current.join(",") !== selectedOrgUnitPaths.join(",");
+
+    if (uniqueUsernames.length > 0 && (pathsChanged || uniqueUsernames.length > 0)) {
+      refetchUsers({
+        usernames: uniqueUsernames,
+        orgUnitPaths: selectedOrgUnitPaths,
+      });
+      // Update the ref to current paths
+      prevPathsRef.current = [...selectedOrgUnitPaths];
+    }
+  }, [uniqueUsernames, selectedOrgUnitPaths, refetchUsers]);
+
+  // Link user details with visit statistics and update dashboard stats
   useEffect(() => {
     if (!dashboardData?.sqlViewData?.listGrid?.rows) {
       return;
     }
 
     const rows = dashboardData.sqlViewData.listGrid.rows;
-    const formattedRows = rows.map((row: string[]) => {
-      const [timestamp, username] = row;
-      return { timestamp, username };
+    const usernameColumnIndex = dashboardData.sqlViewData.listGrid.headers.findIndex(
+      (header: { column: string; }) => header.column === "username",
+    );
+    const timestampColumnIndex = dashboardData.sqlViewData.listGrid.headers.findIndex(
+      (header: { column: string; }) => header.column === "timestamp",
+    );
+
+    if (usernameColumnIndex < 0 || timestampColumnIndex < 0) {
+      return;
+    }
+
+    // Get the list of usernames from filtered users (if org units are selected)
+    const filteredUsernames = new Set<string>();
+    if (filteredUserData?.users?.users && selectedOrgUnitPaths.length > 0) {
+      filteredUserData.users.users.forEach((user: any) => {
+        filteredUsernames.add(user.username);
+      });
+    }
+
+    // Filter rows based on selected org units if applicable
+    const filteredRows =
+      selectedOrgUnitPaths.length > 0
+        ? rows.filter((row: any[]) => filteredUsernames.has(row[usernameColumnIndex]))
+        : rows;
+
+    // Format rows for processing
+    const formattedRows = filteredRows.map((row: any[]) => {
+      return {
+        timestamp: row[timestampColumnIndex],
+        username: row[usernameColumnIndex],
+      };
     });
 
+    // Group by username for visit details
     const groupedData: Record<string, VisitDetails> = {};
 
     formattedRows.forEach((row: { timestamp: string; username: string; }) => {
@@ -96,6 +153,7 @@ export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] 
 
       groupedData[username].visits += 1;
 
+      // Fix for last visit date - ensure we're comparing dates properly
       const currentVisitDate = new Date(timestamp);
       const existingLastVisitDate = new Date(groupedData[username].lastVisit);
 
@@ -107,7 +165,7 @@ export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] 
     const sortedData = Object.values(groupedData).sort((a, b) => b.visits - a.visits);
     setVisitDetails(sortedData);
 
-    // Calculate dashboard statistics
+    // Calculate dashboard statistics based on filtered rows
     const totalVisits = formattedRows.length;
 
     // Top users (already sorted by visits)
@@ -218,31 +276,9 @@ export default function DashboardReport({ row, value, selectedOrgUnitPaths = [] 
         count: topMonthCount,
       },
     });
-  }, [dashboardData]);
+  }, [dashboardData, filteredUserData, selectedOrgUnitPaths]);
 
-  const {
-    data: filteredUserData,
-    loading: userLoading,
-    error: userError,
-    refetch: refetchUsers,
-  } = useFilteredUsers(uniqueUsernames, selectedOrgUnitPaths);
-
-  // Fetch user details when usernames change
-  useEffect(() => {
-    // Only refetch if the usernames or paths have actually changed
-    const pathsChanged = !prevPathsRef.current || prevPathsRef.current.join(",") !== selectedOrgUnitPaths.join(",");
-
-    if (uniqueUsernames.length > 0 && (pathsChanged || uniqueUsernames.length > 0)) {
-      refetchUsers({
-        usernames: uniqueUsernames,
-        orgUnitPaths: selectedOrgUnitPaths,
-      });
-      // Update the ref to current paths
-      prevPathsRef.current = [...selectedOrgUnitPaths];
-    }
-  }, [uniqueUsernames, selectedOrgUnitPaths, refetchUsers]);
-
-  // Link user details with visit statistics
+  // Link user details with visit statistics for display
   useEffect(() => {
     if (!filteredUserData?.users?.users || !visitDetails.length) {
       return;
