@@ -1,3 +1,5 @@
+// file location: src/hooks/users.ts
+
 import { useDataQuery } from "@dhis2/app-runtime";
 
 /**
@@ -15,7 +17,7 @@ export const useFilteredUsers = (usernames: string[], orgUnitPaths: string[]) =>
         const params: any = {
           paging: false,
           fields:
-            "id,username,name,displayName,phoneNumber,jobTitle,userCredentials[userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]",
+            "id,firstName, surname, username,name,displayName,phoneNumber,jobTitle,userCredentials[userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]",
         };
 
         const filters = [];
