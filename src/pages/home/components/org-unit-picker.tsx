@@ -2,12 +2,13 @@
 
 "use client";
 
-import { useState } from "react";
-import OrganisationUnitMultiSelect from "./../../../components/OrganisationUnitTree/OrganisationUnitSelector";
+import { useState, useEffect } from "react";
+import OrganisationUnitMultiSelect from "../../../components/OrganisationUnitTree/OrganisationUnitSelector";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { X } from "lucide-react";
 import { useOrgUnitData } from "../../../services/fetchOrgunitData";
 import { CircularLoader } from "@dhis2/ui";
+import { useDashboard } from "../../../context/DashboardContext";
 
 interface OrgUnitPickerProps {
   onOrgUnitsChange?: (paths: string[], names: string[]) => void;
@@ -15,22 +16,26 @@ interface OrgUnitPickerProps {
 
 export default function OrgUnitPicker({ onOrgUnitsChange }: OrgUnitPickerProps) {
   const [open, setOpen] = useState(false);
-  const [selectedOrgUnits, setSelectedOrgUnits] = useState<string[]>([]);
-  const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
-
+  const { state, dispatch } = useDashboard();
   const { loading, error, data } = useOrgUnitData();
 
+  // Use the selected org units from context
+  const selectedOrgUnits = state.orgUnitPaths;
+  const selectedOrgUnitNames = state.orgUnitNames;
+
   const handleSubmit = (units: string[], names: string[]) => {
-    setSelectedOrgUnits(units);
-    setSelectedOrgUnitNames(names);
+    // Update context
+    dispatch({
+      type: 'SET_ORG_UNITS',
+      payload: { paths: units, names }
+    });
+
     setOpen(false);
 
+    // Also call the callback if provided
     if (onOrgUnitsChange) {
       onOrgUnitsChange(units, names);
     }
-
-    // console.log("Selected org unit paths:", units);
-    // console.log("Selected org unit names:", names);
   };
 
   const displayText = selectedOrgUnitNames.length > 0

@@ -1,16 +1,19 @@
 "use client";
 
-import type { DateValueType } from "@/types/dashboard-reportType";
+import type { DateValueType } from "./../../../types/dashboard-reportType";
 import { useRef, useEffect } from "react";
 import Datepicker from "react-tailwindcss-datepicker";
+import { useDashboard } from "./../../../context/DashboardContext";
 
 interface DatePickerComponentProps {
-  value: DateValueType;
-  onChange: (value: DateValueType | null) => void;
+  value?: DateValueType;
+  onChange?: (value: DateValueType | null) => void;
   maxDate: Date;
 }
 
 export default function DatePicker({ value, onChange, maxDate }: DatePickerComponentProps) {
+  const { state, dispatch } = useDashboard();
+
   // Use ref to track previous value to prevent unnecessary re-renders
   const prevValueRef = useRef<DateValueType | null>(null);
 
@@ -27,18 +30,32 @@ export default function DatePicker({ value, onChange, maxDate }: DatePickerCompo
     // Update the ref
     prevValueRef.current = newValue;
 
-    // Ensure we're passing a valid value to the parent
+    // Ensure we're passing a valid value
     if (newValue && (newValue.startDate || newValue.endDate)) {
-      onChange(newValue);
+      // Update the global context
+      dispatch({ type: 'SET_DATE_RANGE', payload: newValue });
+
+      // Also call the onChange prop if provided (for local state management)
+      if (onChange) {
+        onChange(newValue);
+      }
     } else {
-      onChange({ startDate: null, endDate: null });
+      const emptyValue = { startDate: null, endDate: null };
+      dispatch({ type: 'SET_DATE_RANGE', payload: emptyValue });
+
+      if (onChange) {
+        onChange(emptyValue);
+      }
     }
   };
 
-  // Update the ref when value changes from parent
+  // Determine which value to use - props take precedence over context
+  const displayValue = value || state.value;
+
+  // Update the ref when value changes from either props or context
   useEffect(() => {
-    prevValueRef.current = value;
-  }, [value]);
+    prevValueRef.current = displayValue;
+  }, [displayValue]);
 
   return (
     <Datepicker
@@ -47,7 +64,7 @@ export default function DatePicker({ value, onChange, maxDate }: DatePickerCompo
       primaryColor="sky"
       inputClassName="min-w-[300px] rounded-sm py-1 text-sm border border-sky-500 text-sky-500 p-2 focus:ring-0 focus:outline-none"
       maxDate={maxDate}
-      value={value}
+      value={displayValue}
       onChange={handleDateChange}
       showShortcuts
     />

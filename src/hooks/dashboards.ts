@@ -1,10 +1,7 @@
-
-
 import { DateValueType } from "@/types/dashboard-reportType";
 import { formatDateToYYYYMMDD } from "../lib/utils";
 import { Dashboards } from "@/types/dashboardsType";
 import { useDataQuery } from "@dhis2/app-runtime";
-import { useEffect, useState } from "react";
 
 export type UseDashboardsInfoReturn = {
   loading: boolean;
@@ -32,12 +29,25 @@ export interface Params {
   datetime: DateValueType;
   criteria: string;
   sqlViewUid: string;
+  orgUnitPaths?: string[];
 }
 
-export const useSqlViewDataReport = ({ datetime, criteria, sqlViewUid }: Params) => {
+export const useSqlViewDataReport = ({ datetime, criteria, sqlViewUid, orgUnitPaths = [] }: Params) => {
   // Ensure we have valid dates before making the query
   const startDate = datetime.startDate ? formatDateToYYYYMMDD(datetime.startDate) : formatDateToYYYYMMDD(new Date());
   const endDate = datetime.endDate ? formatDateToYYYYMMDD(datetime.endDate) : formatDateToYYYYMMDD(new Date());
+
+  // Build filter array
+  const filters = [
+    `timestamp:ge:${startDate}`,
+    `timestamp:le:${endDate}`
+  ];
+
+  // Add organization unit filters if applicable
+  if (orgUnitPaths && orgUnitPaths.length > 0) {
+    // Add organization unit path filtering logic here if needed
+    // Example: filters.push(`orgUnit:in:[${orgUnitPaths.join(',')}]`);
+  }
 
   const query = {
     sqlViewData: {
@@ -45,14 +55,13 @@ export const useSqlViewDataReport = ({ datetime, criteria, sqlViewUid }: Params)
       params: {
         paging: "false",
         criteria,
-        filter: [`timestamp:ge:${startDate}`, `timestamp:le:${endDate}`],
+        filter: filters,
       },
     },
   };
 
   const { loading, error, data, refetch } = useDataQuery(query, {
     lazy: true,
-    enabled: false,
     onComplete: (data: any) => {
       console.log("Query completed successfully");
     },

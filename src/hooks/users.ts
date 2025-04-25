@@ -5,11 +5,12 @@ import { useDataQuery } from "@dhis2/app-runtime";
 /**
  * Hook to fetch users filtered by usernames and organization units
  * @param usernames Array of usernames to filter by
- * @param orgUnitPaths Array of organization unit paths to filter by
+ * @param orgUnitPaths Array of organization unit paths to filter by (optional)
  * @returns Query result with loading, error, data, and refetch function
  */
 
-export const useFilteredUsers = (usernames: string[], orgUnitPaths: string[]) => {
+export const useFilteredUsers = (usernames: string[], orgUnitPaths: string[] = []) => {
+  console.log("useFilteredUsers called with:", { usernames, orgUnitPaths });
   const query = {
     users: {
       resource: "users",
@@ -39,11 +40,19 @@ export const useFilteredUsers = (usernames: string[], orgUnitPaths: string[]) =>
     },
   };
 
+  console.log("useFilteredUsers query params:", query.users.params);
+
   const result = useDataQuery(query, {
     variables: {
       usernames: usernames || [],
       orgUnitPaths: orgUnitPaths || [],
     },
+  });
+
+  console.log("useFilteredUsers initial result:", {
+    loading: result.loading,
+    error: result.error ? "Error occurred" : "No error",
+    dataExists: result.data ? "Data exists" : "No data",
   });
 
   return result;
