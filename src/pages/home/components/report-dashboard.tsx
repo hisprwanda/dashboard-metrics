@@ -103,11 +103,11 @@ export default function DashboardReport() {
       const rows = dashboardData.sqlViewData.listGrid.rows;
 
       // Extract unique usernames from dashboard data (username is at index 1)
-      const usernames = [...new Set(rows.map((row: any[]) => row[1]))];
+      const usernames = [...new Set(rows.map((row: any[]) => row[1] as string))];
       console.log("Extracted unique usernames:", usernames);
 
       // Set the unique usernames state
-      setUniqueUsernames(usernames);
+      setUniqueUsernames(usernames as string[]);
 
       // Calculate visit details
       const userVisits: { [key: string]: { count: number; lastVisit: string; }; } = {};
