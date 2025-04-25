@@ -25,6 +25,8 @@ export default function DashboardReport() {
 
   // Add a ref to track if dashboard data was processed
   const dashboardDataProcessed = useRef(false);
+  // Add a ref to track if top users have been updated
+  const topUsersUpdated = useRef(false);
 
   const favoriteuid = row?.id;
   const criteria = favoriteuid ? `favoriteuid%${encodeURIComponent(favoriteuid)}` : '';
@@ -85,12 +87,16 @@ export default function DashboardReport() {
         datetime: value,
         orgUnitPaths: orgUnitPaths
       });
+
+      // Reset processing flags when inputs change
+      dashboardDataProcessed.current = false;
+      topUsersUpdated.current = false;
     }
   }, [value, row, sqlViewUid, orgUnitPaths, refetchDashboard, criteria]);
 
   // Process dashboard data and extract usernames
   useEffect(() => {
-    // Check if data is available in the correct structure
+    // Check if data is available in the correct structure and hasn't been processed yet
     if (!dashboardLoading && dashboardData?.sqlViewData?.listGrid?.rows && !dashboardDataProcessed.current) {
       console.log("Processing dashboard data rows:", dashboardData.sqlViewData.listGrid.rows.length);
 
@@ -129,8 +135,6 @@ export default function DashboardReport() {
         lastVisit: data.lastVisit
       }));
 
-      setVisitDetails(visitDetailsArray);
-
       // Calculate total visits
       const totalVisits = rows.length;
 
@@ -139,7 +143,8 @@ export default function DashboardReport() {
         .sort((a, b) => b.visits - a.visits)
         .slice(0, 5);
 
-      // Set dashboard statistics
+      // Update states in a single batch to avoid cascading updates
+      setVisitDetails(visitDetailsArray);
       setDashboardStats(prev => ({
         ...prev,
         totalVisits,
@@ -183,7 +188,8 @@ export default function DashboardReport() {
 
   // Link user details once user data is loaded
   useEffect(() => {
-    if (!userLoading && userData?.users?.users && visitDetails.length > 0) {
+    // Only process if we have user data, visit details, and haven't updated top users yet
+    if (!userLoading && userData?.users?.users && visitDetails.length > 0 && !topUsersUpdated.current) {
       console.log("Linking user details with visit data");
       const users = userData.users.users;
 
@@ -217,9 +223,7 @@ export default function DashboardReport() {
         };
       });
 
-      setLinkedUsers(linkedUsersData);
-
-      // Update top users with names
+      // Create a new top users array with user details
       const updatedTopUsers = dashboardStats.topUsers.map(topUser => {
         const userDetails = linkedUsersData.find(u => u.username === topUser.username);
         return {
@@ -229,17 +233,30 @@ export default function DashboardReport() {
         };
       });
 
-      setDashboardStats(prev => ({
-        ...prev,
-        topUsers: updatedTopUsers
-      }));
+      // Update states in a single batch
+      setLinkedUsers(linkedUsersData);
+
+      // Only update dashboardStats if the top users have changed
+      if (JSON.stringify(updatedTopUsers) !== JSON.stringify(dashboardStats.topUsers)) {
+        setDashboardStats(prev => ({
+          ...prev,
+          topUsers: updatedTopUsers
+        }));
+      }
+
+      // Mark as updated to prevent infinite loop
+      topUsersUpdated.current = true;
     }
   }, [userLoading, userData, visitDetails, dashboardStats.topUsers]);
 
-  // Reset processed flag when row or value changes
+  // Reset processed flags when inputs change
   useEffect(() => {
-    dashboardDataProcessed.current = false;
-  }, [row, value, orgUnitPaths]);
+    return () => {
+      // Cleanup function to reset flags when component unmounts
+      dashboardDataProcessed.current = false;
+      topUsersUpdated.current = false;
+    };
+  }, []);
 
   if (!row || !value) {
     return (
