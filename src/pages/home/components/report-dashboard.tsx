@@ -1,7 +1,6 @@
-// file location: src/pages/home/components/report-dashboard.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSqlViewDataReport } from "../../../hooks/dashboards";
 import { useFilteredUsers } from "../../../hooks/users";
 import type { LinkedUser, VisitDetails } from "../../../types/dashboard-reportType";
@@ -24,16 +23,20 @@ export default function DashboardReport() {
   });
   const { sqlViewUid } = useSystem();
 
+  // Add a ref to track if dashboard data was processed
+  const dashboardDataProcessed = useRef(false);
+
   const favoriteuid = row?.id;
   const criteria = favoriteuid ? `favoriteuid%${encodeURIComponent(favoriteuid)}` : '';
 
-  // User data query with optional orgUnitPaths
-  const {
-    loading: userLoading,
-    error: userError,
-    data: userData,
-  } = useFilteredUsers(uniqueUsernames);
+  console.log("DashboardReport - Initial render with:", {
+    rowId: row?.id,
+    dateRange: value,
+    orgUnitPaths,
+    uniqueUsernames
+  });
 
+  // Dashboard data query
   const {
     loading: dashboardLoading,
     error: dashboardError,
@@ -46,9 +49,37 @@ export default function DashboardReport() {
     orgUnitPaths: orgUnitPaths
   });
 
+  // User data query with the extracted usernames
+  const {
+    loading: userLoading,
+    error: userError,
+    data: userData,
+    refetch: refetchUsers
+  } = useFilteredUsers(uniqueUsernames, orgUnitPaths);
+
+  // Log dashboard query results
+  useEffect(() => {
+    console.log("Dashboard data query state:", {
+      loading: dashboardLoading,
+      hasError: !!dashboardError,
+      hasData: !!dashboardData,
+      dataStructure: dashboardData ? Object.keys(dashboardData) : []
+    });
+
+    if (dashboardError) {
+      console.error("Dashboard data error:", dashboardError);
+    }
+  }, [dashboardLoading, dashboardError, dashboardData]);
+
   // Initial report fetch
   useEffect(() => {
     if (value?.startDate && value?.endDate && row?.id && sqlViewUid) {
+      console.log("Fetching dashboard data with:", {
+        criteria,
+        dateRange: value,
+        orgUnitPaths
+      });
+
       refetchDashboard({
         criteria,
         datetime: value,
@@ -57,29 +88,37 @@ export default function DashboardReport() {
     }
   }, [value, row, sqlViewUid, orgUnitPaths, refetchDashboard, criteria]);
 
-  // Process dashboard data
+  // Process dashboard data and extract usernames
   useEffect(() => {
-    if (!dashboardLoading && dashboardData?.rows) {
-      // Extract unique usernames from dashboard data
-      const usernames = [...new Set(dashboardData.rows.map((row: any[]) => row[2]))];
-      setUniqueUsernames(usernames as string[]);
+    // Check if data is available in the correct structure
+    if (!dashboardLoading && dashboardData?.sqlViewData?.listGrid?.rows && !dashboardDataProcessed.current) {
+      console.log("Processing dashboard data rows:", dashboardData.sqlViewData.listGrid.rows.length);
+
+      const rows = dashboardData.sqlViewData.listGrid.rows;
+
+      // Extract unique usernames from dashboard data (username is at index 1)
+      const usernames = [...new Set(rows.map((row: any[]) => row[1]))];
+      console.log("Extracted unique usernames:", usernames);
+
+      // Set the unique usernames state
+      setUniqueUsernames(usernames);
 
       // Calculate visit details
       const userVisits: { [key: string]: { count: number; lastVisit: string; }; } = {};
 
-      dashboardData.rows.forEach((row: any[]) => {
-        const username = row[2];
-        const visitTime = row[0];
+      rows.forEach((row: any[]) => {
+        const timestamp = row[0]; // Timestamp is at index 0
+        const username = row[1];  // Username is at index 1
 
         if (!userVisits[username]) {
-          userVisits[username] = { count: 0, lastVisit: visitTime };
+          userVisits[username] = { count: 0, lastVisit: timestamp };
         }
 
         userVisits[username].count += 1;
 
         // Update last visit if more recent
-        if (new Date(visitTime) > new Date(userVisits[username].lastVisit)) {
-          userVisits[username].lastVisit = visitTime;
+        if (new Date(timestamp) > new Date(userVisits[username].lastVisit)) {
+          userVisits[username].lastVisit = timestamp;
         }
       });
 
@@ -93,7 +132,7 @@ export default function DashboardReport() {
       setVisitDetails(visitDetailsArray);
 
       // Calculate total visits
-      const totalVisits = dashboardData.rows.length;
+      const totalVisits = rows.length;
 
       // Find top users
       const topUsers = [...visitDetailsArray]
@@ -109,13 +148,46 @@ export default function DashboardReport() {
           visits: user.visits
         }))
       }));
+
+      // Mark as processed to avoid duplicate processing
+      dashboardDataProcessed.current = true;
     }
   }, [dashboardLoading, dashboardData]);
+
+  // Effect to manually trigger users refetch when usernames change
+  useEffect(() => {
+    if (uniqueUsernames.length > 0) {
+      console.log("Triggering users API call with usernames:", uniqueUsernames);
+
+      // Explicitly refetch with the new usernames
+      refetchUsers({
+        usernames: uniqueUsernames,
+        orgUnitPaths: orgUnitPaths
+      });
+    }
+  }, [uniqueUsernames, orgUnitPaths, refetchUsers]);
+
+  // Log user data query results
+  useEffect(() => {
+    console.log("User data query state:", {
+      loading: userLoading,
+      hasError: !!userError,
+      hasData: !!userData,
+      userCount: userData?.users?.users?.length || 0
+    });
+
+    if (userError) {
+      console.error("User data error:", userError);
+    }
+  }, [userLoading, userError, userData]);
 
   // Link user details once user data is loaded
   useEffect(() => {
     if (!userLoading && userData?.users?.users && visitDetails.length > 0) {
+      console.log("Linking user details with visit data");
       const users = userData.users.users;
+
+      console.log("Available users to link:", users.length);
 
       // Map visit details to user information
       const linkedUsersData = visitDetails.map(visit => {
@@ -163,6 +235,11 @@ export default function DashboardReport() {
       }));
     }
   }, [userLoading, userData, visitDetails, dashboardStats.topUsers]);
+
+  // Reset processed flag when row or value changes
+  useEffect(() => {
+    dashboardDataProcessed.current = false;
+  }, [row, value, orgUnitPaths]);
 
   if (!row || !value) {
     return (
