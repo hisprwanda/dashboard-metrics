@@ -34,14 +34,12 @@ export const useTestSqlView = () => {
   const createTestView = async () => {
     try {
       const createResponse = await createSqlView(testSqlParams);
-      console.log("SQL View created:", createResponse);
 
       const uid = createResponse.response.uid;
       const executeResponse = await executeSqlView({}, {
         variables: {},
         resource: `sqlViews/${uid}/execute`
       });
-      console.log("SQL View executed:", executeResponse);
 
       return { success: true, uid };
     } catch (error) {

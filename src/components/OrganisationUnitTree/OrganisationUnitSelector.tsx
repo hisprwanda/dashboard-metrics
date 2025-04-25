@@ -209,7 +209,6 @@ const OrganisationUnitMultiSelect = ({
     setSelectedGroups([]);
 
     // Log for debugging
-    console.log("Deselected all org units");
   };
 
   if (isLoading) {

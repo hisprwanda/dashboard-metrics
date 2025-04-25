@@ -252,7 +252,6 @@ export default function DashboardUserDetails({
       // Save PDF
       doc.save(`Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.pdf`);
 
-      console.log("PDF export completed successfully");
     } catch (error) {
       console.error("Error exporting PDF:", error);
       alert("Failed to export PDF. See console for details.");

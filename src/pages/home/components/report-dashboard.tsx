@@ -31,13 +31,6 @@ export default function DashboardReport() {
   const favoriteuid = row?.id;
   const criteria = favoriteuid ? `favoriteuid%${encodeURIComponent(favoriteuid)}` : '';
 
-  console.log("DashboardReport - Initial render with:", {
-    rowId: row?.id,
-    dateRange: value,
-    orgUnitPaths,
-    uniqueUsernames
-  });
-
   // Dashboard data query
   const {
     loading: dashboardLoading,
@@ -61,12 +54,6 @@ export default function DashboardReport() {
 
   // Log dashboard query results
   useEffect(() => {
-    console.log("Dashboard data query state:", {
-      loading: dashboardLoading,
-      hasError: !!dashboardError,
-      hasData: !!dashboardData,
-      dataStructure: dashboardData ? Object.keys(dashboardData) : []
-    });
 
     if (dashboardError) {
       console.error("Dashboard data error:", dashboardError);
@@ -76,11 +63,6 @@ export default function DashboardReport() {
   // Initial report fetch
   useEffect(() => {
     if (value?.startDate && value?.endDate && row?.id && sqlViewUid) {
-      console.log("Fetching dashboard data with:", {
-        criteria,
-        dateRange: value,
-        orgUnitPaths
-      });
 
       refetchDashboard({
         criteria,
@@ -98,13 +80,11 @@ export default function DashboardReport() {
   useEffect(() => {
     // Check if data is available in the correct structure and hasn't been processed yet
     if (!dashboardLoading && dashboardData?.sqlViewData?.listGrid?.rows && !dashboardDataProcessed.current) {
-      console.log("Processing dashboard data rows:", dashboardData.sqlViewData.listGrid.rows.length);
 
       const rows = dashboardData.sqlViewData.listGrid.rows;
 
       // Extract unique usernames from dashboard data (username is at index 1)
       const usernames = [...new Set(rows.map((row: any[]) => row[1] as string))];
-      console.log("Extracted unique usernames:", usernames);
 
       // Set the unique usernames state
       setUniqueUsernames(usernames as string[]);
@@ -162,7 +142,6 @@ export default function DashboardReport() {
   // Effect to manually trigger users refetch when usernames change
   useEffect(() => {
     if (uniqueUsernames.length > 0) {
-      console.log("Triggering users API call with usernames:", uniqueUsernames);
 
       // Explicitly refetch with the new usernames
       refetchUsers({
@@ -174,12 +153,6 @@ export default function DashboardReport() {
 
   // Log user data query results
   useEffect(() => {
-    console.log("User data query state:", {
-      loading: userLoading,
-      hasError: !!userError,
-      hasData: !!userData,
-      userCount: userData?.users?.users?.length || 0
-    });
 
     if (userError) {
       console.error("User data error:", userError);
@@ -190,10 +163,8 @@ export default function DashboardReport() {
   useEffect(() => {
     // Only process if we have user data, visit details, and haven't updated top users yet
     if (!userLoading && userData?.users?.users && visitDetails.length > 0 && !topUsersUpdated.current) {
-      console.log("Linking user details with visit data");
       const users = userData.users.users;
 
-      console.log("Available users to link:", users.length);
 
       // Map visit details to user information
       const linkedUsersData = visitDetails.map(visit => {

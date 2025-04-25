@@ -63,7 +63,6 @@ export const useSqlViewDataReport = ({ datetime, criteria, sqlViewUid, orgUnitPa
   const { loading, error, data, refetch } = useDataQuery(query, {
     lazy: true,
     onComplete: (data: any) => {
-      console.log("Query completed successfully");
     },
     onError: (error: any) => {
       console.error("Query error:", error);

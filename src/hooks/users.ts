@@ -10,7 +10,6 @@ import { useDataQuery } from "@dhis2/app-runtime";
  */
 
 export const useFilteredUsers = (usernames: string[], orgUnitPaths: string[] = []) => {
-  console.log("useFilteredUsers called with:", { usernames, orgUnitPaths });
   const query = {
     users: {
       resource: "users",
@@ -40,19 +39,12 @@ export const useFilteredUsers = (usernames: string[], orgUnitPaths: string[] = [
     },
   };
 
-  console.log("useFilteredUsers query params:", query.users.params);
 
   const result = useDataQuery(query, {
     variables: {
       usernames: usernames || [],
       orgUnitPaths: orgUnitPaths || [],
     },
-  });
-
-  console.log("useFilteredUsers initial result:", {
-    loading: result.loading,
-    error: result.error ? "Error occurred" : "No error",
-    dataExists: result.data ? "Data exists" : "No data",
   });
 
   return result;
