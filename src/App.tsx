@@ -6,6 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import MainLayout from "./components/layout/MainLayout";
 import HomePage from "./pages/home/HomePage";
+import UserEngagementPage from "./pages/user-engagement/UserEngagementPage";
+import DistrictEngagementPage from "./pages/district-engagement/DistrictEngagementPage";
+import InactivityTrackingPage from "./pages/inactivity-tracking/InactivityTrackingPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { AppProviders } from "./context/AppProviders";
 
@@ -25,6 +28,9 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<MainLayout />}>
               <Route index element={<HomePage />} />
+              <Route path="user-engagement" element={<UserEngagementPage />} />
+              <Route path="district-engagement" element={<DistrictEngagementPage />} />
+              <Route path="inactivity-tracking" element={<InactivityTrackingPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
