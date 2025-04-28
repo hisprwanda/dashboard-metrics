@@ -37,6 +37,21 @@ const sqlParams: SqlViewParams = {
     "SELECT timestamp, username, favoriteuid, eventtype FROM datastatisticsevent WHERE eventtype = 'DASHBOARD_VIEW';",
 };
 
+// SQL view for organization units by level
+const orgUnitByLevelSqlParams: SqlViewParams = {
+  name: "Get Organization Units By Level",
+  description: "Returns organization units at a specific level that can be dynamically specified",
+  type: "QUERY",
+  cacheStrategy: "CACHE_1_MINUTE",
+  sqlQuery:
+    "SELECT ou.organisationunitid, ou.uid, ou.name, ou.code, ou.path, ous.level " +
+    "FROM organisationunit ou " +
+    "JOIN _orgunitstructure ous ON ou.organisationunitid = ous.organisationunitid " +
+    "WHERE ous.level = ${level} " +
+    "ORDER BY ou.name;",
+  // Note: The level parameter should be passed in the query parameters when executing the SQL view
+};
+
 // Query to check if SQL view exists by name
 const checkSqlViewQuery = {
   sqlViews: {
@@ -113,6 +128,19 @@ const deleteDataStoreMutation = {
   type: "delete"
 };
 
+const orgUnitDataStoreMutation = {
+  resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
+  type: "create",
+  data: (data: DataStoreItem) => ({
+    ...data
+  })
+};
+
+const deleteOrgUnitDataStoreMutation = {
+  resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
+  type: "delete"
+};
+
 export const useDataStoreService = () => {
   const useDataStoreItem = () => {
     const query = {
@@ -123,16 +151,37 @@ export const useDataStoreService = () => {
     return useDataQuery(query);
   };
 
+  const useOrgUnitDataStoreItem = () => {
+    const query = {
+      datastore: {
+        resource: `dataStore/dashboardMetrics/OrgSqlQueryId`,
+      },
+    };
+    return useDataQuery(query);
+  };
+
   const [saveDataStoreItemMutation, { loading: mutateLoading, error: mutateError }] = useDataMutation(dataStoreMutation);
+  const [saveOrgUnitDataStoreItemMutation, { loading: orgUnitMutateLoading, error: orgUnitMutateError }] = useDataMutation(orgUnitDataStoreMutation);
 
   const [deleteDataStoreItemMutation, { loading: deleteLoading, error: deleteError }] =
     useDataMutation(deleteDataStoreMutation);
+  const [deleteOrgUnitDataStoreItemMutation, { loading: deleteOrgUnitLoading, error: deleteOrgUnitError }] =
+    useDataMutation(deleteOrgUnitDataStoreMutation);
 
   const deleteDataStoreItem = async (): Promise<any> => {
     try {
       return await deleteDataStoreItemMutation({});
     } catch (error) {
       console.error("Error deleting from datastore:", error);
+      throw error;
+    }
+  };
+
+  const deleteOrgUnitDataStoreItem = async (): Promise<any> => {
+    try {
+      return await deleteOrgUnitDataStoreItemMutation({});
+    } catch (error) {
+      console.error("Error deleting org unit from datastore:", error);
       throw error;
     }
   };
@@ -146,10 +195,22 @@ export const useDataStoreService = () => {
     }
   };
 
+  const saveOrgUnitDataStoreItem = async (key: string, data: DataStoreItem): Promise<any> => {
+    try {
+      return await saveOrgUnitDataStoreItemMutation(data);
+    } catch (error) {
+      console.error("Error saving org unit to datastore:", error);
+      throw error;
+    }
+  };
+
   return {
     useDataStoreItem,
+    useOrgUnitDataStoreItem,
     saveDataStoreItem,
+    saveOrgUnitDataStoreItem,
     deleteDataStoreItem,
+    deleteOrgUnitDataStoreItem,
     mutateLoading,
     mutateError,
     deleteLoading,
@@ -160,15 +221,39 @@ export const useDataStoreService = () => {
 export const useInitializeSystem = () => {
   const [initialized, setInitialized] = useState(false);
   const [sqlViewUid, setSqlViewUid] = useState<string | null>(null);
+  const [orgUnitSqlViewUid, setOrgUnitSqlViewUid] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [initializationAttempted, setInitializationAttempted] = useState(false);
 
-  const { useDataStoreItem, saveDataStoreItem, deleteDataStoreItem } = useDataStoreService();
+  const {
+    useDataStoreItem,
+    useOrgUnitDataStoreItem,
+    saveDataStoreItem,
+    saveOrgUnitDataStoreItem,
+    deleteDataStoreItem,
+    deleteOrgUnitDataStoreItem
+  } = useDataStoreService();
+
   const { createSqlView, executeSqlViews, useCheckSqlViewExistsQuery } = useSqlViewService();
 
   const { loading: dsLoading, data: dsData } = useDataStoreItem();
+  const { loading: orgUnitDsLoading, data: orgUnitDsData } = useOrgUnitDataStoreItem();
+
   const { data: sqlViewData, refetch: checkSqlView, loading: checkSqlViewLoading } = useCheckSqlViewExistsQuery();
+
+  const checkOrgUnitSqlViewQuery = {
+    sqlViews: {
+      resource: "sqlViews",
+      params: {
+        filter: `name:eq:${orgUnitByLevelSqlParams.name}`,
+        fields: "id,name,description",
+        paging: false,
+      },
+    },
+  };
+  const { data: orgUnitSqlViewData, refetch: checkOrgUnitSqlView, loading: checkOrgUnitSqlViewLoading } =
+    useDataQuery(checkOrgUnitSqlViewQuery, { lazy: true });
 
   useEffect(() => {
     if (initializationAttempted) {
@@ -176,7 +261,7 @@ export const useInitializeSystem = () => {
     }
 
     const init = async () => {
-      if (dsLoading || checkSqlViewLoading) {
+      if (dsLoading || checkSqlViewLoading || orgUnitDsLoading || checkOrgUnitSqlViewLoading) {
         return;
       }
 
@@ -184,85 +269,29 @@ export const useInitializeSystem = () => {
         setInitializationAttempted(true);
         console.log("Starting system initialization...");
 
-        // Step 2: Check if appID exists in datastore
-        if (dsData && dsData.datastore && dsData.datastore.uid) {
-          console.log("Found existing SQL view in datastore:", dsData.datastore.uid);
+        // Initialize dashboard SQL view
+        let dashboardViewUid = await initializeSqlView(
+          dsData?.datastore,
+          sqlParams,
+          checkSqlView,
+          saveDataStoreItem,
+          deleteDataStoreItem,
+          "appID"
+        );
 
-          const existingViewResponse = await checkSqlView();
+        // Initialize organization unit SQL view
+        let orgUnitViewUid = await initializeSqlView(
+          orgUnitDsData?.datastore,
+          orgUnitByLevelSqlParams,
+          checkOrgUnitSqlView,
+          saveOrgUnitDataStoreItem,
+          deleteOrgUnitDataStoreItem,
+          "OrgSqlQueryId"
+        );
 
-          if (existingViewResponse?.sqlViews?.sqlViews?.length > 0 &&
-            existingViewResponse.sqlViews.sqlViews[0].name === sqlParams.name) {
-            // SQL view exists and matches our name, use it
-            setSqlViewUid(dsData.datastore.uid);
-            setInitialized(true);
-            setLoading(false);
-            return;
-          } else {
-            // SQL view doesn't exist or name doesn't match, delete the datastore item
-            console.log("SQL view doesn't exist or name doesn't match, deleting datastore item");
-            await deleteDataStoreItem();
-            // Continue with the rest of the initialization
-          }
-
-          setSqlViewUid(dsData.datastore.uid);
-          setInitialized(true);
-          setLoading(false);
-          return;
-        }
-
-        // Step 3: Check if SQL view with this name already exists
-        console.log("Checking if SQL view exists...");
-        const existingViewResponse = await checkSqlView();
-        let uid: string | null = null;
-
-        if (existingViewResponse?.sqlViews?.sqlViews?.length > 0) {
-          // SQL view already exists, use its UID
-          uid = existingViewResponse.sqlViews.sqlViews[0].id;
-          console.log("Found existing SQL view:", uid);
-        } else {
-          // Step 4: Create SQL view if it doesn't exist
-          console.log("Creating new SQL view...");
-          try {
-            const createResponse = await createSqlView(sqlParams);
-            uid = createResponse.response.uid;
-            console.log("Created new SQL view:", uid);
-          } catch (err) {
-            // Handle 409 conflict (view already exists)
-            const dhisError = err as DHIS2Error;
-            if (dhisError?.response?.httpStatusCode === 409 && dhisError?.response?.response?.uid) {
-              uid = dhisError.response.response.uid;
-              console.log("SQL view already exists (from 409):", uid);
-            } else {
-              console.error("Error creating SQL view:", err);
-              throw err;
-            }
-          }
-        }
-
-        if (!uid) {
-          throw new Error("Failed to get SQL view UID");
-        }
-
-        // Step: Execute the SQL views creation via maintenance endpoint
-        console.log("Creating SQL views in database...");
-        try {
-          await executeSqlViews({});
-          console.log("SQL views created successfully");
-        } catch (err) {
-          console.error("Error creating SQL views:", err);
-        }
-
-        // Step 5: Save to datastore
-        console.log("Saving to datastore...");
-        await saveDataStoreItem("appID", {
-          name: sqlParams.name,
-          uid,
-          isSqlViewCreated: true,
-          isSqlViewExecuted: true,
-        });
-
-        // Step 6: Save to state
-        setSqlViewUid(uid);
+        // Save to state
+        setSqlViewUid(dashboardViewUid);
+        setOrgUnitSqlViewUid(orgUnitViewUid);
         setInitialized(true);
       } catch (err) {
         console.error("Initialization error:", err);
@@ -272,18 +301,107 @@ export const useInitializeSystem = () => {
       }
     };
 
+    // Helper function to initialize a SQL view
+    const initializeSqlView = async (
+      dataStoreData: any,
+      params: SqlViewParams,
+      checkFunction: Function,
+      saveFunction: Function,
+      deleteFunction: Function,
+      key: string
+    ): Promise<string | null> => {
+      // Step 1: Check if view exists in datastore
+      if (dataStoreData && dataStoreData.uid) {
+        console.log(`Found existing SQL view in datastore: ${dataStoreData.uid} for ${params.name}`);
+
+        const existingViewResponse = await checkFunction();
+        const existingSqlViews = existingViewResponse?.sqlViews?.sqlViews;
+
+        if (existingSqlViews?.length > 0 && existingSqlViews[0].name === params.name) {
+          // SQL view exists and matches our name, use it
+          return dataStoreData.uid;
+        } else {
+          // SQL view doesn't exist or name doesn't match, delete the datastore item
+          console.log(`SQL view doesn't exist or name doesn't match for ${params.name}, deleting datastore item`);
+          await deleteFunction();
+          // Continue with the rest of the initialization
+        }
+      }
+
+      // Step 2: Check if SQL view with this name already exists
+      console.log(`Checking if SQL view exists for ${params.name}...`);
+      const existingViewResponse = await checkFunction();
+      let uid: string | null = null;
+
+      if (existingViewResponse?.sqlViews?.sqlViews?.length > 0) {
+        // SQL view already exists, use its UID
+        uid = existingViewResponse.sqlViews.sqlViews[0].id;
+        console.log(`Found existing SQL view: ${uid} for ${params.name}`);
+      } else {
+        // Step 3: Create SQL view if it doesn't exist
+        console.log(`Creating new SQL view for ${params.name}...`);
+        try {
+          const createResponse = await createSqlView(params);
+          uid = createResponse.response.uid;
+          console.log(`Created new SQL view: ${uid} for ${params.name}`);
+        } catch (err) {
+          // Handle 409 conflict (view already exists)
+          const dhisError = err as DHIS2Error;
+          if (dhisError?.response?.httpStatusCode === 409 && dhisError?.response?.response?.uid) {
+            uid = dhisError.response.response.uid;
+            console.log(`SQL view already exists (from 409): ${uid} for ${params.name}`);
+          } else {
+            console.error(`Error creating SQL view for ${params.name}:`, err);
+            throw err;
+          }
+        }
+      }
+
+      if (!uid) {
+        throw new Error(`Failed to get SQL view UID for ${params.name}`);
+      }
+
+      // Step 4: Execute the SQL views creation via maintenance endpoint
+      console.log("Creating SQL views in database...");
+      try {
+        await executeSqlViews({});
+        console.log("SQL views created successfully");
+      } catch (err) {
+        console.error("Error creating SQL views:", err);
+      }
+
+      // Step 5: Save to datastore
+      console.log(`Saving to datastore for ${params.name}...`);
+      await saveFunction(key, {
+        name: params.name,
+        uid,
+        isSqlViewCreated: true,
+        isSqlViewExecuted: true,
+      });
+
+      return uid;
+    };
+
     init();
   }, [
     dsData,
     dsLoading,
+    orgUnitDsData,
+    orgUnitDsLoading,
     checkSqlView,
+    checkOrgUnitSqlView,
     createSqlView,
     executeSqlViews,
     saveDataStoreItem,
+    saveOrgUnitDataStoreItem,
+    deleteDataStoreItem,
+    deleteOrgUnitDataStoreItem,
     initializationAttempted,
     checkSqlViewLoading,
+    checkOrgUnitSqlViewLoading,
     sqlViewData,
+    orgUnitSqlViewData,
   ]);
 
-  return { initialized, sqlViewUid, loading, error };
+  return { initialized, sqlViewUid, orgUnitSqlViewUid, loading, error };
 };

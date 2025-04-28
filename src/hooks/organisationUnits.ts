@@ -22,16 +22,16 @@ export const useOrganisationUnitLevels = () => {
 /**
  * SQL Query Hook to fetch all organisation units in a specific level
  * @param levelNo The level number of the organisation units to fetch
- * @param sqlViewUid The UID of the SQL view to use for fetching the data (defaults to cAZ5REWwTg1)
+ * @param orgUnitSqlViewUid The UID of the SQL view to use for fetching the data
  * @returns Results from the SQL view containing organisation units at the specified level
  */
-export const useOrganisationUnitsByLevel = (levelNo: string, sqlViewUid: string = "cAZ5REWwTg1") => {
+export const useOrganisationUnitsByLevel = (levelNo: string, orgUnitSqlViewUid: string = "cAZ5REWwTg1") => {
   // Skip the query if no level is selected
   const enabled = !!levelNo;
 
   const query = {
     sqlViewData: {
-      resource: `sqlViews/${sqlViewUid}/data`,
+      resource: `sqlViews/${orgUnitSqlViewUid}/data`,
       params: {
         paging: false,
         var: [`level:${levelNo}`],

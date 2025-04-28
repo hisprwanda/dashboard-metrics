@@ -1,13 +1,15 @@
 // src/pages/district-engagement/components/filter-section.tsx
+import { useSystem } from "./../../../context/SystemContext";
 import {
   SingleSelectField,
   SingleSelectOption,
-  CircularLoader,
 } from "@dhis2/ui";
 
 
 
 export const FilterSection: React.FC = () => {
+  const { orgUnitSqlViewUid } = useSystem();
+
 
   return (
     <div>
