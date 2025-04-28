@@ -5,7 +5,7 @@ import DataTable from "./components/data-table";
 
 export default function InactivityTrackingPage() {
   return (
-    <div className="space-y-4 p-6">
+    <div className="mt-4 mx-6">
       <DataTable />
     </div>
   );

@@ -8,7 +8,7 @@ import {
 } from "mantine-react-table";
 import { FilterSection } from "./filter-section";
 import { format, differenceInDays } from "date-fns";
-import { CircularLoader } from '@dhis2/ui';
+import { Box, Skeleton, Text, Card } from '@mantine/core';
 
 // Define the type for inactivity tracking data
 interface InactivityData {
@@ -80,12 +80,12 @@ export default function DataTable() {
 
   // Handler for user data updates from filter component
   const handleUserDataChange = (newUserData: any[]) => {
-    setIsLoading(true);
-    // Simulating a small delay to show loading state
-    setTimeout(() => {
-      setUserData(newUserData);
-      setIsLoading(false);
-    }, 300);
+    setUserData(newUserData);
+  };
+
+  // Handler for loading state changes
+  const handleLoadingChange = (loading: boolean) => {
+    setIsLoading(loading);
   };
 
   // Define columns for the table
@@ -185,29 +185,37 @@ export default function DataTable() {
     renderEmptyRowsFallback: () => (
       <div className="p-4 text-center">
         {userData.length === 0 ?
-          "Select user groups and/or inactivity criteria above to view user data" :
+          "Select a user group to view user data" :
           "No matching records found"}
+      </div>
+    ),
+    renderTopToolbarCustomActions: () => (
+      <div className="ml-2">
+        {userData.length > 0 && (
+          <div className="text-sm">
+            <span className="font-semibold mr-1">Users found:</span>
+            {isLoading ? (
+              <Skeleton height={18} width={30} radius="xl" />
+            ) : (
+              <span>{userData.length}</span>
+            )}
+          </div>
+        )}
       </div>
     ),
   });
 
   return (
-    <div className="space-y-6">
+    <div className="mb-9">
       {/* Filters */}
-      <FilterSection onUserDataChange={handleUserDataChange} />
+      <FilterSection
+        onUserDataChange={handleUserDataChange}
+        onLoadingChange={handleLoadingChange}
+      />
 
       {/* Table */}
-      <div className="bg-white rounded-md shadow-sm">
-        {isLoading ? (
-          <div className="flex justify-center items-center p-10">
-            <CircularLoader small />
-            <span className="ml-2">Loading data...</span>
-          </div>
-        ) : (
-          <>
-            <MantineReactTable table={table} />
-          </>
-        )}
+      <div className="bg-white shadow-sm">
+        <MantineReactTable table={table} />
       </div>
     </div>
   );
