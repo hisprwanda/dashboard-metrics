@@ -1,77 +1,21 @@
 // file location: src/pages/district-engagement/components/data-table.tsx
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo } from "react";
 import {
   MantineReactTable,
   MRT_ColumnDef,
   useMantineReactTable,
 } from "mantine-react-table";
 import { FilterSection } from "./filter-section";
-import { Skeleton } from '@mantine/core';
-import { processDistrictEngagementData, DistrictEngagement } from "../../../lib/processDistrictData";
+import { DistrictEngagement } from "../../../lib/processDistrictData";
 
 export default function DataTable() {
-  // State to hold the data
-  const [orgUnitData, setOrgUnitData] = useState<any[]>([]);
-  const [userData, setUserData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Process data for the table using our utility function
-  const tableData = useMemo<DistrictEngagement[]>(
-    () => processDistrictEngagementData(orgUnitData, userData),
-    [orgUnitData, userData]
-  );
-
-  // Calculate summary metrics
-  const summaryMetrics = useMemo(() => {
-    if (tableData.length === 0) return null;
-
-    const totalDistricts = tableData.length;
-    const districtsWithAccess = tableData.filter(district => district.hasAccess).length;
-    const accessCoveragePercentage = ((districtsWithAccess / totalDistricts) * 100).toFixed(1);
-
-    const consistentlyActiveDistricts = tableData.filter(district => district.isConsistentlyActive).length;
-    const consistentlyActivePercentage = ((consistentlyActiveDistricts / totalDistricts) * 100).toFixed(1);
-
-    console.log("[TABLE] 📊 Summary metrics calculated:", {
-      totalDistricts,
-      districtsWithAccess,
-      accessCoveragePercentage,
-      consistentlyActiveDistricts,
-      consistentlyActivePercentage
-    });
-
-    return {
-      totalDistricts,
-      districtsWithAccess,
-      accessCoveragePercentage,
-      consistentlyActiveDistricts,
-      consistentlyActivePercentage
-    };
-  }, [tableData]);
-
-  // Memoized callback handlers to prevent unnecessary re-renders
-  const handleOrgUnitDataChange = useCallback((newOrgUnitData: any[]) => {
-    console.log(`[TABLE] 🔄 Organization unit data updated: ${newOrgUnitData.length} units`);
-    setOrgUnitData(newOrgUnitData);
-  }, []);
-
-  const handleUserDataChange = useCallback((newUserData: any[]) => {
-    console.log(`[TABLE] 🔄 User data updated: ${newUserData.length} users`);
-    setUserData(newUserData);
-  }, []);
-
-  const handleLoadingChange = useCallback((loading: boolean) => {
-    console.log(`[TABLE] 🔄 Loading state changed: ${loading}`);
-    setIsLoading(loading);
-  }, []);
-
-  // Define columns for the table
   const columns = useMemo<MRT_ColumnDef<DistrictEngagement>[]>(
     () => [
       {
-        accessorKey: "districtName",
-        header: "District",
+        accessorKey: "OrgUnitName",
+        header: "Org Unit Name",
         size: 150,
       },
       {
@@ -129,7 +73,7 @@ export default function DataTable() {
       },
     },
     state: {
-      isLoading: isLoading,
+      isLoading,
     },
     renderEmptyRowsFallback: () => (
       <div className="p-4 text-center">
@@ -138,49 +82,12 @@ export default function DataTable() {
           "No matching records found"}
       </div>
     ),
-    renderTopToolbarCustomActions: () => {
-      // Don't render summary if data isn't loaded yet
-      if (!summaryMetrics || isLoading) return null;
-
-      return (
-        <div className="ml-2 flex flex-col gap-1">
-          <div className="text-sm">
-            <span className="font-semibold mr-1">Districts:</span>
-            {isLoading ? (
-              <Skeleton height={18} width={30} radius="xl" />
-            ) : (
-              <span>{summaryMetrics.totalDistricts}</span>
-            )}
-          </div>
-          <div className="text-sm">
-            <span className="font-semibold mr-1">District Access Coverage:</span>
-            {isLoading ? (
-              <Skeleton height={18} width={80} radius="xl" />
-            ) : (
-              <span>{summaryMetrics.districtsWithAccess} districts ({summaryMetrics.accessCoveragePercentage}%)</span>
-            )}
-          </div>
-          <div className="text-sm">
-            <span className="font-semibold mr-1">Consistently Active Districts:</span>
-            {isLoading ? (
-              <Skeleton height={18} width={80} radius="xl" />
-            ) : (
-              <span>{summaryMetrics.consistentlyActiveDistricts} districts ({summaryMetrics.consistentlyActivePercentage}%)</span>
-            )}
-          </div>
-        </div>
-      );
-    },
   });
 
   return (
     <div className="mb-9">
       {/* Filters */}
-      <FilterSection
-        onOrganisationDataChange={handleOrgUnitDataChange}
-        onUserDataChange={handleUserDataChange}
-        onLoadingChange={handleLoadingChange}
-      />
+      <FilterSection />
 
       {/* Table */}
       <div className="bg-white shadow-sm">
