@@ -1,15 +1,33 @@
 // src/pages/district-engagement/components/filter-section.tsx
-import { useSystem } from "./../../../context/SystemContext";
+import React from "react";
+import { useDashboard } from "../../../context/DashboardContext";
+import { useOrganisationUnitLevels } from "../../../hooks/organisationUnits";
+import { useOrganisationUnitsByLevel } from "../../../hooks/organisationUnits";
+import { useSystem } from "../../../context/SystemContext";
 import {
   SingleSelectField,
   SingleSelectOption,
 } from "@dhis2/ui";
 
-
-
 export const FilterSection: React.FC = () => {
+  const { state, dispatch } = useDashboard();
   const { orgUnitSqlViewUid } = useSystem();
 
+  // Fetch organization unit levels - the only data fetched on initial load
+  const orgUnitLevelsQuery = useOrganisationUnitLevels();
+
+  const orgUnitLevels = orgUnitLevelsQuery.data?.organisationUnitLevels?.organisationUnitLevels || [];
+
+  // Handle organization unit level change
+  const handleOrgUnitLevelChange = ({ selected }: { selected: string; }) => {
+    console.log("Selected organization unit level:", selected);
+
+    // Update the dashboard context with the selected level
+    dispatch({
+      type: 'SET_ORG_UNIT_LEVEL',
+      payload: selected || ''
+    });
+  };
 
   return (
     <div>
@@ -17,7 +35,7 @@ export const FilterSection: React.FC = () => {
         <SingleSelectField
           label="Organization Unit Level"
           onChange={handleOrgUnitLevelChange}
-          selected={selectedOrgUnitLevel}
+          selected={state.selectedOrgUnitLevel}
           loading={orgUnitLevelsQuery.loading}
           clearable
           placeholder="Select organization unit level"
@@ -32,12 +50,6 @@ export const FilterSection: React.FC = () => {
           ))}
         </SingleSelectField>
       </div>
-
-      {!selectedOrgUnitLevel && (
-        <div className="p-4 text-center">
-          Select an organization unit level to view district engagement data
-        </div>
-      )}
     </div>
   );
 };

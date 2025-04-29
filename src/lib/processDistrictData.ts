@@ -1,132 +1,85 @@
-import { subDays, isWithinInterval, startOfWeek, endOfWeek, differenceInDays } from "date-fns";
-
+// src/lib/processDistrictData.ts
+/**
+ * Interface representing district engagement metrics
+ */
 export interface DistrictEngagement {
-  id: string;
-  districtName: string;
+  OrgUnitName: string;
   totalUsers: number;
   activeUsers: number;
   lastActivity: string;
-  hasAccess: boolean;
   accessPercentage: string;
   isConsistentlyActive: boolean;
   dashboardViews: number;
 }
 
 /**
- * Processes organization units and user data to generate district engagement metrics
- * @param orgUnits Array of organization units (districts)
- * @param userData Array of users with their organization unit assignments
- * @returns Array of DistrictEngagement objects with calculated metrics
+ * Process raw data from DHIS2 into district engagement metrics
+ * @param orgUnitData Organization unit data from SQL view
+ * @param userData User data filtered by organization units
+ * @returns Array of district engagement metrics
  */
-export const processDistrictEngagementData = (
-  orgUnits: any[],
-  userData: any[]
-): DistrictEngagement[] => {
-  console.log("[PROCESSING] 📊 Starting district data processing");
-  console.log(`[PROCESSING] 📊 Inputs: ${orgUnits?.length || 0} org units, ${userData?.length || 0} users`);
-
-  if (!orgUnits || !userData || orgUnits.length === 0) {
-    console.log("[PROCESSING] ⚠️ No data to process, returning empty array");
+export function processDistrictData(orgUnitData: any[], userData: any[]): DistrictEngagement[] {
+  if (!orgUnitData?.length || !userData?.length) {
     return [];
   }
 
-  // Group users by their organization units for easier processing
-  const usersByOrgUnit = new Map<string, any[]>();
-  console.log("[PROCESSING] 🔄 Grouping users by organization unit...");
+  return orgUnitData.map(orgUnitRow => {
+    // Based on your example data format:
+    // [0] = organizationunitid
+    // [1] = uid
+    // [2] = name
+    // [3] = code
+    // [4] = path
+    // [5] = level
+    const orgUnitPath = orgUnitRow[4]; // Path is at index 4
+    const orgUnitName = orgUnitRow[2]; // Name is at index 2
+    const orgUnitId = orgUnitRow[1];   // UID is at index 1
 
-  userData.forEach(user => {
-    if (user.organisationUnits && user.organisationUnits.length > 0) {
-      user.organisationUnits.forEach((orgUnit: any) => {
-        if (!usersByOrgUnit.has(orgUnit.id)) {
-          usersByOrgUnit.set(orgUnit.id, []);
-        }
-        usersByOrgUnit.get(orgUnit.id)?.push(user);
-      });
-    }
-  });
+    // Find users belonging to this organization unit
+    const orgUnitUsers = userData.filter(
+      (user: any) => user.organisationUnits?.some(
+        (ou: any) => ou.id === orgUnitId || orgUnitPath.includes(ou.id)
+      )
+    );
 
-  console.log(`[PROCESSING] ✅ Created user mappings for ${usersByOrgUnit.size} org units`);
+    // Count active users (those with lastLogin)
+    const activeUsers = orgUnitUsers.filter(
+      (user: any) => user.userCredentials?.lastLogin
+    );
 
-  // Calculate metrics for each district (organization unit)
-  const result = orgUnits.map(orgUnit => {
-    const districtUsers = usersByOrgUnit.get(orgUnit.id) || [];
-    const totalUsers = districtUsers.length;
+    // Find the most recent login date
+    const lastActivityDate = activeUsers.length > 0
+      ? new Date(Math.max(...activeUsers
+        .filter((user: any) => user.userCredentials?.lastLogin)
+        .map((user: any) => new Date(user.userCredentials.lastLogin).getTime())
+      ))
+      : null;
 
-    console.log(`[PROCESSING] 📋 Processing ${orgUnit.displayName}: ${totalUsers} users`);
+    // Format date as string or return placeholder
+    const lastActivity = lastActivityDate
+      ? lastActivityDate.toLocaleDateString()
+      : "No activity";
 
-    // Active users calculation (users who have logged in)
-    const activeUsers = districtUsers.filter(user =>
-      user.userCredentials?.lastLogin
-    ).length;
+    // Calculate access percentage
+    const accessPercentage = orgUnitUsers.length > 0
+      ? Math.round((activeUsers.length / orgUnitUsers.length) * 100)
+      : 0;
 
-    // Find the most recent login date for this district
-    let lastActivity = "Never";
-    let lastActivityDate: Date | null = null;
-    districtUsers.forEach(user => {
-      if (user.userCredentials?.lastLogin) {
-        const loginDate = new Date(user.userCredentials.lastLogin);
-        if (!lastActivityDate || loginDate > lastActivityDate) {
-          lastActivityDate = loginDate;
-          lastActivity = loginDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-        }
-      }
-    });
+    // Determine if consistently active (more than 50% active users)
+    const isConsistentlyActive = accessPercentage >= 50;
 
-    // District Access Coverage: Has at least one user accessing the dashboard
-    const hasAccess = activeUsers > 0;
-    const accessPercentage = totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) + "%" : "0%";
-
-    // Consistently Active Districts: Has at least one user logging in every week over the past month
-    let isConsistentlyActive = false;
-
-    if (districtUsers.length > 0) {
-      // Define the past 4 weeks
-      const today = new Date();
-      const pastWeeks = [
-        { start: startOfWeek(subDays(today, 28)), end: endOfWeek(subDays(today, 21)) },
-        { start: startOfWeek(subDays(today, 21)), end: endOfWeek(subDays(today, 14)) },
-        { start: startOfWeek(subDays(today, 14)), end: endOfWeek(subDays(today, 7)) },
-        { start: startOfWeek(subDays(today, 7)), end: endOfWeek(today) }
-      ];
-
-      // Check for activity in each week
-      const weeklyActivity = pastWeeks.map(week => {
-        return districtUsers.some(user => {
-          if (user.userCredentials?.lastLogin) {
-            const loginDate = new Date(user.userCredentials.lastLogin);
-            return isWithinInterval(loginDate, { start: week.start, end: week.end });
-          }
-          return false;
-        });
-      });
-
-      // District is consistently active if there's activity in all 4 weeks
-      isConsistentlyActive = weeklyActivity.every(hasActivity => hasActivity);
-    }
-
-    // Dashboard views (placeholder - in a real implementation, this would come from analytics data)
-    // For this example, we'll estimate based on active users
-    const dashboardViews = activeUsers > 0 ? Math.round(activeUsers * (Math.random() * 10 + 5)) : 0;
+    // For this example, we're using a placeholder for dashboard views
+    // In a real implementation, you would calculate this from actual dashboard analytics data
+    const dashboardViews = Math.max(1, activeUsers.length * 3); // Just a placeholder calculation
 
     return {
-      id: orgUnit.id,
-      districtName: orgUnit.displayName || orgUnit.name,
-      totalUsers,
-      activeUsers,
+      OrgUnitName: orgUnitName,
+      totalUsers: orgUnitUsers.length,
+      activeUsers: activeUsers.length,
       lastActivity,
-      hasAccess,
-      accessPercentage,
+      accessPercentage: `${accessPercentage}%`,
       isConsistentlyActive,
-      dashboardViews
+      dashboardViews,
     };
   });
-
-  console.log(`[PROCESSING] ✅ Finished processing ${result.length} districts`);
-
-  // Sample output debugging
-  if (result.length > 0) {
-    console.log(`[PROCESSING] 📋 Sample processed district:`, result[0]);
-  }
-
-  return result;
-};
+}
