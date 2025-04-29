@@ -9,12 +9,14 @@ interface DashboardState {
   value: DateValueType;
   orgUnitPaths: string[];
   orgUnitNames: string[];
+  selectedOrgUnitLevel: string; // Added property for the selected org unit level
 }
 
 type DashboardAction =
   | { type: 'SET_DASHBOARD'; payload: DashboardConverted; }
   | { type: 'SET_DATE_RANGE'; payload: DateValueType; }
   | { type: 'SET_ORG_UNITS'; payload: { paths: string[]; names: string[]; }; }
+  | { type: 'SET_ORG_UNIT_LEVEL'; payload: string; } // Added action for setting org unit level
   | { type: 'RESET'; };
 
 interface DashboardContextType {
@@ -40,6 +42,7 @@ const initialState: DashboardState = {
   value: getDefaultDateRange(),
   orgUnitPaths: [],
   orgUnitNames: [],
+  selectedOrgUnitLevel: '', // Initialize as empty string
 };
 
 const dashboardReducer = (state: DashboardState, action: DashboardAction): DashboardState => {
@@ -59,6 +62,11 @@ const dashboardReducer = (state: DashboardState, action: DashboardAction): Dashb
         ...state,
         orgUnitPaths: action.payload.paths,
         orgUnitNames: action.payload.names,
+      };
+    case 'SET_ORG_UNIT_LEVEL':
+      return {
+        ...state,
+        selectedOrgUnitLevel: action.payload,
       };
     case 'RESET':
       return initialState;
