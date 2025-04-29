@@ -25,7 +25,7 @@ export const useOrganisationUnitLevels = () => {
  * @param orgUnitSqlViewUid The UID of the SQL view to use for fetching the data
  * @returns Results from the SQL view containing organisation units at the specified level
  */
-export const useOrganisationUnitsByLevel = (levelNo: string, orgUnitSqlViewUid: string = "cAZ5REWwTg1") => {
+export const useOrganisationUnitsByLevel = (levelNo: string, orgUnitSqlViewUid: string) => {
   // Skip the query if no level is selected
   const enabled = !!levelNo;
 
@@ -38,6 +38,7 @@ export const useOrganisationUnitsByLevel = (levelNo: string, orgUnitSqlViewUid: 
       },
     },
   };
+
 
   return useDataQuery(query, { enabled });
 };
