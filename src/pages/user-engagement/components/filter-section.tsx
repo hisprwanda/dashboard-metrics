@@ -16,6 +16,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onUserDataChange, 
   // Refs to prevent infinite loops
   const prevLoadingRef = useRef<boolean>(false);
   const isMountedRef = useRef<boolean>(true);
+  const prevDataRef = useRef<string>(''); // Track processed data to avoid unnecessary updates
 
   // Static date calculations
   const now = new Date();
@@ -84,33 +85,45 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onUserDataChange, 
     });
   }, [oneMonthAgo, oneWeekAgo]);
 
-  // Combined effect for handling loading state and user data updates
+  // Effect for handling loading state
   useEffect(() => {
     if (!isMountedRef.current) return;
 
-    // Update loading state
     const isLoading = selectedUserGroups.length > 0 && filteredUsersQuery.loading;
     if (isLoading !== prevLoadingRef.current) {
       prevLoadingRef.current = isLoading;
       onLoadingChange(isLoading);
     }
+  }, [selectedUserGroups, filteredUsersQuery.loading, onLoadingChange]);
 
-    // Process and update user data only when not loading and we have data
+  // Separate effect for handling user data updates
+  useEffect(() => {
+    if (!isMountedRef.current) return;
+
+    // Only process and update when we have new data and user groups are selected
     if (!filteredUsersQuery.loading && filteredUsersQuery.data && selectedUserGroups.length > 0) {
       const users = filteredUsersQuery.data.users.users;
-      const processedUsers = processUserEngagementData(users);
-      onUserDataChange(processedUsers);
-    } else if (selectedUserGroups.length === 0) {
-      // Clear data when no user groups are selected
+
+      // Create a hash of the current data to compare with previous update
+      const dataHash = JSON.stringify(users.map((u: any) => u.id));
+
+      // Only update if data has changed
+      if (dataHash !== prevDataRef.current) {
+        prevDataRef.current = dataHash;
+        const processedUsers = processUserEngagementData(users);
+        onUserDataChange(processedUsers);
+      }
+    } else if (selectedUserGroups.length === 0 && prevDataRef.current !== '') {
+      // Clear data when no user groups are selected and we haven't already cleared
+      prevDataRef.current = '';
       onUserDataChange([]);
     }
   }, [
     selectedUserGroups,
     filteredUsersQuery.loading,
     filteredUsersQuery.data,
-    onLoadingChange,
-    onUserDataChange,
-    processUserEngagementData
+    processUserEngagementData,
+    onUserDataChange
   ]);
 
   // Handle any errors
