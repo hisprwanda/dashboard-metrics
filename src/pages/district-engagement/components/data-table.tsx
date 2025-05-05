@@ -1,6 +1,6 @@
 // file location: src/pages/district-engagement/components/data-table.tsx
 
-import React, { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   MantineReactTable,
   MRT_ColumnDef,
@@ -9,111 +9,13 @@ import {
 import { FilterSection } from "./filter-section";
 import { DistrictEngagement } from "../../../lib/processDistrictData";
 import { useDashboard } from "../../../context/DashboardContext";
-import { useSystem } from "../../../context/SystemContext";
-import { useOrganisationUnitsByLevel } from "../../../hooks/organisationUnits";
-import { useFilteredUsers } from "../../../hooks/users";
 
 export default function DataTable() {
-  const { state } = useDashboard();
-  const { orgUnitSqlViewUid } = useSystem();
   const [tableData, setTableData] = useState<DistrictEngagement[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { state } = useDashboard();
 
-  // Get the selected level from the dashboard state
-  const selectedLevel = state.selectedOrgUnitLevel;
-
-  // Only fetch organization units when a level is selected
-  const orgUnitQuery = useOrganisationUnitsByLevel(
-    selectedLevel || "",
-    orgUnitSqlViewUid || ""
-  );
-
-  // Process organization unit data only when data is available
-  const orgUnitData = useMemo(() => {
-    if (!orgUnitQuery.data || !orgUnitQuery.data.sqlViewData) return [];
-
-    console.log("Organization units by level:", orgUnitQuery.data.sqlViewData);
-    return orgUnitQuery.data.sqlViewData.rows || [];
-  }, [orgUnitQuery.data]);
-
-  // Extract organization unit paths for user filtering
-  const orgUnitPaths = useMemo(() => {
-    if (!orgUnitData.length) return [];
-    // Assuming the path is the second column in the SQL view data
-    return orgUnitData.map(row => row[1]);
-  }, [orgUnitData]);
-
-  // Only fetch users when we have org unit paths
-  const userQuery = useFilteredUsers(
-    [], // usernames
-    orgUnitPaths, // orgUnitPaths
-    [], // orgUnitIds
-    [] // userGroups
-  );
-
-  // Process user data and populate the table
-  useEffect(() => {
-    setIsLoading(orgUnitQuery.loading || userQuery.loading);
-
-    if (orgUnitData.length && userQuery.data?.users?.users) {
-      console.log("User data:", userQuery.data.users.users);
-
-      // Process district engagement data
-      const processedData: DistrictEngagement[] = orgUnitData.map(orgUnitRow => {
-        const orgUnitPath = orgUnitRow[1];
-        const orgUnitName = orgUnitRow[0];
-
-        // Find users belonging to this organization unit
-        const orgUnitUsers = userQuery.data.users.users.filter(
-          (user: any) => user.organisationUnits.some(
-            (ou: any) => orgUnitPath.includes(ou.id)
-          )
-        );
-
-        // Count active users (those with lastLogin)
-        const activeUsers = orgUnitUsers.filter(
-          (user: any) => user.userCredentials && user.userCredentials.lastLogin
-        );
-
-        // Find the most recent login date
-        const lastActivityDate = activeUsers.length > 0
-          ? new Date(Math.max(...activeUsers.map(
-            (user: any) => new Date(user.userCredentials.lastLogin).getTime()
-          )))
-          : null;
-
-        // Format date as string or return placeholder
-        const lastActivity = lastActivityDate
-          ? lastActivityDate.toLocaleDateString()
-          : "No activity";
-
-        // Calculate access percentage
-        const accessPercentage = orgUnitUsers.length > 0
-          ? Math.round((activeUsers.length / orgUnitUsers.length) * 100)
-          : 0;
-
-        // Determine if consistently active (more than 50% active users)
-        const isConsistentlyActive = accessPercentage >= 50;
-
-        // For this example, we're using a placeholder for dashboard views
-        // In a real implementation, you would calculate this from actual dashboard analytics data
-        const dashboardViews = activeUsers.length * 3; // Just a placeholder calculation
-
-        return {
-          OrgUnitName: orgUnitName,
-          totalUsers: orgUnitUsers.length,
-          activeUsers: activeUsers.length,
-          lastActivity,
-          accessPercentage: `${accessPercentage}%`,
-          isConsistentlyActive,
-          dashboardViews,
-        };
-      });
-
-      setTableData(processedData);
-    }
-  }, [orgUnitData, userQuery.data]);
-
+  // Define columns for the table
   const columns = useMemo<MRT_ColumnDef<DistrictEngagement>[]>(
     () => [
       {
@@ -161,6 +63,11 @@ export default function DataTable() {
     []
   );
 
+  // Handle data received from FilterSection
+  const handleDataProcessed = (processedData: DistrictEngagement[]) => {
+    setTableData(processedData);
+  };
+
   const table = useMantineReactTable({
     columns,
     data: tableData,
@@ -180,7 +87,7 @@ export default function DataTable() {
     },
     renderEmptyRowsFallback: () => (
       <div className="p-4 text-center">
-        {!selectedLevel ?
+        {!state.selectedOrgUnitLevel ?
           "Please select an organization unit level to view district data" :
           "No data found for the selected organization unit level"}
       </div>
@@ -190,7 +97,10 @@ export default function DataTable() {
   return (
     <div className="mb-9">
       {/* Filters */}
-      <FilterSection />
+      <FilterSection
+        onLoadingChange={setIsLoading}
+        onDataProcessed={handleDataProcessed}
+      />
 
       {/* Table */}
       <div className="bg-white shadow-sm">

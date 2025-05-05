@@ -24,21 +24,14 @@ export function processDistrictData(orgUnitData: any[], userData: any[]): Distri
   }
 
   return orgUnitData.map(orgUnitRow => {
-    // Based on your example data format:
-    // [0] = organizationunitid
-    // [1] = uid
-    // [2] = name
-    // [3] = code
-    // [4] = path
-    // [5] = level
-    const orgUnitPath = orgUnitRow[4]; // Path is at index 4
-    const orgUnitName = orgUnitRow[2]; // Name is at index 2
-    const orgUnitId = orgUnitRow[1];   // UID is at index 1
+    // Based on the data format received from SQL view
+    const orgUnitPath = orgUnitRow[1]; // Path is at index 1
+    const orgUnitName = orgUnitRow[0]; // Name is at index 0
 
     // Find users belonging to this organization unit
     const orgUnitUsers = userData.filter(
       (user: any) => user.organisationUnits?.some(
-        (ou: any) => ou.id === orgUnitId || orgUnitPath.includes(ou.id)
+        (ou: any) => orgUnitPath.includes(ou.id)
       )
     );
 

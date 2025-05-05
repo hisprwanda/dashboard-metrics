@@ -1,5 +1,7 @@
 // src/hooks/organisationUnits.ts
+import { useDataEngine } from "@dhis2/app-runtime";
 import { useDataQuery } from "@dhis2/app-runtime";
+import { useCallback, useState } from "react";
 
 /**
  * Hook to fetch all organisation unit levels
@@ -25,20 +27,40 @@ export const useOrganisationUnitLevels = () => {
  * @param orgUnitSqlViewUid The UID of the SQL view to use for fetching the data
  * @returns Results from the SQL view containing organisation units at the specified level
  */
-export const useOrganisationUnitsByLevel = (levelNo: string, orgUnitSqlViewUid: string) => {
-  // Skip the query if no level is selected
-  const enabled = !!levelNo;
+export const useOrganisationUnitsByLevel = () => {
+  const engine = useDataEngine();
+  // Local states for loading, error, and data
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
 
-  const query = {
-    sqlViewData: {
-      resource: `sqlViews/${orgUnitSqlViewUid}/data`,
-      params: {
-        paging: false,
-        var: [`level:${levelNo}`],
+
+  const fetchOrganisationUnitsByLevel = useCallback(async (levelNo: string, orgUnitSqlViewUid: string) => {
+
+    const query = {
+      sqlViewData: {
+        resource: `sqlViews/${orgUnitSqlViewUid}/data`,
+        params: {
+          paging: false,
+          var: [`level:${levelNo}`],
+        },
       },
-    },
-  };
+    };
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await engine.query(query);
+      setData(result); // Store the fetched data in state
+      return result;
+    } catch (err) {
+      setError(err); // Handle any errors
+      return null; // Explicitly return null or some default value
+    } finally {
+      setLoading(false); // Reset the loading state
+    }
+  }, [engine]);
 
 
-  return useDataQuery(query, { enabled });
+  return { loading, error, data, fetchOrganisationUnitsByLevel };
 };
