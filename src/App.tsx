@@ -1,16 +1,16 @@
+// file location: src/App.tsx
+
 import React from "react";
-import { AuthProvider } from "./context/AuthContext";
-import { SystemProvider } from "./context/SystemContext";
-import ProtectedRoute from "./routes/ProtectedRoute";
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import MainLayout from "./components/layout/MainLayout";
-import { TooltipProvider } from "./components/ui/tooltip";
 import HomePage from "./pages/home/HomePage";
-import UsersPage from "./pages/users/users-page";
+import UserEngagementPage from "./pages/user-engagement/UserEngagementPage";
+import DistrictEngagementPage from "./pages/district-engagement/DistrictEngagementPage";
+import InactivityTrackingPage from "./pages/inactivity-tracking/InactivityTrackingPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import AdminPage from "./pages/admin/AdminPage";
+import { AppProviders } from "./context/AppProviders";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,38 +23,19 @@ const queryClient = new QueryClient({
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <SystemProvider>
-          <AuthProvider>
-            <Router>
-              <Routes>
-                <Route path="/" element={<MainLayout />}>
-                  <Route index element={<HomePage />} />
-                  <Route path="*" element={<NotFoundPage />} />
-                  <Route
-                    path="admin"
-                    element={
-                      <ProtectedRoute requiredAuthorities={["F_SYSTEM_SETTING"]}>
-                        <AdminPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="users"
-                    element={
-                      <ProtectedRoute
-                        requiredAuthorities={["M_dhis-web-dashboard"]}
-                      >
-                        <UsersPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Route>
-              </Routes>
-            </Router>
-          </AuthProvider>
-        </SystemProvider>
-      </TooltipProvider>
+      <AppProviders>
+        <Router>
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="user-engagement" element={<UserEngagementPage />} />
+              <Route path="district-engagement" element={<DistrictEngagementPage />} />
+              <Route path="inactivity-tracking" element={<InactivityTrackingPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+          </Routes>
+        </Router>
+      </AppProviders>
     </QueryClientProvider>
   );
 };

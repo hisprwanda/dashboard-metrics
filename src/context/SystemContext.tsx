@@ -4,13 +4,14 @@ import { useInitializeSystem } from "../services/systemIdentification";
 
 interface SystemContextProps {
   sqlViewUid: string | null;
+  orgUnitSqlViewUid: string | null;
   initialized: boolean;
 }
 
 const SystemContext = createContext<SystemContextProps | undefined>(undefined);
 
 export const SystemProvider: React.FC<{ children: React.ReactNode; }> = ({ children }) => {
-  const { sqlViewUid, initialized, loading, error } = useInitializeSystem();
+  const { sqlViewUid, orgUnitSqlViewUid, initialized, loading, error } = useInitializeSystem();
 
   if (loading) {
     return (
@@ -34,7 +35,7 @@ export const SystemProvider: React.FC<{ children: React.ReactNode; }> = ({ child
   }
 
   return (
-    <SystemContext.Provider value={{ sqlViewUid, initialized }}>
+    <SystemContext.Provider value={{ sqlViewUid, orgUnitSqlViewUid, initialized }}>
       {children}
     </SystemContext.Provider>
   );

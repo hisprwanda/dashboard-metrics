@@ -1,3 +1,4 @@
+// file location: src/pages/home/components/show-data.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -8,7 +9,7 @@ import { RiCloseLargeFill } from "react-icons/ri";
 import { formatDate } from "../../../lib/utils";
 import DatePicker from "./date-picker";
 import DashboardReport from "./report-dashboard";
-import type { DateValueType } from "@/types/dashboard-reportType";
+import { useDashboard } from "../../../context/DashboardContext";
 import OrgUnitPicker from "./org-unit-picker";
 
 export interface DataSourceRowProps {
@@ -17,58 +18,26 @@ export interface DataSourceRowProps {
 }
 
 export default function ShowData({ row, data }: DataSourceRowProps) {
+  const { state, dispatch } = useDashboard();
   const [open, setOpen] = useState(false);
   const MAX_DATE = new Date();
-  const [value, setValue] = useState<DateValueType>(() => {
-    const today = new Date();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(today.getDate() - 7);
-
-    return {
-      startDate: sevenDaysAgo,
-      endDate: today,
-    };
-  });
-  const [selectedOrgUnitPaths, setSelectedOrgUnitPaths] = useState<string[]>([]);
-  const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
-
-  // Use ref to track previous value to prevent unnecessary re-renders
-  const prevValueRef = useRef<DateValueType | null>(null);
   const reportKey = useRef<string>(`${Date.now()}`);
 
-  const handleValueChange = (newValue: DateValueType | null) => {
-    // Skip if the value hasn't actually changed
-    if (
-      prevValueRef.current?.startDate?.getTime() === newValue?.startDate?.getTime() &&
-      prevValueRef.current?.endDate?.getTime() === newValue?.endDate?.getTime()
-    ) {
-      return;
-    }
-
-    // Update the ref
-    prevValueRef.current = newValue;
-
-    // Ensure we're setting a valid value and triggering a re-render
+  const handleValueChange = (newValue: { startDate: Date | null; endDate: Date | null; } | null) => {
     if (newValue && (newValue.startDate || newValue.endDate)) {
-      setValue(newValue);
-      // Generate a new key to force re-render of the report component
+      dispatch({ type: 'SET_DATE_RANGE', payload: newValue });
       reportKey.current = `${Date.now()}`;
-    } else {
-      setValue({ startDate: null, endDate: null });
     }
   };
 
   const handleOrgUnitsChange = (paths: string[], names: string[]) => {
-    setSelectedOrgUnitPaths(paths);
-    setSelectedOrgUnitNames(names);
-    // Generate a new key to force re-render of the report component
+    dispatch({ type: 'SET_ORG_UNITS', payload: { paths, names } });
     reportKey.current = `${Date.now()}`;
   };
 
-  // Update the ref when value changes
   useEffect(() => {
-    prevValueRef.current = value;
-  }, [value]);
+    dispatch({ type: 'SET_DASHBOARD', payload: row });
+  }, [row, dispatch]);
 
   return (
     <AlertDialog.Root open={open} onOpenChange={setOpen}>
@@ -83,16 +52,16 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
           <AlertDialog.Title className="text-mauve12 -mt-4 font-medium">
             <div className="flex justify-between items-center py-2">
               <div className="w-[300px] flex items-start justify-between gap-20 ">
-                <DatePicker value={value} onChange={handleValueChange} maxDate={MAX_DATE} />
+                <DatePicker value={state.value} onChange={handleValueChange} maxDate={MAX_DATE} />
               </div>
               <div>
                 <OrgUnitPicker onOrgUnitsChange={handleOrgUnitsChange} />
               </div>
               <h3 className="text-sm font-semibold text-gray-900">
-                {formatDate(value?.startDate)} - {formatDate(value?.endDate)}
-                {selectedOrgUnitNames.length > 0 && (
+                {formatDate(state.value?.startDate)} - {formatDate(state.value?.endDate)}
+                {state.orgUnitNames.length > 0 && (
                   <span className="ml-2 text-xs text-blue-600">
-                    ({selectedOrgUnitNames.length} org unit{selectedOrgUnitNames.length !== 1 ? "s" : ""} selected)
+                    ({state.orgUnitNames.length} org unit{state.orgUnitNames.length !== 1 ? "s" : ""} selected)
                   </span>
                 )}
               </h3>
@@ -107,12 +76,7 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
               </AlertDialog.Cancel>
             </div>
           </AlertDialog.Title>
-          <DashboardReport
-            key={reportKey.current}
-            row={row}
-            value={value}
-            selectedOrgUnitPaths={selectedOrgUnitPaths}
-          />
+          <DashboardReport key={reportKey.current} />
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog.Root>

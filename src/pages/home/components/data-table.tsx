@@ -1,3 +1,5 @@
+// file location: src/pages/home/components/data-table.tsx
+
 import {
   AtedBy,
   Dashboard,
@@ -7,14 +9,12 @@ import {
 } from "../../../types/dashboardsType";
 import { useDashboardsInfo } from "../../../hooks/dashboards";
 
-import { ActionIcon, Tooltip } from "@mantine/core";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   MantineReactTable,
   MRT_ColumnDef,
   useMantineReactTable,
 } from "mantine-react-table";
-import { IconRefresh } from "@tabler/icons-react";
 import { capitalizeFirstChar } from "../../../lib/utils";
 import TableActions from "./table-actions";
 
@@ -25,30 +25,30 @@ export default function DataTable() {
     data?.dashboards?.dashboards
   )
     ? data.dashboards.dashboards.map((dashboard) => {
-        const visualizations: Visualization[] = dashboard.dashboardItems
-          .filter(
-            (item) =>
-              item.visualization &&
-              item.visualization.id &&
-              item.visualization.displayName
-          )
-          .map((item) => ({
-            id: item?.visualization?.id as string,
-            displayName: item?.visualization?.displayName as string,
-          }));
+      const visualizations: Visualization[] = dashboard.dashboardItems
+        .filter(
+          (item) =>
+            item.visualization &&
+            item.visualization.id &&
+            item.visualization.displayName
+        )
+        .map((item) => ({
+          id: item?.visualization?.id as string,
+          displayName: item?.visualization?.displayName as string,
+        }));
 
-        return {
-          name: dashboard.name as string,
-          created: new Date(dashboard.created),
-          lastUpdated: new Date(dashboard.lastUpdated),
-          createdBy: dashboard.createdBy as AtedBy,
-          lastUpdatedBy: dashboard.lastUpdatedBy as AtedBy,
-          displayName: dashboard.displayName as string,
-          favorite: dashboard.favorite as boolean,
-          id: dashboard.id as string,
-          visualizations,
-        };
-      })
+      return {
+        name: dashboard.name as string,
+        created: new Date(dashboard.created),
+        lastUpdated: new Date(dashboard.lastUpdated),
+        createdBy: dashboard.createdBy as AtedBy,
+        lastUpdatedBy: dashboard.lastUpdatedBy as AtedBy,
+        displayName: dashboard.displayName as string,
+        favorite: dashboard.favorite as boolean,
+        id: dashboard.id as string,
+        visualizations,
+      };
+    })
     : [];
 
   const columns = useMemo<MRT_ColumnDef<DashboardConverted>[]>(

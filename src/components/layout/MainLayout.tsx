@@ -1,12 +1,12 @@
 
 import { Outlet } from 'react-router-dom';
-import Header from '../header/header';
+import HeaderNav from './HeaderNav';
 
 export default function MainLayout() {
   return (
     <div>
       <div>
-        <Header />
+        <HeaderNav />
         <Outlet />
       </div>
     </div>
