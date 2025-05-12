@@ -56,11 +56,33 @@ const LoginTrendDisplay = ({ trend }: { trend: number[]; }) => {
   const normalizedTrend = trend.map(val => Math.min(val, 30)); // Cap at 30 for display
   const maxValue = Math.max(...normalizedTrend, 5); // Ensure minimum scale
 
+  // Generate actual month names for the last 3 months
+  const getMonthNames = () => {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    const today = new Date();
+    const months = [];
+
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(today);
+      d.setMonth(today.getMonth() - i);
+      months.push(monthNames[d.getMonth()]);
+    }
+
+    return months; // Returns current month first, then previous months
+  };
+
+  const monthNames = getMonthNames();
+
   return (
     <div className="flex items-end h-8 gap-1">
       {normalizedTrend.map((value, index) => {
         const height = (value / maxValue) * 100;
-        const tooltipLabel = `Month ${3 - index}: ${value} logins`;
+        const monthName = monthNames[index];
+        const tooltipLabel = `${monthName}: ${value} logins`;
 
         // Use fixed color classes instead of dynamic ones
         const getColorClass = (value: number) => {
