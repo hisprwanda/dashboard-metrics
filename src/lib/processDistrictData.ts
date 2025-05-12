@@ -26,7 +26,7 @@ export function processDistrictData(orgUnitData: any[], userData: any[]): Distri
   return orgUnitData.map(orgUnitRow => {
     // Based on the data format received from SQL view
     const orgUnitPath = orgUnitRow[1]; // Path is at index 1
-    const orgUnitName = orgUnitRow[0]; // Name is at index 0
+    const orgUnitName = orgUnitRow[2]; // Name is at index 0
 
     // Find users belonging to this organization unit
     const orgUnitUsers = userData.filter(
