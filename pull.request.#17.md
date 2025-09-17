@@ -1,0 +1,85 @@
+PS D:\ALL-GITHUB\dashboard-metrics> yarn outdated
+yarn outdated v1.22.22
+info Color legend :
+"<red>" : Major Update backward-incompatible updates
+"<yellow>" : Minor Update backward-compatible features
+"<green>" : Patch Update backward-compatible bug fixes
+Package Current Wanted Latest Package Type URL
+@dhis2/app-runtime 3.12.0 3.14.5 3.14.5 dependencies https://github.com/dhis2/app-runtime#readme
+@dhis2/cli-app-scripts 11.7.5 11.8.2 12.8.0 devDependencies https://github.com/dhis2/app-platform#readme
+@dhis2/ui 9.15.0 9.15.0 10.9.0 dependencies https://github.com/dhis2/ui#readme
+@faker-js/faker 9.3.0 9.9.0 10.0.0 dependencies https://fakerjs.dev
+@hookform/resolvers 3.9.1 3.10.0 5.2.2 dependencies https://react-hook-form.com
+@mantine/core 6.0.21 6.0.21 8.3.1 dependencies https://mantine.dev/
+@mantine/dates 6.0.21 6.0.21 8.3.1 dependencies https://mantine.dev/dates/getting-started/
+@mantine/hooks 6.0.21 6.0.21 8.3.1 dependencies https://mantine.dev
+@radix-ui/react-avatar 1.1.2 1.1.10 1.1.10 dependencies https://radix-ui.com/primitives
+@radix-ui/react-checkbox 1.1.3 1.3.3 1.3.3 dependencies https://radix-ui.com/primitives
+@radix-ui/react-dialog 1.1.4 1.1.15 1.1.15 dependencies https://radix-ui.com/primitives
+@radix-ui/react-dropdown-menu 2.1.3 2.1.16 2.1.16 dependencies https://radix-ui.com/primitives
+@radix-ui/react-label 2.1.1 2.1.7 2.1.7 dependencies https://radix-ui.com/primitives
+@radix-ui/react-popover 1.1.3 1.1.15 1.1.15 dependencies https://radix-ui.com/primitives
+@radix-ui/react-select 2.1.3 2.2.6 2.2.6 dependencies https://radix-ui.com/primitives
+@radix-ui/react-separator 1.1.1 1.1.7 1.1.7 dependencies https://radix-ui.com/primitives
+@radix-ui/react-slot 1.1.2 1.2.3 1.2.3 dependencies https://radix-ui.com/primitives
+@radix-ui/react-switch 1.1.2 1.2.6 1.2.6 dependencies https://radix-ui.com/primitives
+@radix-ui/react-toast 1.2.3 1.2.15 1.2.15 dependencies https://radix-ui.com/primitives
+@radix-ui/react-toggle 1.1.1 1.1.10 1.1.10 dependencies https://radix-ui.com/primitives
+@radix-ui/react-toggle-group 1.1.1 1.1.11 1.1.11 dependencies https://radix-ui.com/primitives
+@radix-ui/react-tooltip 1.1.5 1.2.8 1.2.8 dependencies https://radix-ui.com/primitives
+@radix-ui/themes 3.1.6 3.2.1 3.2.1 dependencies https://radix-ui.com/themes
+@tabler/icons-react 3.24.0 3.35.0 3.35.0 dependencies https://tabler-icons.io
+@tanstack/eslint-plugin-query 5.62.1 5.89.0 5.89.0 devDependencies https://tanstack.com/query
+@tanstack/react-query 5.62.7 5.89.0 5.89.0 dependencies https://tanstack.com/query
+@tanstack/react-table 8.20.5 8.21.3 8.21.3 dependencies https://tanstack.com/table
+@tiptap/extension-code-block-lowlight 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/extension-color 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/extension-heading 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/extension-horizontal-rule 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/extension-image 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/extension-link 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/extension-placeholder 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/extension-text-style 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/extension-typography 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/extension-underline 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/pm 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/react 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@tiptap/starter-kit 2.10.3 2.26.1 3.4.4 dependencies https://tiptap.dev
+@types/node 22.10.2 22.18.5 24.5.1 devDependencies https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node
+@types/react 18.3.16 18.3.24 19.1.13 devDependencies https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react
+@types/react-dom 18.3.5 18.3.7 19.1.9 devDependencies https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom
+autoprefixer 10.4.20 10.4.21 10.4.21 devDependencies https://github.com/postcss/autoprefixer#readme
+cmdk 1.0.0 1.0.0 1.1.1 dependencies https://github.com/pacocoursey/cmdk#readme
+concurrently 9.1.2 9.2.1 9.2.1 dependencies https://github.com/open-cli-tools/concurrently#readme
+dayjs 1.11.13 1.11.18 1.11.18 dependencies https://day.js.org
+eslint 9.16.0 9.35.0 9.35.0 devDependencies https://eslint.org
+eslint-config-prettier 9.1.0 9.1.2 10.1.8 devDependencies https://github.com/prettier/eslint-config-prettier#readme
+eslint-plugin-import 2.31.0 2.32.0 2.32.0 devDependencies https://github.com/import-js/eslint-plugin-import
+eslint-plugin-prettier 5.2.1 5.5.4 5.5.4 devDependencies https://github.com/prettier/eslint-plugin-prettier#readme
+eslint-plugin-react 7.37.2 7.37.5 7.37.5 devDependencies https://github.com/jsx-eslint/eslint-plugin-react
+eslint-plugin-react-hooks 4.6.2 4.6.2 5.2.0 devDependencies https://react.dev/
+framer-motion 11.14.4 11.18.2 12.23.13 dependencies https://github.com/motiondivision/motion#readme
+jspdf 3.0.1 3.0.2 3.0.2 dependencies https://github.com/parallax/jsPDF
+lowlight 3.2.0 3.3.0 3.3.0 dependencies https://github.com/wooorm/lowlight#readme
+lucide-react 0.466.0 0.466.0 0.544.0 dependencies https://lucide.dev
+postcss 8.4.49 8.5.6 8.5.6 devDependencies https://postcss.org/
+postcss-cli 11.0.0 11.0.1 11.0.1 dependencies https://github.com/postcss/postcss-cli#readme
+prettier 3.4.2 3.6.2 3.6.2 devDependencies https://prettier.io
+react 18.3.1 18.3.1 19.1.1 resolutionDependencies https://react.dev/
+react 18.3.1 18.3.1 19.1.1 dependencies https://react.dev/
+react-day-picker 8.10.1 8.10.1 9.10.0 dependencies https://daypicker.dev
+react-dom 18.3.1 18.3.1 19.1.1 resolutionDependencies https://react.dev/
+react-dom 18.3.1 18.3.1 19.1.1 dependencies https://react.dev/
+react-hook-form 7.54.1 7.62.0 7.62.0 dependencies https://react-hook-form.com
+react-icons 5.4.0 5.5.0 5.5.0 dependencies https://github.com/react-icons/react-icons#readme
+react-json-tree 0.19.0 0.19.0 0.20.0 dependencies https://github.com/reduxjs/redux-devtools/tree/master/packages/react-json-tree
+react-lazy-load-image-component 1.6.2 1.6.3 1.6.3 dependencies https://github.com/Aljullu/react-lazy-load-image-component#readme
+react-medium-image-zoom 5.2.12 5.3.0 5.3.0 dependencies https://github.com/rpearce/react-medium-image-zoom
+react-router-dom 6.28.0 6.30.1 7.9.1 dependencies https://github.com/remix-run/react-router#readme
+react-tailwindcss-datepicker 1.7.2 1.7.4 2.0.0 dependencies https://github.com/onesine/react-tailwindcss-datepicker
+tailwind-merge 2.5.5 2.6.0 3.3.1 dependencies https://github.com/dcastil/tailwind-merge
+tailwindcss 3.4.16 3.4.17 4.1.13 devDependencies https://tailwindcss.com
+typescript 5.7.2 5.9.2 5.9.2 devDependencies https://www.typescriptlang.org/
+zod 3.24.1 3.25.76 4.1.9 dependencies https://zod.dev
+Done in 7.78s.
+PS D:\ALL-GITHUB\dashboard-metrics>
