@@ -10,9 +10,9 @@ export interface UserEngagementData {
   loginTrend: number[];
   lastLogin: Date | null;
   daysSinceLastLogin: number | null;
-  accessRecency: 'lastWeek' | 'lastMonth' | 'overMonth' | 'never';
-  userGroups: { id: string; displayName: string; }[];
-  organisationUnits: { id: string; displayName: string; }[];
+  accessRecency: "lastWeek" | "lastMonth" | "overMonth" | "never";
+  userGroups: { id: string; displayName: string }[];
+  organisationUnits: { id: string; displayName: string }[];
 }
 
 export interface LoginFrequencyChartData {

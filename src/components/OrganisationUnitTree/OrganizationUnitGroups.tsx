@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+
 import { CircularLoader } from "@dhis2/ui";
-import { MultiSelect } from "./../../components/ui/multi-select";
+
+import { MultiSelect } from "../ui/multi-select";
 
 interface OrganizationUnitGroupsProps {
   selectedGroups: string[];
@@ -49,5 +51,4 @@ const OrganizationUnitGroups: React.FC<OrganizationUnitGroupsProps> = ({
   );
 };
 
-export default OrganizationUnitGroups
-
+export default OrganizationUnitGroups;

@@ -1,24 +1,34 @@
 // src/pages/district-engagement/components/filter-section.tsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+
+import { CircularLoader, SingleSelectField, SingleSelectOption } from "@dhis2/ui";
+
 import { useDashboard } from "../../../context/DashboardContext";
-import { useOrganisationUnitLevels, useOrganisationUnitsByLevel } from "../../../hooks/organisationUnits";
-import { useFilteredUsers } from "../../../hooks/users";
 import { useSystem } from "../../../context/SystemContext";
 import {
-  SingleSelectField,
-  SingleSelectOption,
-  CircularLoader
-} from "@dhis2/ui";
-import { processDistrictData, DistrictEngagement } from "../../../lib/processDistrictData";
+  useOrganisationUnitLevels,
+  useOrganisationUnitsByLevel,
+} from "../../../hooks/organisationUnits";
+import { useFilteredUsers } from "../../../hooks/users";
+import type { DistrictEngagement } from "../../../lib/processDistrictData";
+import { processDistrictData } from "../../../lib/processDistrictData";
 
 interface FilterSectionProps {
   onLoadingChange?: (isLoading: boolean) => void;
   onDataProcessed?: (data: DistrictEngagement[]) => void;
 }
 
-export const FilterSection: React.FC<FilterSectionProps> = ({ onLoadingChange, onDataProcessed }) => {
+export const FilterSection: React.FC<FilterSectionProps> = ({
+  onLoadingChange,
+  onDataProcessed,
+}) => {
   const { state, dispatch } = useDashboard();
-  const { loading: orgUnitsLoading, error: orgUnitsError, data: orgUnitsData, fetchOrganisationUnitsByLevel } = useOrganisationUnitsByLevel();
+  const {
+    loading: orgUnitsLoading,
+    error: orgUnitsError,
+    data: orgUnitsData,
+    fetchOrganisationUnitsByLevel,
+  } = useOrganisationUnitsByLevel();
   const { orgUnitSqlViewUid } = useSystem();
   const [processingData, setProcessingData] = useState(false);
   const [orgUnitPaths, setOrgUnitPaths] = useState<string[]>([]);
@@ -30,7 +40,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onLoadingChange, o
   // Filter users by the selected organization unit paths
   const usersQuery = useFilteredUsers([], orgUnitPaths, [], [], false);
 
-  const orgUnitLevels = orgUnitLevelsQuery.data?.organisationUnitLevels?.organisationUnitLevels || [];
+  const orgUnitLevels =
+    orgUnitLevelsQuery.data?.organisationUnitLevels?.organisationUnitLevels || [];
 
   // Process data when both org units and users are loaded
   useEffect(() => {
@@ -45,7 +56,6 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onLoadingChange, o
 
         // Process the data
         const processedData = processDistrictData(orgUnitData, userData);
-        console.log("Processed district data:", processedData);
 
         // Pass the processed data up to the parent component
         if (onDataProcessed) {
@@ -60,14 +70,20 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onLoadingChange, o
         }
       }
     }
-  }, [orgUnitPaths, usersQuery.data, usersQuery.loading, usersQuery.error, districtData, onDataProcessed, onLoadingChange]);
+  }, [
+    orgUnitPaths,
+    usersQuery.data,
+    usersQuery.loading,
+    usersQuery.error,
+    districtData,
+    onDataProcessed,
+    onLoadingChange,
+  ]);
 
   // Handle organization unit level change
-  const handleOrgUnitLevelChange = async ({ selected }: { selected: string; }) => {
-    console.log("Selected organization unit level:", selected);
-
+  const handleOrgUnitLevelChange = async ({ selected }: { selected: string }) => {
     // Update the context state with the selected level
-    dispatch({ type: 'SET_ORG_UNIT_LEVEL', payload: selected });
+    dispatch({ type: "SET_ORG_UNIT_LEVEL", payload: selected });
 
     // Signal loading state change if callback exists
     if (onLoadingChange) {
@@ -84,16 +100,14 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onLoadingChange, o
     if (selected && orgUnitSqlViewUid) {
       try {
         const orgUnitsResult = await fetchOrganisationUnitsByLevel(selected, orgUnitSqlViewUid);
-        console.log("Fetched org units:", orgUnitsResult);
 
         if (orgUnitsResult?.sqlViewData?.listGrid?.rows) {
           // Store the rows data directly
-          const rows = orgUnitsResult.sqlViewData.listGrid.rows;
+          const { rows } = orgUnitsResult.sqlViewData.listGrid;
           setDistrictData(rows);
 
           // Extract paths from the result (path is at index 4)
           const paths = rows.map((row: any[]) => row[4]);
-          console.log("Extracted paths:", paths);
 
           // Set the paths to trigger the user query
           setOrgUnitPaths(paths);
@@ -167,7 +181,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onLoadingChange, o
       )}
 
       <div className="text-sm text-gray-600 mt-2">
-        Select an organization unit level to view engagement metrics for all districts at that level.
+        Select an organization unit level to view engagement metrics for all districts at that
+        level.
       </div>
     </div>
   );

@@ -1,21 +1,28 @@
 "use client";
 
 import { useMemo } from "react";
-import type { DateValueType, LinkedUser } from "@/types/dashboard-reportType";
-import type { DashboardConverted } from "@/types/dashboardsType";
-import { MantineReactTable, type MRT_ColumnDef, useMantineReactTable, type MRT_Row } from "mantine-react-table";
-import { Button, Group, Badge, Text } from "@mantine/core";
-import { IconFileSpreadsheet, IconFile, IconUser, IconEye } from "@tabler/icons-react";
-import * as XLSX from "xlsx";
+
+import { Badge, Button, Group, Text } from "@mantine/core";
+import { IconEye, IconFile, IconFileSpreadsheet, IconUser } from "@tabler/icons-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import {
+  MantineReactTable,
+  type MRT_ColumnDef,
+  type MRT_Row,
+  useMantineReactTable,
+} from "mantine-react-table";
+import * as XLSX from "xlsx";
+
+import type { DateValueType, LinkedUser } from "@/types/dashboard-reportType";
+import type { DashboardConverted } from "@/types/dashboardsType";
 
 interface DashboardStats {
   totalVisits: number;
-  topUsers: { username: string; visits: number; firstName?: string; surname?: string; }[];
-  topDay: { date: Date | null; count: number; };
-  topWeek: { startDate: Date | null; endDate: Date | null; count: number; };
-  topMonth: { month: string; year: string; count: number; };
+  topUsers: { username: string; visits: number; firstName?: string; surname?: string }[];
+  topDay: { date: Date | null; count: number };
+  topWeek: { startDate: Date | null; endDate: Date | null; count: number };
+  topMonth: { month: string; year: string; count: number };
 }
 
 interface DashboardUserDetailsComponentProps {
@@ -70,9 +77,7 @@ export default function DashboardUserDetails({
         },
       },
       {
-        accessorFn: (row) => {
-          return row?.visits || 0;
-        },
+        accessorFn: (row) => row?.visits || 0,
         id: "AccessFrequency",
         header: "Access Frequency",
         size: 40,
@@ -97,36 +102,32 @@ export default function DashboardUserDetails({
         size: 50,
       },
       {
-        accessorFn: (row) => {
-          return row?.organisationUnits?.map((org) => org?.displayName).join(", ") || "";
-        },
+        accessorFn: (row) =>
+          row?.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
         id: "organisations",
         header: "Organisations",
         size: 40,
       },
       {
-        accessorFn: (row) => {
-          return row?.userGroups?.map((group) => group?.displayName).join(", ") || "";
-        },
+        accessorFn: (row) => row?.userGroups?.map((group) => group?.displayName).join(", ") || "",
         id: "userGroups",
         header: "User Groups",
         size: 40,
       },
       {
-        accessorFn: (row) => {
-          return row?.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "";
-        },
+        accessorFn: (row) =>
+          row?.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "",
         id: "userRoles",
         header: "Roles",
         size: 40,
       },
     ],
-    [],
+    []
   );
 
   // Function to prepare data for export
-  const prepareDataForExport = (rows: MRT_Row<LinkedUser>[]) => {
-    return rows.map((row) => {
+  const prepareDataForExport = (rows: MRT_Row<LinkedUser>[]) =>
+    rows.map((row) => {
       const userData = row.original;
       const firstName = userData.firstName || "";
       const surname = userData.surname || "";
@@ -148,7 +149,6 @@ export default function DashboardUserDetails({
         "Last Visit": lastVisitDate,
       };
     });
-  };
 
   // Export to Excel/XLSX
   const handleExportXLSX = (rows: MRT_Row<LinkedUser>[]) => {
@@ -179,7 +179,10 @@ export default function DashboardUserDetails({
     XLSX.utils.book_append_sheet(wb, ws, "User Access Data");
 
     // Generate XLSX file and trigger download
-    XLSX.writeFile(wb, `Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.xlsx`);
+    XLSX.writeFile(
+      wb,
+      `Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.xlsx`
+    );
   };
 
   // Export to PDF
@@ -200,13 +203,19 @@ export default function DashboardUserDetails({
       doc.text(
         `Period: ${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
         14,
-        22,
+        22
       );
       doc.text(`Export Date: ${new Date().toLocaleDateString("en-CA")}`, 14, 29);
       doc.text(`Total Visits: ${dashboardStats.totalVisits}`, 14, 36);
 
       // Get table headers from columns
-      const tableHeaders = ["Name", "User Groups", "Organisations", "Access Frequency", "Last Visit"];
+      const tableHeaders = [
+        "Name",
+        "User Groups",
+        "Organisations",
+        "Access Frequency",
+        "Last Visit",
+      ];
 
       // Prepare table data from rows
       const tableData = rows.map((row) => {
@@ -214,7 +223,8 @@ export default function DashboardUserDetails({
         const firstName = userData.firstName || "";
         const surname = userData.surname || "";
         const username = userData.username || "";
-        const displayName = firstName && surname ? `${firstName} ${surname} (${username})` : username;
+        const displayName =
+          firstName && surname ? `${firstName} ${surname} (${username})` : username;
 
         // Format the date for export
         let lastVisitDate = "-";
@@ -250,10 +260,10 @@ export default function DashboardUserDetails({
       });
 
       // Save PDF
-      doc.save(`Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.pdf`);
-
+      doc.save(
+        `Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.pdf`
+      );
     } catch (error) {
-      console.error("Error exporting PDF:", error);
       alert("Failed to export PDF. See console for details.");
     }
   };

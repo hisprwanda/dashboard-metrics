@@ -1,6 +1,7 @@
 // file location: src/pages/inactivity-tracking/InactivityTrackingPage.tsx
 
 import React from "react";
+
 import DataTable from "./components/data-table";
 
 export default function InactivityTrackingPage() {

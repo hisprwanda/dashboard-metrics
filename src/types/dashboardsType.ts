@@ -1,48 +1,45 @@
 // file location: src/types/dashboardsType.ts
 export interface Dashboards {
-    dashboards: Dashboard[];
+  dashboards: Dashboard[];
 }
 
 export interface Dashboard {
-    name: string;
-    created: Date;
-    lastUpdated: Date;
-    createdBy: AtedBy;
-    lastUpdatedBy: AtedBy;
-    displayName: string;
-    favorite: boolean;
-    id: string;
-    dashboardItems: DashboardItem[];
+  name: string;
+  created: Date;
+  lastUpdated: Date;
+  createdBy: AtedBy;
+  lastUpdatedBy: AtedBy;
+  displayName: string;
+  favorite: boolean;
+  id: string;
+  dashboardItems: DashboardItem[];
 }
 
 export interface AtedBy {
-    id: string;
-    code: null | string;
-    name: string;
-    displayName: string;
-    username: string;
+  id: string;
+  code: null | string;
+  name: string;
+  displayName: string;
+  username: string;
 }
 
 export interface DashboardItem {
-    visualization?: Visualization;
+  visualization?: Visualization;
 }
 
 export interface Visualization {
-    displayName: string;
-    id: string;
+  displayName: string;
+  id: string;
 }
 
 export interface DashboardConverted {
-    name: string;
-    created: Date;
-    lastUpdated: Date;
-    createdBy: AtedBy;
-    lastUpdatedBy: AtedBy;
-    displayName: string;
-    favorite: boolean;
-    id: string;
-    visualizations: Visualization[];
+  name: string;
+  created: Date;
+  lastUpdated: Date;
+  createdBy: AtedBy;
+  lastUpdatedBy: AtedBy;
+  displayName: string;
+  favorite: boolean;
+  id: string;
+  visualizations: Visualization[];
 }
-
-
-

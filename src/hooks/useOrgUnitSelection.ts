@@ -1,7 +1,8 @@
 "use client";
 
-import type { OrgUnit } from "@/types/organisationUnit";
 import { useState } from "react";
+
+import type { OrgUnit } from "@/types/organisationUnit";
 
 export const useOrgUnitSelection = (orgUnits: OrgUnit[]) => {
   const [selectedOrgUnits, setSelectedOrgUnits] = useState<string[]>([]);
@@ -11,9 +12,8 @@ export const useOrgUnitSelection = (orgUnits: OrgUnit[]) => {
     setSelectedOrgUnits((prevSelected) => {
       if (prevSelected.includes(path)) {
         return prevSelected.filter((selectedPath) => selectedPath !== path);
-      } else {
-        return [...prevSelected, path];
       }
+      return [...prevSelected, path];
     });
   };
 
@@ -29,5 +29,4 @@ export const useOrgUnitSelection = (orgUnits: OrgUnit[]) => {
     handleDeselectAll,
     setSelectedOrgUnits, // Expose the setter for external control
   };
-}
-
+};

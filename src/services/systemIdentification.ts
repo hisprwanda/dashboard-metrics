@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useDataQuery, useDataMutation } from "@dhis2/app-runtime";
+import { useEffect, useState, useMemo } from "react";
+
+import { useDataMutation, useDataQuery } from "@dhis2/app-runtime";
 
 export interface SqlViewParams {
   name: string;
@@ -56,13 +57,12 @@ const orgUnitByLevelSqlParams: SqlViewParams = {
 const checkSqlViewQuery = {
   sqlViews: {
     resource: "sqlViews",
-    params: ({ name }: { name: string; }) => ({
-      filter: `name:eq:${name}`,
+    params: {
       fields: "id,name,description",
       paging: false,
-    }),
+    },
   },
-};
+} as const;
 
 const createSqlViewMutation = {
   resource: "sqlViews",
@@ -77,8 +77,8 @@ const createSqlViewMutation = {
 };
 
 const createSqlViewsMutation = {
-  resource: 'maintenance/sqlViewsCreate',
-  type: 'create',
+  resource: "maintenance/sqlViewsCreate",
+  type: "create",
   data: {},
 };
 
@@ -86,29 +86,48 @@ const dataStoreMutation = {
   resource: "dataStore/dashboardMetrics/appID",
   type: "create",
   data: (data: DataStoreItem) => ({
-    ...data
-  })
+    ...data,
+  }),
 };
 
 export const useSqlViewService = () => {
-  const [createSqlView, { loading: createLoading, error: createError }] = useDataMutation(createSqlViewMutation);
-  const [executeSqlViews, { loading: executeLoading, error: executeError }] = useDataMutation(createSqlViewsMutation);
+  const [createSqlView, { loading: createLoading, error: createError }] =
+    useDataMutation(createSqlViewMutation);
+  const [executeSqlViews, { loading: executeLoading, error: executeError }] =
+    useDataMutation(createSqlViewsMutation);
 
-  const useCheckSqlViewExistsQuery = () => {
-    return useDataQuery(checkSqlViewQuery, {
-      variables: { name: sqlParams.name },
+  const useCheckSqlViewExistsQuery = (name: string) => {
+    const memoizedQuery = useMemo(
+      () => ({
+        sqlViews: {
+          resource: "sqlViews",
+          params: {
+            filter: `name:eq:${name}`,
+            fields: "id,name,description",
+            paging: false,
+          },
+        },
+      }),
+      [name]
+    );
+
+    return useDataQuery(memoizedQuery, {
       lazy: true,
     });
   };
 
   const useSqlViewQuery = (viewUid: string, params: Record<string, any> = {}) => {
-    const query = {
-      sqlViewData: {
-        resource: `sqlViews/${viewUid}/data`,
-        params,
-      },
-    };
-    return useDataQuery(query, { lazy: true });
+    const memoizedQuery = useMemo(
+      () => ({
+        sqlViewData: {
+          resource: `sqlViews/${viewUid}/data`,
+          params,
+        },
+      }),
+      [viewUid, params]
+    );
+
+    return useDataQuery(memoizedQuery, { lazy: true });
   };
 
   return {
@@ -125,27 +144,27 @@ export const useSqlViewService = () => {
 
 const deleteDataStoreMutation = {
   resource: "dataStore/dashboardMetrics/appID",
-  type: "delete"
+  type: "delete",
 };
 
 const orgUnitDataStoreMutation = {
   resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
   type: "create",
   data: (data: DataStoreItem) => ({
-    ...data
-  })
+    ...data,
+  }),
 };
 
 const deleteOrgUnitDataStoreMutation = {
   resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
-  type: "delete"
+  type: "delete",
 };
 
 export const useDataStoreService = () => {
   const useDataStoreItem = () => {
     const query = {
       datastore: {
-        resource: `dataStore/dashboardMetrics/appID`,
+        resource: "dataStore/dashboardMetrics/appID",
       },
     };
     return useDataQuery(query);
@@ -154,19 +173,25 @@ export const useDataStoreService = () => {
   const useOrgUnitDataStoreItem = () => {
     const query = {
       datastore: {
-        resource: `dataStore/dashboardMetrics/OrgSqlQueryId`,
+        resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
       },
     };
     return useDataQuery(query);
   };
 
-  const [saveDataStoreItemMutation, { loading: mutateLoading, error: mutateError }] = useDataMutation(dataStoreMutation);
-  const [saveOrgUnitDataStoreItemMutation, { loading: orgUnitMutateLoading, error: orgUnitMutateError }] = useDataMutation(orgUnitDataStoreMutation);
+  const [saveDataStoreItemMutation, { loading: mutateLoading, error: mutateError }] =
+    useDataMutation(dataStoreMutation);
+  const [
+    saveOrgUnitDataStoreItemMutation,
+    { loading: orgUnitMutateLoading, error: orgUnitMutateError },
+  ] = useDataMutation(orgUnitDataStoreMutation);
 
   const [deleteDataStoreItemMutation, { loading: deleteLoading, error: deleteError }] =
     useDataMutation(deleteDataStoreMutation);
-  const [deleteOrgUnitDataStoreItemMutation, { loading: deleteOrgUnitLoading, error: deleteOrgUnitError }] =
-    useDataMutation(deleteOrgUnitDataStoreMutation);
+  const [
+    deleteOrgUnitDataStoreItemMutation,
+    { loading: deleteOrgUnitLoading, error: deleteOrgUnitError },
+  ] = useDataMutation(deleteOrgUnitDataStoreMutation);
 
   const deleteDataStoreItem = async (): Promise<any> => {
     try {
@@ -232,7 +257,7 @@ export const useInitializeSystem = () => {
     saveDataStoreItem,
     saveOrgUnitDataStoreItem,
     deleteDataStoreItem,
-    deleteOrgUnitDataStoreItem
+    deleteOrgUnitDataStoreItem,
   } = useDataStoreService();
 
   const { createSqlView, executeSqlViews, useCheckSqlViewExistsQuery } = useSqlViewService();
@@ -240,7 +265,11 @@ export const useInitializeSystem = () => {
   const { loading: dsLoading, data: dsData } = useDataStoreItem();
   const { loading: orgUnitDsLoading, data: orgUnitDsData } = useOrgUnitDataStoreItem();
 
-  const { data: sqlViewData, refetch: checkSqlView, loading: checkSqlViewLoading } = useCheckSqlViewExistsQuery();
+  const {
+    data: sqlViewData,
+    refetch: checkSqlView,
+    loading: checkSqlViewLoading,
+  } = useCheckSqlViewExistsQuery(sqlParams.name);
 
   const checkOrgUnitSqlViewQuery = {
     sqlViews: {
@@ -252,8 +281,11 @@ export const useInitializeSystem = () => {
       },
     },
   };
-  const { data: orgUnitSqlViewData, refetch: checkOrgUnitSqlView, loading: checkOrgUnitSqlViewLoading } =
-    useDataQuery(checkOrgUnitSqlViewQuery, { lazy: true });
+  const {
+    data: orgUnitSqlViewData,
+    refetch: checkOrgUnitSqlView,
+    loading: checkOrgUnitSqlViewLoading,
+  } = useDataQuery(checkOrgUnitSqlViewQuery, { lazy: true });
 
   useEffect(() => {
     if (initializationAttempted) {
@@ -267,10 +299,9 @@ export const useInitializeSystem = () => {
 
       try {
         setInitializationAttempted(true);
-        console.log("Starting system initialization...");
 
         // Initialize dashboard SQL view
-        let dashboardViewUid = await initializeSqlView(
+        const dashboardViewUid = await initializeSqlView(
           dsData?.datastore,
           sqlParams,
           checkSqlView,
@@ -280,7 +311,7 @@ export const useInitializeSystem = () => {
         );
 
         // Initialize organization unit SQL view
-        let orgUnitViewUid = await initializeSqlView(
+        const orgUnitViewUid = await initializeSqlView(
           orgUnitDsData?.datastore,
           orgUnitByLevelSqlParams,
           checkOrgUnitSqlView,
@@ -311,45 +342,36 @@ export const useInitializeSystem = () => {
       key: string
     ): Promise<string | null> => {
       // Step 1: Check if view exists in datastore
-      if (dataStoreData && dataStoreData.uid) {
-        console.log(`Found existing SQL view in datastore: ${dataStoreData.uid} for ${params.name}`);
-
+      if (dataStoreData?.uid) {
         const existingViewResponse = await checkFunction();
         const existingSqlViews = existingViewResponse?.sqlViews?.sqlViews;
 
         if (existingSqlViews?.length > 0 && existingSqlViews[0].name === params.name) {
           // SQL view exists and matches our name, use it
           return dataStoreData.uid;
-        } else {
-          // SQL view doesn't exist or name doesn't match, delete the datastore item
-          console.log(`SQL view doesn't exist or name doesn't match for ${params.name}, deleting datastore item`);
-          await deleteFunction();
-          // Continue with the rest of the initialization
         }
+        // SQL view doesn't exist or name doesn't match, delete the datastore item
+        await deleteFunction();
+        // Continue with the rest of the initialization
       }
 
       // Step 2: Check if SQL view with this name already exists
-      console.log(`Checking if SQL view exists for ${params.name}...`);
       const existingViewResponse = await checkFunction();
       let uid: string | null = null;
 
       if (existingViewResponse?.sqlViews?.sqlViews?.length > 0) {
         // SQL view already exists, use its UID
         uid = existingViewResponse.sqlViews.sqlViews[0].id;
-        console.log(`Found existing SQL view: ${uid} for ${params.name}`);
       } else {
         // Step 3: Create SQL view if it doesn't exist
-        console.log(`Creating new SQL view for ${params.name}...`);
         try {
           const createResponse = await createSqlView(params);
           uid = createResponse.response.uid;
-          console.log(`Created new SQL view: ${uid} for ${params.name}`);
         } catch (err) {
           // Handle 409 conflict (view already exists)
           const dhisError = err as DHIS2Error;
           if (dhisError?.response?.httpStatusCode === 409 && dhisError?.response?.response?.uid) {
             uid = dhisError.response.response.uid;
-            console.log(`SQL view already exists (from 409): ${uid} for ${params.name}`);
           } else {
             console.error(`Error creating SQL view for ${params.name}:`, err);
             throw err;
@@ -362,16 +384,13 @@ export const useInitializeSystem = () => {
       }
 
       // Step 4: Execute the SQL views creation via maintenance endpoint
-      console.log("Creating SQL views in database...");
       try {
         await executeSqlViews({});
-        console.log("SQL views created successfully");
       } catch (err) {
         console.error("Error creating SQL views:", err);
       }
 
       // Step 5: Save to datastore
-      console.log(`Saving to datastore for ${params.name}...`);
       await saveFunction(key, {
         name: params.name,
         uid,

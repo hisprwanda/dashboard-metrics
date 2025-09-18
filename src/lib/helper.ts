@@ -1,28 +1,31 @@
-import { OrgUnit } from "@/types/organisationUnit";
+import type { OrgUnit } from "@/types/organisationUnit";
 
 // filtering Org Units by search term and level
-export const filterOrgUnits = (orgUnits: OrgUnit[], term: string, level: number | null): string[] => {
-    if (!term && !level) return [];
-  
-    return orgUnits
-      .map((unit) => {
-        const matchesSearch = term
-          ? unit.displayName.toLowerCase().includes(term.toLowerCase())
-          : true;
-        const matchesLevel = level ? unit.level === level : true;
-  
-        const filteredChildren = filterOrgUnits(unit.children || [], term, level);
-  
-        if ((matchesSearch && matchesLevel) || filteredChildren.length > 0) {
-          return [unit.path, ...filteredChildren];
-        }
-        return [];
-      })
-      .flat();
-  };
+export const filterOrgUnits = (
+  orgUnits: OrgUnit[],
+  term: string,
+  level: number | null
+): string[] => {
+  if (!term && !level) return [];
 
+  return orgUnits
+    .map((unit) => {
+      const matchesSearch = term
+        ? unit.displayName.toLowerCase().includes(term.toLowerCase())
+        : true;
+      const matchesLevel = level ? unit.level === level : true;
 
-  // Function to filter organization units
+      const filteredChildren = filterOrgUnits(unit.children || [], term, level);
+
+      if ((matchesSearch && matchesLevel) || filteredChildren.length > 0) {
+        return [unit.path, ...filteredChildren];
+      }
+      return [];
+    })
+    .flat();
+};
+
+// Function to filter organization units
 export const filterSingleOrgUnits = (orgUnits: OrgUnit[], searchTerm: string): string[] => {
   if (!searchTerm) return [];
 
@@ -40,7 +43,6 @@ export const filterSingleOrgUnits = (orgUnits: OrgUnit[], searchTerm: string): s
 };
 
 // Function to handle selection logic
-export const handleOrgSingleUnitSelection = (orgUnit: OrgUnit) => {
+export const handleOrgSingleUnitSelection = (orgUnit: OrgUnit) =>
   // You can handle any side effects or business logic here
-  return orgUnit;
-};
+  orgUnit;

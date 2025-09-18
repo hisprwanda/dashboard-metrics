@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
 import { format, subDays, subMonths } from "date-fns";
-import { MultiSelectField, MultiSelectOption, CircularLoader } from '@dhis2/ui';
-import { useUserGroups, useFilteredUsers } from "../../../hooks/users";
+
+import { CircularLoader, MultiSelectField, MultiSelectOption } from "@dhis2/ui";
+
+import { useFilteredUsers, useUserGroups } from "../../../hooks/users";
 
 // Interface for filter props
 interface FilterSectionProps {
@@ -9,14 +12,17 @@ interface FilterSectionProps {
   onLoadingChange: (isLoading: boolean) => void;
 }
 
-export const FilterSection: React.FC<FilterSectionProps> = ({ onUserDataChange, onLoadingChange }) => {
+export const FilterSection: React.FC<FilterSectionProps> = ({
+  onUserDataChange,
+  onLoadingChange,
+}) => {
   // State for selected user groups
   const [selectedUserGroups, setSelectedUserGroups] = useState<string[]>([]);
 
   // Refs to prevent infinite loops
   const prevLoadingRef = useRef<boolean>(false);
   const isMountedRef = useRef<boolean>(true);
-  const prevDataRef = useRef<string>(''); // Track processed data to avoid unnecessary updates
+  const prevDataRef = useRef<string>(""); // Track processed data to avoid unnecessary updates
 
   // Static date calculations
   const now = new Date();
@@ -37,53 +43,57 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onUserDataChange, 
   );
 
   // Cleanup on unmount
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       isMountedRef.current = false;
-    };
-  }, []);
+    },
+    []
+  );
 
   // Memoized handler for user group selection
-  const handleUserGroupsChange = useCallback(({ selected }: { selected: string[]; }) => {
+  const handleUserGroupsChange = useCallback(({ selected }: { selected: string[] }) => {
     setSelectedUserGroups(selected);
   }, []);
 
   // Process user data to calculate engagement metrics
-  const processUserEngagementData = useCallback((users: any[]) => {
-    if (!users || users.length === 0) return [];
+  const processUserEngagementData = useCallback(
+    (users: any[]) => {
+      if (!users || users.length === 0) return [];
 
-    return users.map(user => {
-      const lastLoginTimestamp = user.userCredentials?.lastLogin;
-      const lastLoginDate = lastLoginTimestamp ? new Date(lastLoginTimestamp) : null;
-      const loginPastMonth = lastLoginDate ? Math.floor(Math.random() * 30) + 1 : 0;
+      return users.map((user) => {
+        const lastLoginTimestamp = user.userCredentials?.lastLogin;
+        const lastLoginDate = lastLoginTimestamp ? new Date(lastLoginTimestamp) : null;
+        const loginPastMonth = lastLoginDate ? Math.floor(Math.random() * 30) + 1 : 0;
 
-      const loginTrend = [
-        loginPastMonth,
-        lastLoginDate ? Math.floor(Math.random() * 25) + 1 : 0,
-        lastLoginDate ? Math.floor(Math.random() * 20) + 1 : 0
-      ];
+        const loginTrend = [
+          loginPastMonth,
+          lastLoginDate ? Math.floor(Math.random() * 25) + 1 : 0,
+          lastLoginDate ? Math.floor(Math.random() * 20) + 1 : 0,
+        ];
 
-      let accessRecency: 'lastWeek' | 'lastMonth' | 'overMonth' | 'never' = 'never';
+        let accessRecency: "lastWeek" | "lastMonth" | "overMonth" | "never" = "never";
 
-      if (lastLoginDate) {
-        const lastLoginDateStr = format(lastLoginDate, "yyyy-MM-dd");
-        if (lastLoginDateStr >= oneWeekAgo) {
-          accessRecency = 'lastWeek';
-        } else if (lastLoginDateStr >= oneMonthAgo) {
-          accessRecency = 'lastMonth';
-        } else {
-          accessRecency = 'overMonth';
+        if (lastLoginDate) {
+          const lastLoginDateStr = format(lastLoginDate, "yyyy-MM-dd");
+          if (lastLoginDateStr >= oneWeekAgo) {
+            accessRecency = "lastWeek";
+          } else if (lastLoginDateStr >= oneMonthAgo) {
+            accessRecency = "lastMonth";
+          } else {
+            accessRecency = "overMonth";
+          }
         }
-      }
 
-      return {
-        ...user,
-        loginPastMonth,
-        loginTrend,
-        accessRecency
-      };
-    });
-  }, [oneMonthAgo, oneWeekAgo]);
+        return {
+          ...user,
+          loginPastMonth,
+          loginTrend,
+          accessRecency,
+        };
+      });
+    },
+    [oneMonthAgo, oneWeekAgo]
+  );
 
   // Effect for handling loading state
   useEffect(() => {
@@ -102,7 +112,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onUserDataChange, 
 
     // Only process and update when we have new data and user groups are selected
     if (!filteredUsersQuery.loading && filteredUsersQuery.data && selectedUserGroups.length > 0) {
-      const users = filteredUsersQuery.data.users.users;
+      const { users } = filteredUsersQuery.data.users;
 
       // Create a hash of the current data to compare with previous update
       const dataHash = JSON.stringify(users.map((u: any) => u.id));
@@ -113,9 +123,9 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onUserDataChange, 
         const processedUsers = processUserEngagementData(users);
         onUserDataChange(processedUsers);
       }
-    } else if (selectedUserGroups.length === 0 && prevDataRef.current !== '') {
+    } else if (selectedUserGroups.length === 0 && prevDataRef.current !== "") {
       // Clear data when no user groups are selected and we haven't already cleared
-      prevDataRef.current = '';
+      prevDataRef.current = "";
       onUserDataChange([]);
     }
   }, [
@@ -123,7 +133,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onUserDataChange, 
     filteredUsersQuery.loading,
     filteredUsersQuery.data,
     processUserEngagementData,
-    onUserDataChange
+    onUserDataChange,
   ]);
 
   // Handle any errors
@@ -147,11 +157,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onUserDataChange, 
             dataTest="user-groups-selector"
           >
             {userGroups.map((group: any) => (
-              <MultiSelectOption
-                key={group.id}
-                label={group.displayName}
-                value={group.id}
-              />
+              <MultiSelectOption key={group.id} label={group.displayName} value={group.id} />
             ))}
           </MultiSelectField>
         </div>
@@ -174,9 +180,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({ onUserDataChange, 
       </div>
 
       {selectedUserGroups.length === 0 && (
-        <div className="p-4 text-center">
-          Select a user group to view user engagement data
-        </div>
+        <div className="p-4 text-center">Select a user group to view user engagement data</div>
       )}
     </div>
   );

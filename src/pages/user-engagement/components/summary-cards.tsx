@@ -1,27 +1,31 @@
-import { Card, Text, Progress, Badge, Tooltip } from '@mantine/core';
+import { Badge, Card, Progress, Text, Tooltip } from "@mantine/core";
 import { IconCalendar, IconChartLine, IconUsers } from "@tabler/icons-react";
-import { UserEngagementData, AccessRecencySummary } from "../types/user-engagement";
+
+import type { AccessRecencySummary, UserEngagementData } from "../types/user-engagement";
 
 // Summary cards component for displaying metrics
-export const SummaryCards = ({ data }: { data: UserEngagementData[]; }) => {
+export function SummaryCards({ data }: { data: UserEngagementData[] }) {
   // Calculate access recency summary
   const accessSummary: AccessRecencySummary = {
     lastWeek: 0,
     lastMonth: 0,
     overMonth: 0,
     never: 0,
-    total: data.length
+    total: data.length,
   };
 
   // Count users by access recency
-  data.forEach(user => {
+  data.forEach((user) => {
     accessSummary[user.accessRecency]++;
   });
 
   // Calculate percentages
-  const lastWeekPercent = data.length > 0 ? Math.round((accessSummary.lastWeek / data.length) * 100) : 0;
-  const lastMonthPercent = data.length > 0 ? Math.round((accessSummary.lastMonth / data.length) * 100) : 0;
-  const overMonthPercent = data.length > 0 ? Math.round((accessSummary.overMonth / data.length) * 100) : 0;
+  const lastWeekPercent =
+    data.length > 0 ? Math.round((accessSummary.lastWeek / data.length) * 100) : 0;
+  const lastMonthPercent =
+    data.length > 0 ? Math.round((accessSummary.lastMonth / data.length) * 100) : 0;
+  const overMonthPercent =
+    data.length > 0 ? Math.round((accessSummary.overMonth / data.length) * 100) : 0;
   const neverPercent = data.length > 0 ? Math.round((accessSummary.never / data.length) * 100) : 0;
 
   // Calculate total logins in the past month
@@ -34,7 +38,7 @@ export const SummaryCards = ({ data }: { data: UserEngagementData[]; }) => {
   let mostActiveUser = { name: "None", logins: 0 };
   let leastActiveUser = { name: "None", logins: Number.MAX_SAFE_INTEGER };
 
-  data.forEach(user => {
+  data.forEach((user) => {
     if (user.loginPastMonth > mostActiveUser.logins) {
       mostActiveUser = { name: user.fullName, logins: user.loginPastMonth };
     }
@@ -53,7 +57,9 @@ export const SummaryCards = ({ data }: { data: UserEngagementData[]; }) => {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <Card withBorder shadow="sm" radius="md" p="md">
         <div className="flex justify-between items-start mb-2">
-          <Text size="lg" weight={500}>Access Recency</Text>
+          <Text size="lg" weight={500}>
+            Access Recency
+          </Text>
           <IconCalendar size={20} color="#3b82f6" />
         </div>
 
@@ -94,42 +100,62 @@ export const SummaryCards = ({ data }: { data: UserEngagementData[]; }) => {
 
       <Card withBorder shadow="sm" radius="md" p="md">
         <div className="flex justify-between items-start mb-2">
-          <Text size="lg" weight={500}>Login Frequency</Text>
+          <Text size="lg" weight={500}>
+            Login Frequency
+          </Text>
           <IconChartLine size={20} color="#3b82f6" />
         </div>
 
         <div className="space-y-3">
           <div>
-            <Text size="sm" weight={500}>Total Logins (Past Month)</Text>
-            <Text size="xl" weight={700} color="blue">{totalLogins}</Text>
+            <Text size="sm" weight={500}>
+              Total Logins (Past Month)
+            </Text>
+            <Text size="xl" weight={700} color="blue">
+              {totalLogins}
+            </Text>
           </div>
 
           <div>
-            <Text size="sm" weight={500}>Average Logins Per User</Text>
-            <Text size="xl" weight={700} color="indigo">{avgLogins}</Text>
+            <Text size="sm" weight={500}>
+              Average Logins Per User
+            </Text>
+            <Text size="xl" weight={700} color="indigo">
+              {avgLogins}
+            </Text>
           </div>
         </div>
       </Card>
 
       <Card withBorder shadow="sm" radius="md" p="md">
         <div className="flex justify-between items-start mb-2">
-          <Text size="lg" weight={500}>User Highlights</Text>
+          <Text size="lg" weight={500}>
+            User Highlights
+          </Text>
           <IconUsers size={20} color="#3b82f6" />
         </div>
 
         <div className="space-y-3">
           <div>
-            <Text size="sm" weight={500}>Most Active User</Text>
+            <Text size="sm" weight={500}>
+              Most Active User
+            </Text>
             <div className="flex justify-between">
-              <Text size="md" className="text-ellipsis overflow-hidden">{mostActiveUser.name}</Text>
+              <Text size="md" className="text-ellipsis overflow-hidden">
+                {mostActiveUser.name}
+              </Text>
               <Badge color="green">{mostActiveUser.logins} logins</Badge>
             </div>
           </div>
 
           <div>
-            <Text size="sm" weight={500}>Least Active User</Text>
+            <Text size="sm" weight={500}>
+              Least Active User
+            </Text>
             <div className="flex justify-between">
-              <Text size="md" className="text-ellipsis overflow-hidden">{leastActiveUser.name}</Text>
+              <Text size="md" className="text-ellipsis overflow-hidden">
+                {leastActiveUser.name}
+              </Text>
               <Badge color="yellow">{leastActiveUser.logins} logins</Badge>
             </div>
           </div>
@@ -137,4 +163,4 @@ export const SummaryCards = ({ data }: { data: UserEngagementData[]; }) => {
       </Card>
     </div>
   );
-};
+}

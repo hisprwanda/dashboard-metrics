@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+
 import { CircularLoader } from "@dhis2/ui";
-import { MultiSelect } from "./../../components/ui/multi-select";
+
+import { MultiSelect } from "../ui/multi-select";
 
 interface OrganizationUnitLevelsProps {
   selectedLevels: number[];
@@ -50,5 +52,4 @@ const OrganizationUnitLevels: React.FC<OrganizationUnitLevelsProps> = ({
   );
 };
 
-export default OrganizationUnitLevels
-
+export default OrganizationUnitLevels;

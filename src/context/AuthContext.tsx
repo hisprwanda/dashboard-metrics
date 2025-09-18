@@ -1,11 +1,7 @@
 // file location: src/context/AuthContext.tsx
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import type { ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+
 import { useDataQuery } from "@dhis2/app-runtime";
 
 interface AuthContextProps {
@@ -44,9 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // if (error) return <div>Error loading user authorities</div>;
 
   return (
-    <AuthContext.Provider value={{ userDatails, authorities }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ userDatails, authorities }}>{children}</AuthContext.Provider>
   );
 };
 
