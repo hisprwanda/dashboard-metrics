@@ -1,6 +1,7 @@
 // file location: src/pages/user-engagement/UserEngagementPage.tsx
 
 import React from "react";
+
 import DataTable from "./components/data-table";
 
 export default function UserEngagementPage() {

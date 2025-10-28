@@ -1,6 +1,6 @@
+import { Outlet } from "react-router-dom";
 
-import { Outlet } from 'react-router-dom';
-import HeaderNav from './HeaderNav';
+import HeaderNav from "./HeaderNav";
 
 export default function MainLayout() {
   return (

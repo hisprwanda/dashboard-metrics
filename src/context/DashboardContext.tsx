@@ -1,7 +1,8 @@
 // file location: src/context/DashboardContext.tsx
-import React, { createContext, useContext, useReducer, useMemo } from 'react';
-import { DashboardConverted } from '@/types/dashboardsType';
-import { DateValueType } from "@/types/dashboard-reportType";
+import React, { createContext, useContext, useMemo, useReducer } from "react";
+
+import type { DateValueType } from "@/types/dashboard-reportType";
+import type { DashboardConverted } from "@/types/dashboardsType";
 
 // Enhanced state interface with more descriptive naming
 interface DashboardState {
@@ -13,11 +14,11 @@ interface DashboardState {
 }
 
 type DashboardAction =
-  | { type: 'SET_DASHBOARD'; payload: DashboardConverted; }
-  | { type: 'SET_DATE_RANGE'; payload: DateValueType; }
-  | { type: 'SET_ORG_UNITS'; payload: { paths: string[]; names: string[]; }; }
-  | { type: 'SET_ORG_UNIT_LEVEL'; payload: string; } // Added action for setting org unit level
-  | { type: 'RESET'; };
+  | { type: "SET_DASHBOARD"; payload: DashboardConverted }
+  | { type: "SET_DATE_RANGE"; payload: DateValueType }
+  | { type: "SET_ORG_UNITS"; payload: { paths: string[]; names: string[] } }
+  | { type: "SET_ORG_UNIT_LEVEL"; payload: string } // Added action for setting org unit level
+  | { type: "RESET" };
 
 interface DashboardContextType {
   state: DashboardState;
@@ -42,33 +43,33 @@ const initialState: DashboardState = {
   value: getDefaultDateRange(),
   orgUnitPaths: [],
   orgUnitNames: [],
-  selectedOrgUnitLevel: '', // Initialize as empty string
+  selectedOrgUnitLevel: "", // Initialize as empty string
 };
 
 const dashboardReducer = (state: DashboardState, action: DashboardAction): DashboardState => {
   switch (action.type) {
-    case 'SET_DASHBOARD':
+    case "SET_DASHBOARD":
       return {
         ...state,
         row: action.payload,
       };
-    case 'SET_DATE_RANGE':
+    case "SET_DATE_RANGE":
       return {
         ...state,
         value: action.payload,
       };
-    case 'SET_ORG_UNITS':
+    case "SET_ORG_UNITS":
       return {
         ...state,
         orgUnitPaths: action.payload.paths,
         orgUnitNames: action.payload.names,
       };
-    case 'SET_ORG_UNIT_LEVEL':
+    case "SET_ORG_UNIT_LEVEL":
       return {
         ...state,
         selectedOrgUnitLevel: action.payload,
       };
-    case 'RESET':
+    case "RESET":
       return initialState;
     default:
       return state;
@@ -85,17 +86,13 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({ state, dispatch }), [state, dispatch]);
 
-  return (
-    <DashboardContext.Provider value={contextValue}>
-      {children}
-    </DashboardContext.Provider>
-  );
+  return <DashboardContext.Provider value={contextValue}>{children}</DashboardContext.Provider>;
 };
 
 export const useDashboard = (): DashboardContextType => {
   const context = useContext(DashboardContext);
   if (!context) {
-    throw new Error('useDashboard must be used within a DashboardProvider');
+    throw new Error("useDashboard must be used within a DashboardProvider");
   }
   return context;
 };

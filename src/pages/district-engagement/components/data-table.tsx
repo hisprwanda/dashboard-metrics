@@ -1,14 +1,14 @@
 // file location: src/pages/district-engagement/components/data-table.tsx
 
 import { useMemo, useState } from "react";
-import {
-  MantineReactTable,
-  MRT_ColumnDef,
-  useMantineReactTable,
-} from "mantine-react-table";
-import { FilterSection } from "./filter-section";
-import { DistrictEngagement } from "../../../lib/processDistrictData";
+
+import type { MRT_ColumnDef } from "mantine-react-table";
+import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
+
 import { useDashboard } from "../../../context/DashboardContext";
+import type { DistrictEngagement } from "../../../lib/processDistrictData";
+
+import { FilterSection } from "./filter-section";
 
 export default function DataTable() {
   const [tableData, setTableData] = useState<DistrictEngagement[]>([]);
@@ -48,9 +48,11 @@ export default function DataTable() {
         header: "Consistently Active",
         Cell: ({ cell }) => {
           const value = cell.getValue<boolean>();
-          return value ?
-            <span style={{ color: "green" }}>Yes</span> :
-            <span style={{ color: "red" }}>No</span>;
+          return value ? (
+            <span style={{ color: "green" }}>Yes</span>
+          ) : (
+            <span style={{ color: "red" }}>No</span>
+          );
         },
         size: 150,
       },
@@ -87,9 +89,9 @@ export default function DataTable() {
     },
     renderEmptyRowsFallback: () => (
       <div className="p-4 text-center">
-        {!state.selectedOrgUnitLevel ?
-          "Please select an organization unit level to view district data" :
-          "No data found for the selected organization unit level"}
+        {!state.selectedOrgUnitLevel
+          ? "Please select an organization unit level to view district data"
+          : "No data found for the selected organization unit level"}
       </div>
     ),
   });
@@ -97,10 +99,7 @@ export default function DataTable() {
   return (
     <div className="mb-9">
       {/* Filters */}
-      <FilterSection
-        onLoadingChange={setIsLoading}
-        onDataProcessed={handleDataProcessed}
-      />
+      <FilterSection onLoadingChange={setIsLoading} onDataProcessed={handleDataProcessed} />
 
       {/* Table */}
       <div className="bg-white shadow-sm">

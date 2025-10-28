@@ -5,3 +5,13 @@ src/locales
 build
 .env
 /draft/
+
+# drafts
+drafts/
+*.draft
+.drafts
+.draft
+draft
+/.drafts
+/.draft
+/draft

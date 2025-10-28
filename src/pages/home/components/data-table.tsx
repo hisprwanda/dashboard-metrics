@@ -1,70 +1,73 @@
 // file location: src/pages/home/components/data-table.tsx
 
-import {
-  AtedBy,
-  Dashboard,
-  DashboardConverted,
-  DashboardItem,
-  Visualization,
-} from "../../../types/dashboardsType";
-import { useDashboardsInfo } from "../../../hooks/dashboards";
+import { useCallback, useMemo } from "react";
 
-import { useMemo } from "react";
-import {
-  MantineReactTable,
-  MRT_ColumnDef,
-  useMantineReactTable,
-} from "mantine-react-table";
+import type { MRT_ColumnDef, MRT_Row, MRT_TableOptions } from "mantine-react-table";
+import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
+
+import { useDashboardsInfo } from "../../../hooks/dashboards";
 import { capitalizeFirstChar } from "../../../lib/utils";
+import type { DashboardConverted, Visualization } from "../../../types/dashboardsType";
+
 import TableActions from "./table-actions";
 
-export default function DataTable() {
-  const { loading, error, data } = useDashboardsInfo();
+const TABLE_INITIAL_STATE = {
+  sorting: [{ id: "created", desc: false }],
+  density: "xs" as const,
+  columnPinning: {
+    left: ["mrt-row-actions"],
+    right: ["type"],
+  },
+};
 
-  const transformedDashboards: DashboardConverted[] = Array.isArray(
-    data?.dashboards?.dashboards
-  )
-    ? data.dashboards.dashboards.map((dashboard) => {
+const TABLE_CONTAINER_PROPS = {
+  sx: {
+    minHeight: "300px",
+  },
+} as const;
+
+export default function DataTable() {
+  const { loading, data } = useDashboardsInfo();
+
+  const dashboards = data?.dashboards?.dashboards;
+
+  const transformedDashboards = useMemo<DashboardConverted[]>(() => {
+    if (!Array.isArray(dashboards)) {
+      return [];
+    }
+
+    return dashboards.map((dashboard) => {
       const visualizations: Visualization[] = dashboard.dashboardItems
-        .filter(
-          (item) =>
-            item.visualization &&
-            item.visualization.id &&
-            item.visualization.displayName
-        )
+        .filter((item) => item.visualization?.id && item.visualization.displayName)
         .map((item) => ({
           id: item?.visualization?.id as string,
           displayName: item?.visualization?.displayName as string,
         }));
 
       return {
-        name: dashboard.name as string,
+        name: dashboard.name,
         created: new Date(dashboard.created),
         lastUpdated: new Date(dashboard.lastUpdated),
-        createdBy: dashboard.createdBy as AtedBy,
-        lastUpdatedBy: dashboard.lastUpdatedBy as AtedBy,
-        displayName: dashboard.displayName as string,
+        createdBy: dashboard.createdBy,
+        lastUpdatedBy: dashboard.lastUpdatedBy,
+        displayName: dashboard.displayName,
         favorite: dashboard.favorite as boolean,
-        id: dashboard.id as string,
+        id: dashboard.id,
         visualizations,
       };
-    })
-    : [];
+    });
+  }, [dashboards]);
 
   const columns = useMemo<MRT_ColumnDef<DashboardConverted>[]>(
     () => [
       {
-        accessorFn: (row) => {
-          return row?.name;
-        },
+        accessorFn: (row) => row?.name,
         header: "Name",
         size: 40,
       },
 
       {
-        accessorFn: (row) => {
-          return capitalizeFirstChar(row?.favorite?.toString());
-        },
+        accessorFn: (row) => capitalizeFirstChar(row?.favorite?.toString()),
         header: "Isfavorite",
         size: 40,
       },
@@ -86,9 +89,7 @@ export default function DataTable() {
       },
 
       {
-        accessorFn: (row) => {
-          return row?.createdBy?.displayName;
-        },
+        accessorFn: (row) => row?.createdBy?.displayName,
         header: "createdBy",
         size: 40,
       },
@@ -96,36 +97,31 @@ export default function DataTable() {
     []
   );
 
-  const table = useMantineReactTable({
-    columns,
-    data: transformedDashboards,
-    enableFullScreenToggle: false,
-    enableDensityToggle: false,
-    initialState: {
-      sorting: [{ id: "Instance", desc: false }],
-      density: "xs",
-      columnPinning: {
-        left: ["mrt-row-actions"],
-        right: ["type"],
-      },
-    },
-    mantineTableContainerProps: {
-      sx: {
-        minHeight: "300px",
-      },
-    },
-    enableRowActions: true,
-    renderRowActions: ({ row }) => (
+  const renderRowActions = useCallback(
+    ({ row }: { row: MRT_Row<DashboardConverted> }) => (
       <TableActions row={row.original} data={transformedDashboards} />
     ),
-    state: {
-      isLoading: loading,
-    },
-  });
-
-  return (
-    <>
-      <MantineReactTable table={table} />
-    </>
+    [transformedDashboards]
   );
+
+  const tableOptions = useMemo<MRT_TableOptions<DashboardConverted>>(
+    () => ({
+      columns,
+      data: transformedDashboards,
+      enableFullScreenToggle: false,
+      enableDensityToggle: false,
+      initialState: TABLE_INITIAL_STATE,
+      mantineTableContainerProps: TABLE_CONTAINER_PROPS,
+      enableRowActions: true,
+      renderRowActions,
+      state: {
+        isLoading: loading,
+      },
+    }),
+    [columns, transformedDashboards, loading, renderRowActions]
+  );
+
+  const table = useMantineReactTable(tableOptions);
+
+  return <MantineReactTable table={table} />;
 }

@@ -1,23 +1,26 @@
 // components/SingleSelectionOrgUnitTree.tsx
-import React, { useState, useMemo } from 'react';
-import { InputField, OrganisationUnitTree, CircularLoader } from '@dhis2/ui';
-import { useSingleOrgUnitData } from '../../services/fetchOrgunitData';
-import { OrgUnit } from '../../types/organisationUnit';
-import { filterSingleOrgUnits, handleOrgSingleUnitSelection } from '../../lib/helper';
+import React, { useMemo, useState } from "react";
 
-const SingleSelectionOrgUnitTree = () => {
+import { CircularLoader, InputField, OrganisationUnitTree } from "@dhis2/ui";
+
+import { filterSingleOrgUnits, handleOrgSingleUnitSelection } from "../../lib/helper";
+import { useSingleOrgUnitData } from "../../services/fetchOrgunitData";
+import type { OrgUnit } from "../../types/organisationUnit";
+
+function SingleSelectionOrgUnitTree() {
   const { loading, error, data } = useSingleOrgUnitData();
   const orgUnits = data?.orgUnits?.organisationUnits || [];
   const currentUserOrgUnit = data?.currentUser?.organisationUnits?.[0];
 
   // State for selected org unit and search term
   const [selectedOrgUnit, setSelectedOrgUnit] = useState<OrgUnit | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Filter organization units based on search term
-  const filteredOrgUnitPaths = useMemo(() => {
-    return filterSingleOrgUnits(orgUnits, searchTerm);
-  }, [orgUnits, searchTerm]);
+  const filteredOrgUnitPaths = useMemo(
+    () => filterSingleOrgUnits(orgUnits, searchTerm),
+    [orgUnits, searchTerm]
+  );
 
   const handleOrgUnitClick = (event: any) => {
     const selectedUnit = handleOrgSingleUnitSelection(event); // Handle business logic here
@@ -25,7 +28,7 @@ const SingleSelectionOrgUnitTree = () => {
   };
 
   const handleSearchChange = (value: string | undefined) => {
-    setSearchTerm(value || ''); // Safely handle search term updates
+    setSearchTerm(value || ""); // Safely handle search term updates
   };
 
   if (loading) {
@@ -58,7 +61,7 @@ const SingleSelectionOrgUnitTree = () => {
             roots={[currentUserOrgUnit.id]}
             selected={selectedOrgUnit ? [selectedOrgUnit.path] : []}
             onChange={handleOrgUnitClick}
-            singleSelection={true}
+            singleSelection
             renderNodeLabel={({ node }) => (
               <span className="text-blue-600 font-medium">{node.displayName}</span>
             )}
@@ -76,6 +79,6 @@ const SingleSelectionOrgUnitTree = () => {
       )}
     </div>
   );
-};
+}
 
 export default SingleSelectionOrgUnitTree;

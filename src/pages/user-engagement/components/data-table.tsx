@@ -1,27 +1,30 @@
 // file location: src/pages/user-engagement/components/data-table.tsx
 
 import { useMemo, useState } from "react";
-import {
-  MantineReactTable,
-  MRT_ColumnDef,
-  useMantineReactTable,
-} from "mantine-react-table";
-import { format, differenceInDays } from "date-fns";
-import { Badge, Tooltip } from '@mantine/core';
+
+import { Badge, Tooltip } from "@mantine/core";
+import { differenceInDays, format } from "date-fns";
+import type { MRT_ColumnDef } from "mantine-react-table";
+import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
+
+import type { UserEngagementData } from "../types/user-engagement";
+
 import { FilterSection } from "./filter-section";
 import { SummaryCards } from "./summary-cards";
-import { UserEngagementData } from "../types/user-engagement";
 
 // Map DHIS2 user data to our table format
 const mapUserToTableData = (user: any): UserEngagementData => {
+  // Ensure user is not null/undefined
+  if (!user) {
+    throw new Error("User data cannot be null or undefined");
+  }
+
   // Extract last login date (if any)
   const lastLoginTimestamp = user.userCredentials?.lastLogin;
   const lastLoginDate = lastLoginTimestamp ? new Date(lastLoginTimestamp) : null;
 
   // Calculate days since last login
-  const daysSinceLastLogin = lastLoginDate
-    ? differenceInDays(new Date(), lastLoginDate)
-    : null;
+  const daysSinceLastLogin = lastLoginDate ? differenceInDays(new Date(), lastLoginDate) : null;
 
   // Extract role information
   const roles = user.userCredentials?.userRoles || [];
@@ -30,7 +33,7 @@ const mapUserToTableData = (user: any): UserEngagementData => {
   // Retrieve login metrics from the processed data
   const loginPastMonth = user.loginPastMonth || 0;
   const loginTrend = user.loginTrend || [0, 0, 0];
-  const accessRecency = user.accessRecency || 'never';
+  const accessRecency = user.accessRecency || "never";
 
   // Create email if not available
   const email = user.email || `${user.userCredentials?.username}@example.org`;
@@ -46,14 +49,14 @@ const mapUserToTableData = (user: any): UserEngagementData => {
     lastLogin: lastLoginDate,
     daysSinceLastLogin,
     accessRecency,
-    userGroups: user.userGroups || [],
-    organisationUnits: user.organisationUnits || []
+    userGroups: Array.isArray(user.userGroups) ? user.userGroups : [],
+    organisationUnits: Array.isArray(user.organisationUnits) ? user.organisationUnits : [],
   };
 };
 
 // Component to display login trend visually
-const LoginTrendDisplay = ({ trend }: { trend: number[]; }) => {
-  const normalizedTrend = trend.map(val => Math.min(val, 30)); // Cap at 30 for display
+function LoginTrendDisplay({ trend }: { trend: number[] }) {
+  const normalizedTrend = trend.map((val) => Math.min(val, 30)); // Cap at 30 for display
   const maxValue = Math.max(...normalizedTrend, 5); // Ensure minimum scale
 
   return (
@@ -75,30 +78,30 @@ const LoginTrendDisplay = ({ trend }: { trend: number[]; }) => {
           <Tooltip key={index} label={tooltipLabel}>
             <div
               className={`w-5 ${getColorClass(value)} rounded-sm`}
-              style={{ height: `${height}%`, minHeight: '4px' }}
+              style={{ height: `${height}%`, minHeight: "4px" }}
             />
           </Tooltip>
         );
       })}
     </div>
   );
-};
+}
 
 // Component to display access recency status
-const AccessRecencyBadge = ({ recency }: { recency: string; }) => {
+function AccessRecencyBadge({ recency }: { recency: string }) {
   switch (recency) {
-    case 'lastWeek':
+    case "lastWeek":
       return <Badge color="green">Last 7 days</Badge>;
-    case 'lastMonth':
+    case "lastMonth":
       return <Badge color="blue">Last 30 days</Badge>;
-    case 'overMonth':
+    case "overMonth":
       return <Badge color="orange">Over 30 days</Badge>;
-    case 'never':
+    case "never":
       return <Badge color="red">Never</Badge>;
     default:
       return <Badge color="gray">Unknown</Badge>;
   }
-};
+}
 
 export default function DataTable() {
   // State to hold the filtered user data
@@ -107,7 +110,7 @@ export default function DataTable() {
 
   // Transform API data into table format
   const tableData = useMemo<UserEngagementData[]>(
-    () => userData.map(mapUserToTableData),
+    () => userData.filter((user) => user != null).map(mapUserToTableData),
     [userData]
   );
 
@@ -157,9 +160,7 @@ export default function DataTable() {
         Cell: ({ cell }) => {
           const value = cell.getValue<number>();
           return value > 0 ? (
-            <Badge color={value > 15 ? "green" : value > 5 ? "blue" : "gray"}>
-              {value} logins
-            </Badge>
+            <Badge color={value > 15 ? "green" : value > 5 ? "blue" : "gray"}>{value} logins</Badge>
           ) : (
             <Badge color="red">0 logins</Badge>
           );
@@ -185,15 +186,15 @@ export default function DataTable() {
         },
         filterVariant: "select",
         filterSelectOptions: [
-          { text: 'Last 7 days', value: 'lastWeek' },
-          { text: 'Last 30 days', value: 'lastMonth' },
-          { text: 'Over 30 days', value: 'overMonth' },
-          { text: 'Never', value: 'never' },
+          { text: "Last 7 days", value: "lastWeek" },
+          { text: "Last 30 days", value: "lastMonth" },
+          { text: "Over 30 days", value: "overMonth" },
+          { text: "Never", value: "never" },
         ],
         size: 140,
       },
       {
-        accessorFn: (row) => row.organisationUnits.map(ou => ou.displayName).join(", "),
+        accessorFn: (row) => row.organisationUnits?.map((ou) => ou.displayName).join(", ") || "N/A",
         id: "organisationUnits",
         header: "Organisation Units",
         Cell: ({ cell }) => {
@@ -225,13 +226,13 @@ export default function DataTable() {
       },
     },
     state: {
-      isLoading: isLoading,
+      isLoading,
     },
     renderEmptyRowsFallback: () => (
       <div className="p-4 text-center">
-        {userData.length === 0 ?
-          "Select a user group to view user engagement data" :
-          "No matching records found"}
+        {userData.length === 0
+          ? "Select a user group to view user engagement data"
+          : "No matching records found"}
       </div>
     ),
   });

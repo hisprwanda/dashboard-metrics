@@ -1,9 +1,10 @@
 "use client";
 
-import type { DateValueType } from "./../../../types/dashboard-reportType";
-import { useRef, useEffect } from "react";
-import Datepicker from "react-tailwindcss-datepicker";
-import { useDashboard } from "./../../../context/DashboardContext";
+import { useEffect, useRef } from "react";
+import { CalendarDatePicker } from "../../../components/calendar-date-picker";
+
+import { useDashboard } from "../../../context/DashboardContext";
+import type { DateValueType } from "../../../types/dashboard-reportType";
 
 interface DatePickerComponentProps {
   value?: DateValueType;
@@ -17,12 +18,35 @@ export default function DatePicker({ value, onChange, maxDate }: DatePickerCompo
   // Use ref to track previous value to prevent unnecessary re-renders
   const prevValueRef = useRef<DateValueType | null>(null);
 
-  // Handle date change with debounce to prevent infinite loops
-  const handleDateChange = (newValue: DateValueType | null) => {
+  // Convert DateValueType to DateRange format for CalendarDatePicker
+  const convertToDateRange = (dateValue: DateValueType | null) => {
+    if (!dateValue || (!dateValue.startDate && !dateValue.endDate)) {
+      const today = new Date();
+      return { from: today, to: today };
+    }
+
+    return {
+      from: dateValue.startDate || new Date(),
+      to: dateValue.endDate || dateValue.startDate || new Date(),
+    };
+  };
+
+  // Convert DateRange format back to DateValueType
+  const convertToDateValueType = (dateRange: { from: Date; to: Date }): DateValueType => {
+    return {
+      startDate: dateRange.from,
+      endDate: dateRange.to,
+    };
+  };
+
+  // Handle date change from CalendarDatePicker
+  const handleDateSelect = (dateRange: { from: Date; to: Date }) => {
+    const newValue = convertToDateValueType(dateRange);
+
     // Skip if the value hasn't actually changed
     if (
-      prevValueRef.current?.startDate?.getTime() === newValue?.startDate?.getTime() &&
-      prevValueRef.current?.endDate?.getTime() === newValue?.endDate?.getTime()
+      prevValueRef.current?.startDate?.getTime() === newValue.startDate?.getTime() &&
+      prevValueRef.current?.endDate?.getTime() === newValue.endDate?.getTime()
     ) {
       return;
     }
@@ -30,22 +54,12 @@ export default function DatePicker({ value, onChange, maxDate }: DatePickerCompo
     // Update the ref
     prevValueRef.current = newValue;
 
-    // Ensure we're passing a valid value
-    if (newValue && (newValue.startDate || newValue.endDate)) {
-      // Update the global context
-      dispatch({ type: 'SET_DATE_RANGE', payload: newValue });
+    // Update the global context
+    dispatch({ type: "SET_DATE_RANGE", payload: newValue });
 
-      // Also call the onChange prop if provided (for local state management)
-      if (onChange) {
-        onChange(newValue);
-      }
-    } else {
-      const emptyValue = { startDate: null, endDate: null };
-      dispatch({ type: 'SET_DATE_RANGE', payload: emptyValue });
-
-      if (onChange) {
-        onChange(emptyValue);
-      }
+    // Also call the onChange prop if provided (for local state management)
+    if (onChange) {
+      onChange(newValue);
     }
   };
 
@@ -57,16 +71,17 @@ export default function DatePicker({ value, onChange, maxDate }: DatePickerCompo
     prevValueRef.current = displayValue;
   }, [displayValue]);
 
+  // Convert the display value to the format expected by CalendarDatePicker
+  const dateRange = convertToDateRange(displayValue);
+
   return (
-    <Datepicker
-      displayFormat="DD-MM-YYYY"
-      separator="to"
-      primaryColor="sky"
-      inputClassName="min-w-[300px] rounded-sm py-1 text-sm border border-sky-500 text-sky-500 p-2 focus:ring-0 focus:outline-none"
-      maxDate={maxDate}
-      value={displayValue}
-      onChange={handleDateChange}
-      showShortcuts
+    <CalendarDatePicker
+      date={dateRange}
+      onDateSelect={handleDateSelect}
+      numberOfMonths={2}
+      closeOnSelect={false}
+      variant="outline"
+      className="w-auto"
     />
   );
 }

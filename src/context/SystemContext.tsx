@@ -1,5 +1,7 @@
 import React, { createContext, useContext } from "react";
+
 import { CircularLoader } from "@dhis2/ui";
+
 import { useInitializeSystem } from "../services/systemIdentification";
 
 interface SystemContextProps {
@@ -10,7 +12,7 @@ interface SystemContextProps {
 
 const SystemContext = createContext<SystemContextProps | undefined>(undefined);
 
-export const SystemProvider: React.FC<{ children: React.ReactNode; }> = ({ children }) => {
+export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { sqlViewUid, orgUnitSqlViewUid, initialized, loading, error } = useInitializeSystem();
 
   if (loading) {

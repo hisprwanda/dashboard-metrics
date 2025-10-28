@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { InputField, OrganisationUnitTree, Button, CircularLoader, NoticeBox } from "@dhis2/ui";
+import { useEffect, useState } from "react";
+
 import { useDataQuery } from "@dhis2/app-runtime";
+import { Button, CircularLoader, InputField, NoticeBox, OrganisationUnitTree } from "@dhis2/ui";
+
 import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
-import OrganizationUnitLevels from "./OrganizationUnitLevels";
+
 import OrganizationUnitGroups from "./OrganizationUnitGroups";
+import OrganizationUnitLevels from "./OrganizationUnitLevels";
 
 interface OrganisationUnitMultiSelectProps {
   selectedOrgUnits?: string[];
@@ -15,21 +18,27 @@ interface OrganisationUnitMultiSelectProps {
   loadError?: any;
 }
 
-const OrganisationUnitMultiSelect = ({
+function OrganisationUnitMultiSelect({
   selectedOrgUnits: initialSelectedOrgUnits = [],
   onSubmit,
   preloadedData,
   isLoading = false,
   loadError = null,
-}: OrganisationUnitMultiSelectProps) => {
+}: OrganisationUnitMultiSelectProps) {
   // Use the preloaded data
   const orgUnits = preloadedData?.orgUnits?.organisationUnits || [];
   const orgUnitLevels = preloadedData?.orgUnitLevels?.organisationUnitLevels || [];
   const orgUnitGroups = preloadedData?.orgUnitGroups?.organisationUnitGroups || [];
   const currentUserOrgUnit = preloadedData?.currentUser?.organisationUnits?.[0];
 
-  const { selectedOrgUnits, searchTerm, setSearchTerm, handleOrgUnitClick, handleDeselectAll, setSelectedOrgUnits } =
-    useOrgUnitSelection(orgUnits);
+  const {
+    selectedOrgUnits,
+    searchTerm,
+    setSearchTerm,
+    handleOrgUnitClick,
+    handleDeselectAll,
+    setSelectedOrgUnits,
+  } = useOrgUnitSelection(orgUnits);
 
   // Get names of selected org units
   const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
@@ -42,7 +51,7 @@ const OrganisationUnitMultiSelect = ({
   const searchQuery = {
     orgUnitsSearch: {
       resource: "organisationUnits",
-      params: ({ searchText }: { searchText: string; }) => ({
+      params: ({ searchText }: { searchText: string }) => ({
         fields: "id,displayName,path,level,parent[id,path]",
         filter: `displayName:ilike:${searchText}`,
         paging: false,
@@ -61,7 +70,7 @@ const OrganisationUnitMultiSelect = ({
   const levelQuery = {
     orgUnitsByLevel: {
       resource: "organisationUnits",
-      params: ({ level }: { level: number; }) => ({
+      params: ({ level }: { level: number }) => ({
         fields: "id,displayName,path,level",
         filter: `level:eq:${level}`,
         paging: false,
@@ -80,7 +89,7 @@ const OrganisationUnitMultiSelect = ({
   const groupQuery = {
     orgUnitsByGroup: {
       resource: "organisationUnits",
-      params: ({ groupId }: { groupId: string; }) => ({
+      params: ({ groupId }: { groupId: string }) => ({
         fields: "id,displayName,path,level",
         filter: `organisationUnitGroups.id:eq:${groupId}`,
         paging: false,
@@ -238,7 +247,9 @@ const OrganisationUnitMultiSelect = ({
           error={searchError?.message}
         />
         {searchTerm.length > 0 && searchTerm.length < 3 && (
-          <p className="text-sm text-orange-500 mt-1">Please type at least 3 characters to search</p>
+          <p className="text-sm text-orange-500 mt-1">
+            Please type at least 3 characters to search
+          </p>
         )}
         {isSearching && searchResultUnits.length === 0 && !searchLoading && (
           <NoticeBox title="No results found" warning className="mt-2">
@@ -246,7 +257,9 @@ const OrganisationUnitMultiSelect = ({
           </NoticeBox>
         )}
         {isSearching && searchResultUnits.length > 0 && !searchLoading && (
-          <p className="text-sm text-green-600 mt-1">Found {searchResultUnits.length} matching organization unit(s)</p>
+          <p className="text-sm text-green-600 mt-1">
+            Found {searchResultUnits.length} matching organization unit(s)
+          </p>
         )}
       </div>
 
@@ -261,7 +274,9 @@ const OrganisationUnitMultiSelect = ({
               selected={selectedOrgUnits}
               onChange={({ path }) => handleOrgUnitClick(path)}
               singleSelection={false}
-              renderNodeLabel={({ node }) => <span className="text-green-600 font-medium">{node.displayName}</span>}
+              renderNodeLabel={({ node }) => (
+                <span className="text-green-600 font-medium">{node.displayName}</span>
+              )}
               initiallyExpanded={searchResultUnits.map((unit) => unit.path)}
               disableSelection={false}
             />
@@ -275,7 +290,9 @@ const OrganisationUnitMultiSelect = ({
             selected={selectedOrgUnits}
             onChange={({ path }) => handleOrgUnitClick(path)}
             singleSelection={false}
-            renderNodeLabel={({ node }) => <span className="text-blue-600 font-medium">{node.displayName}</span>}
+            renderNodeLabel={({ node }) => (
+              <span className="text-blue-600 font-medium">{node.displayName}</span>
+            )}
             disableSelection={false}
           />
         )}
@@ -354,6 +371,6 @@ const OrganisationUnitMultiSelect = ({
       </div>
     </div>
   );
-};
+}
 
 export default OrganisationUnitMultiSelect;
