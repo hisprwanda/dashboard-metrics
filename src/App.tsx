@@ -31,8 +31,8 @@ const App: React.FC = () => (
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
-            <Route path="user-engagement" element={<UserEngagementPage />} />
             <Route path="district-engagement" element={<DistrictEngagementPage />} />
+            <Route path="user-engagement" element={<UserEngagementPage />} />
             <Route path="inactivity-tracking" element={<InactivityTrackingPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
