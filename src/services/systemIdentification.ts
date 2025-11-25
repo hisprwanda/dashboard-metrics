@@ -17,7 +17,7 @@ export interface DataStoreItem {
   uid: string;
   isSqlViewCreated: boolean;
   isSqlViewExecuted: boolean;
-  [key: string]: any;
+  [key: string]: string | boolean | number | undefined;
 }
 
 interface DHIS2Error {
@@ -85,6 +85,9 @@ const createSqlViewsMutation = {
 const dataStoreMutation = {
   resource: "dataStore/dashboardMetrics/appID",
   type: "create",
+  params: {
+    encrypt: "true",
+  },
   data: (data: DataStoreItem) => ({
     ...data,
   }),
@@ -116,7 +119,7 @@ export const useSqlViewService = () => {
     });
   };
 
-  const useSqlViewQuery = (viewUid: string, params: Record<string, any> = {}) => {
+  const useSqlViewQuery = (viewUid: string, params: Record<string, unknown> = {}) => {
     const memoizedQuery = useMemo(
       () => ({
         sqlViewData: {
@@ -145,11 +148,17 @@ export const useSqlViewService = () => {
 const deleteDataStoreMutation = {
   resource: "dataStore/dashboardMetrics/appID",
   type: "delete",
+  params: {
+    encrypt: "true",
+  },
 };
 
 const orgUnitDataStoreMutation = {
   resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
   type: "create",
+  params: {
+    encrypt: "true",
+  },
   data: (data: DataStoreItem) => ({
     ...data,
   }),
@@ -158,6 +167,9 @@ const orgUnitDataStoreMutation = {
 const deleteOrgUnitDataStoreMutation = {
   resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
   type: "delete",
+  params: {
+    encrypt: "true",
+  },
 };
 
 export const useDataStoreService = () => {
@@ -165,6 +177,9 @@ export const useDataStoreService = () => {
     const query = {
       datastore: {
         resource: "dataStore/dashboardMetrics/appID",
+        params: {
+          encrypt: "true",
+        },
       },
     };
     return useDataQuery(query);
@@ -174,6 +189,9 @@ export const useDataStoreService = () => {
     const query = {
       datastore: {
         resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
+        params: {
+          encrypt: "true",
+        },
       },
     };
     return useDataQuery(query);
@@ -193,7 +211,7 @@ export const useDataStoreService = () => {
     { loading: deleteOrgUnitLoading, error: deleteOrgUnitError },
   ] = useDataMutation(deleteOrgUnitDataStoreMutation);
 
-  const deleteDataStoreItem = async (): Promise<any> => {
+  const deleteDataStoreItem = async (): Promise<unknown> => {
     try {
       return await deleteDataStoreItemMutation({});
     } catch (error) {
@@ -202,7 +220,7 @@ export const useDataStoreService = () => {
     }
   };
 
-  const deleteOrgUnitDataStoreItem = async (): Promise<any> => {
+  const deleteOrgUnitDataStoreItem = async (): Promise<unknown> => {
     try {
       return await deleteOrgUnitDataStoreItemMutation({});
     } catch (error) {
@@ -211,7 +229,7 @@ export const useDataStoreService = () => {
     }
   };
 
-  const saveDataStoreItem = async (key: string, data: DataStoreItem): Promise<any> => {
+  const saveDataStoreItem = async (key: string, data: DataStoreItem): Promise<unknown> => {
     try {
       return await saveDataStoreItemMutation(data);
     } catch (error) {
@@ -220,7 +238,7 @@ export const useDataStoreService = () => {
     }
   };
 
-  const saveOrgUnitDataStoreItem = async (key: string, data: DataStoreItem): Promise<any> => {
+  const saveOrgUnitDataStoreItem = async (key: string, data: DataStoreItem): Promise<unknown> => {
     try {
       return await saveOrgUnitDataStoreItemMutation(data);
     } catch (error) {
@@ -334,11 +352,11 @@ export const useInitializeSystem = () => {
 
     // Helper function to initialize a SQL view
     const initializeSqlView = async (
-      dataStoreData: any,
+      dataStoreData: { uid?: string; [key: string]: unknown } | undefined,
       params: SqlViewParams,
-      checkFunction: Function,
-      saveFunction: Function,
-      deleteFunction: Function,
+      checkFunction: () => Promise<unknown>,
+      saveFunction: (key: string, data: DataStoreItem) => Promise<unknown>,
+      deleteFunction: () => Promise<unknown>,
       key: string
     ): Promise<string | null> => {
       // Step 1: Check if view exists in datastore

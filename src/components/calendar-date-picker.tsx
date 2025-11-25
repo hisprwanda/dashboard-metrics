@@ -70,6 +70,7 @@ interface CalendarDatePickerProps
   closeOnSelect?: boolean;
   numberOfMonths?: 1 | 2;
   yearsRange?: number;
+  minYear?: number;
   onDateSelect: (range: { from: Date; to: Date }) => void;
 }
 
@@ -81,7 +82,8 @@ export const CalendarDatePicker = React.forwardRef<HTMLButtonElement, CalendarDa
       date,
       closeOnSelect = false,
       numberOfMonths = 2,
-      yearsRange = 10,
+      yearsRange = 50,
+      minYear = 2000,
       onDateSelect,
       variant,
       ...props
@@ -231,11 +233,9 @@ export const CalendarDatePicker = React.forwardRef<HTMLButtonElement, CalendarDa
     };
 
     const today = new Date();
+    const currentYear = today.getFullYear();
 
-    const years = Array.from(
-      { length: yearsRange + 1 },
-      (_, i) => today.getFullYear() - yearsRange / 2 + i
-    );
+    const years = Array.from({ length: currentYear - minYear + 2 }, (_, i) => minYear + i);
 
     const dateRanges = [
       { label: "Today", start: today, end: today },

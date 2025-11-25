@@ -200,15 +200,17 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   }, [applyLoginStatusFilter, fetchedUsers]);
 
   // Handle user group selection change
-  const handleUserGroupsChange = ({ selected }: { selected: string[] }) => {
+  const handleUserGroupsChange = useCallback(({ selected }: { selected: string[] }) => {
+    // Reset fetched users when selection changes to force data update
+    setFetchedUsers([]);
     setSelectedUserGroups(selected);
-  };
+  }, []);
 
   // Handle login status selection change
-  const handleLoginStatusChange = ({ selected }: { selected: string[] }) => {
+  const handleLoginStatusChange = useCallback(({ selected }: { selected: string[] }) => {
     const validSelections = selected.filter(isLoginStatusValue);
     setSelectedLoginStatus(validSelections);
-  };
+  }, []);
 
   // Handle any errors
   const hasError = filteredUsersQuery.error && selectedUserGroups.length > 0;

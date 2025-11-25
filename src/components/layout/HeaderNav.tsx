@@ -9,14 +9,14 @@ export default function HeaderNav() {
   const navLinks = [
     { name: "Dashboard Usage", path: "/", description: "Metrics on dashboard usage patterns" },
     {
-      name: "User Engagement",
-      path: "/user-engagement",
-      description: "Track user activity and engagement metrics",
-    },
-    {
       name: "District Engagement",
       path: "/district-engagement",
       description: "Monitor engagement across districts",
+    },
+    {
+      name: "User Engagement",
+      path: "/user-engagement",
+      description: "Track user activity and engagement metrics",
     },
     {
       name: "Inactivity Tracking",

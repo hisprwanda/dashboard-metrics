@@ -52,6 +52,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
   // Memoized handler for user group selection
   const handleUserGroupsChange = useCallback(({ selected }: { selected: string[] }) => {
+    // Reset the data hash when selection changes to force data update
+    prevDataRef.current = "";
     setSelectedUserGroups(selected);
   }, []);
 
