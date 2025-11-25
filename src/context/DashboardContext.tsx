@@ -23,6 +23,7 @@ type DashboardAction =
 interface DashboardContextType {
   state: DashboardState;
   dispatch: React.Dispatch<DashboardAction>;
+  resetContext: () => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -83,8 +84,16 @@ interface DashboardProviderProps {
 export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(dashboardReducer, initialState);
 
+  // Function to reset context to initial state
+  const resetContext = React.useCallback(() => {
+    dispatch({ type: "RESET" });
+  }, []);
+
   // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({ state, dispatch }), [state, dispatch]);
+  const contextValue = useMemo(
+    () => ({ state, dispatch, resetContext }),
+    [state, dispatch, resetContext]
+  );
 
   return <DashboardContext.Provider value={contextValue}>{children}</DashboardContext.Provider>;
 };

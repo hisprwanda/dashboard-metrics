@@ -21,46 +21,83 @@ interface FilterSectionProps {
 export const FilterSection: React.FC<FilterSectionProps> = ({
   onLoadingChange,
   onDataProcessed,
-}) => {
+}): React.JSX.Element => {
   const { state, dispatch } = useDashboard();
+  const { orgUnitSqlViewUid, initialized } = useSystem();
+
   const {
     loading: orgUnitsLoading,
     error: orgUnitsError,
     data: orgUnitsData,
     fetchOrganisationUnitsByLevel,
   } = useOrganisationUnitsByLevel();
-  const { orgUnitSqlViewUid } = useSystem();
+
   const [processingData, setProcessingData] = useState(false);
-  const [orgUnitPaths, setOrgUnitPaths] = useState<string[]>([]);
-  const [districtData, setDistrictData] = useState<any[]>([]);
+  const [orgUnitIds, setOrgUnitIds] = useState<string[]>([]);
+  const [processedOrgUnits, setProcessedOrgUnits] = useState<
+    Array<{
+      uid: string;
+      name: string;
+      path: string;
+    }>
+  >([]);
+  const [hasProcessedData, setHasProcessedData] = useState(false);
 
   // Fetch organization unit levels - the only data fetched on initial load
   const orgUnitLevelsQuery = useOrganisationUnitLevels();
 
-  // Filter users by the selected organization unit paths
-  const usersQuery = useFilteredUsers([], orgUnitPaths, [], [], false);
+  // Filter users by the selected organization unit IDs - only when we have IDs
+  const usersQuery = useFilteredUsers([], [], orgUnitIds, [], orgUnitIds.length === 0);
 
-  const orgUnitLevels =
+  interface OrganisationUnitLevel {
+    id: string;
+    displayName: string;
+    level: number;
+  }
+
+  const orgUnitLevels: OrganisationUnitLevel[] =
     orgUnitLevelsQuery.data?.organisationUnitLevels?.organisationUnitLevels || [];
 
   // Process data when both org units and users are loaded
   useEffect(() => {
-    if (orgUnitPaths.length > 0 && usersQuery.data && !usersQuery.loading && !usersQuery.error) {
+    if (
+      processedOrgUnits.length > 0 &&
+      usersQuery.data &&
+      !usersQuery.loading &&
+      !usersQuery.error &&
+      !hasProcessedData
+    ) {
       setProcessingData(true);
       try {
-        // Use the stored district data
-        const orgUnitData = districtData;
+        // Type guard for user data
+        const isValidUserData = (data: unknown): data is { users: { users: unknown[] } } => {
+          return (
+            typeof data === "object" &&
+            data !== null &&
+            "users" in data &&
+            typeof (data as any).users === "object" &&
+            (data as any).users !== null &&
+            "users" in (data as any).users &&
+            Array.isArray((data as any).users.users)
+          );
+        };
 
-        // Extract user data
-        const userData = usersQuery.data?.users?.users || [];
+        if (!isValidUserData(usersQuery.data)) {
+          throw new Error("Invalid user data format");
+        }
 
-        // Process the data
-        const processedData = processDistrictData(orgUnitData, userData);
+        // Extract user data with proper typing
+        const userData = usersQuery.data.users.users;
+
+        // Process the data using our processed org units
+        const processedData = processDistrictData(processedOrgUnits, userData);
 
         // Pass the processed data up to the parent component
         if (onDataProcessed) {
           onDataProcessed(processedData);
         }
+
+        setHasProcessedData(true);
       } catch (err) {
         console.error("Error processing data:", err);
       } finally {
@@ -71,11 +108,11 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       }
     }
   }, [
-    orgUnitPaths,
+    processedOrgUnits,
     usersQuery.data,
     usersQuery.loading,
     usersQuery.error,
-    districtData,
+    hasProcessedData,
     onDataProcessed,
     onLoadingChange,
   ]);
@@ -92,44 +129,124 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
     setProcessingData(true);
 
-    // Clear previous paths and data
-    setOrgUnitPaths([]);
-    setDistrictData([]);
+    // Clear previous data
+    setOrgUnitIds([]);
+    setProcessedOrgUnits([]);
+    setHasProcessedData(false);
+
+    // Check if system is properly initialized before attempting to fetch data
+    if (!initialized) {
+      console.error("System not initialized yet");
+      setProcessingData(false);
+      if (onLoadingChange) {
+        onLoadingChange(false);
+      }
+      return;
+    }
+
+    if (!orgUnitSqlViewUid) {
+      console.error("orgUnitSqlViewUid is not available in SystemContext");
+      setProcessingData(false);
+      if (onLoadingChange) {
+        onLoadingChange(false);
+      }
+      return;
+    }
 
     // Fetch organization units by level
-    if (selected && orgUnitSqlViewUid) {
-      try {
-        const orgUnitsResult = await fetchOrganisationUnitsByLevel(selected, orgUnitSqlViewUid);
+    try {
+      const orgUnitsResult = await fetchOrganisationUnitsByLevel(selected, orgUnitSqlViewUid);
 
-        if (orgUnitsResult?.sqlViewData?.listGrid?.rows) {
-          // Store the rows data directly
-          const { rows } = orgUnitsResult.sqlViewData.listGrid;
-          setDistrictData(rows);
+      if (orgUnitsResult?.sqlViewData?.listGrid?.rows) {
+        // Store the rows data directly
+        const { rows } = orgUnitsResult.sqlViewData.listGrid;
 
-          // Extract paths from the result (path is at index 4)
-          const paths = rows.map((row: any[]) => row[4]);
+        // Auto-detect column indices using headers and data patterns for cross-environment compatibility
+        const headers = orgUnitsResult.sqlViewData.listGrid.headers;
 
-          // Set the paths to trigger the user query
-          setOrgUnitPaths(paths);
-        } else {
-          console.error("No rows found in the SQL view result");
-          setProcessingData(false);
-          if (onLoadingChange) {
-            onLoadingChange(false);
+        // Initialize indices with fallback values
+        let uidIndex = -1;
+        let nameIndex = -1;
+        let pathIndex = -1;
+
+        // First, try to detect indices using header information
+        headers.forEach((header, index) => {
+          const columnName = header.name?.toLowerCase() || header.column?.toLowerCase() || "";
+
+          if (columnName.includes("uid") && !columnName.includes("organisationunitid")) {
+            uidIndex = index;
+          } else if (columnName.includes("name") && !columnName.includes("organisationunitid")) {
+            nameIndex = index;
+          } else if (columnName.includes("path")) {
+            pathIndex = index;
+          }
+        });
+
+        // Type guard to check if a value is a valid row
+        const isValidRow = (row: unknown): row is unknown[] => {
+          return Array.isArray(row) && row.length > 0;
+        };
+
+        // If header-based detection failed, fall back to data pattern analysis
+        if (
+          (uidIndex === -1 || nameIndex === -1 || pathIndex === -1) &&
+          rows.length > 0 &&
+          isValidRow(rows[0])
+        ) {
+          for (let i = 0; i < rows[0].length; i++) {
+            const value = String(rows[0][i] || "");
+
+            // DHIS2 UID pattern: 11 characters, alphanumeric, starts with letter
+            if (uidIndex === -1 && value.length === 11 && /^[a-zA-Z][a-zA-Z0-9]{10}$/.test(value)) {
+              uidIndex = i;
+            }
+
+            // Path pattern: starts and ends with "/"
+            if (pathIndex === -1 && value.startsWith("/") && value.split("/").length > 3) {
+              pathIndex = i;
+            }
+
+            // Name pattern: non-numeric string that's not a UID or path
+            if (
+              nameIndex === -1 &&
+              value.length > 1 &&
+              !/^\d+$/.test(value) &&
+              !value.startsWith("/") &&
+              !(value.length === 11 && /^[a-zA-Z][a-zA-Z0-9]{10}$/.test(value))
+            ) {
+              nameIndex = i;
+            }
           }
         }
-      } catch (err) {
-        console.error("Error fetching organization units:", err);
+
+        // Validate that we found all required indices
+        if (uidIndex === -1 || nameIndex === -1 || pathIndex === -1) {
+          console.error("Failed to detect column indices:", { uidIndex, nameIndex, pathIndex });
+          throw new Error("Could not auto-detect column structure from SQL view response");
+        }
+
+        // Extract and process organization units with proper structure
+        const processedUnits = rows
+          .filter(isValidRow)
+          .map((row: unknown[]) => ({
+            uid: String(row[uidIndex] || ""),
+            name: String(row[nameIndex] || ""),
+            path: String(row[pathIndex] || ""),
+          }))
+          .filter((unit) => unit.uid && unit.name);
+
+        // Set the processed org units and IDs to trigger the user query
+        setProcessedOrgUnits(processedUnits);
+        setOrgUnitIds(processedUnits.map((unit) => unit.uid));
+      } else {
+        console.error("No rows found in the SQL view result", orgUnitsResult);
         setProcessingData(false);
         if (onLoadingChange) {
           onLoadingChange(false);
         }
       }
-    } else {
-      // If nothing selected or no SQL view UID, clear data and update loading state
-      if (onDataProcessed) {
-        onDataProcessed([]);
-      }
+    } catch (err) {
+      console.error("Error fetching organization units:", err);
       setProcessingData(false);
       if (onLoadingChange) {
         onLoadingChange(false);
@@ -150,7 +267,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           placeholder="Select organization unit level"
           dataTest="org-unit-level-selector"
         >
-          {orgUnitLevels.map((level: any) => (
+          {orgUnitLevels.map((level: OrganisationUnitLevel) => (
             <SingleSelectOption
               key={level.id}
               label={`${level.displayName} (Level ${level.level})`}

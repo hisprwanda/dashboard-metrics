@@ -1,7 +1,29 @@
 // src/hooks/organisationUnits.ts
 import { useCallback, useState } from "react";
+import { useDataQuery, useDataEngine } from "@dhis2/app-runtime";
 
-import { useDataQuery, useDataMutation } from "@dhis2/app-runtime";
+// Define proper types for the hook responses
+interface OrganisationUnitLevel {
+  id: string;
+  name: string;
+  displayName: string;
+  level: number;
+}
+
+interface OrganisationUnitLevelsResponse {
+  organisationUnitLevels: {
+    organisationUnitLevels: OrganisationUnitLevel[];
+  };
+}
+
+interface SqlViewResponse {
+  sqlViewData: {
+    listGrid: {
+      rows: unknown[][];
+      headers: Array<{ name: string; column: string; type: string }>;
+    };
+  };
+}
 
 // Static query definition to prevent recreation
 const ORG_UNIT_LEVELS_QUERY = {
@@ -18,52 +40,62 @@ const ORG_UNIT_LEVELS_QUERY = {
  * Hook to fetch all organisation unit levels
  */
 export const useOrganisationUnitLevels = () => {
-  return useDataQuery(ORG_UNIT_LEVELS_QUERY);
+  return useDataQuery<OrganisationUnitLevelsResponse>(ORG_UNIT_LEVELS_QUERY);
 };
 
-// Static mutation definition to prevent recreation
-const SQL_VIEW_MUTATION = {
-  resource: "sqlViews",
-  type: "read",
-} as const;
-
 /**
- * SQL Query Hook to fetch all organisation units in a specific level
- * @param levelNo The level number of the organisation units to fetch
- * @param orgUnitSqlViewUid The UID of the SQL view to use for fetching the data
- * @returns Results from the SQL view containing organisation units at the specified level
+ * Hook to fetch organisation units by level using SQL view
+ * @returns Object with loading state, error, data, and fetch function
  */
 export const useOrganisationUnitsByLevel = () => {
+  const engine = useDataEngine();
+
   // Local states for loading, error, and data
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
-  const [data, setData] = useState<any>(null);
-
-  // Use static mutation for dynamic queries
-  const [mutate] = useDataMutation(SQL_VIEW_MUTATION);
+  const [error, setError] = useState<Error | null>(null);
+  const [data, setData] = useState<SqlViewResponse | null>(null);
 
   const fetchOrganisationUnitsByLevel = useCallback(
-    async (levelNo: string, orgUnitSqlViewUid: string) => {
+    async (levelNo: string, orgUnitSqlViewUid: string): Promise<SqlViewResponse | null> => {
       setLoading(true);
       setError(null);
+
       try {
-        const result = await mutate({
-          id: `${orgUnitSqlViewUid}/data`,
-          params: {
-            paging: false,
-            var: [`level:${levelNo}`],
-          },
+        console.log("Fetching org units with params:", {
+          levelNo,
+          orgUnitSqlViewUid,
         });
-        setData(result); // Store the fetched data in state
-        return result;
+
+        // Create a dynamic query for this specific request
+        const dynamicQuery = {
+          sqlViewData: {
+            resource: `sqlViews/${orgUnitSqlViewUid}/data`,
+            params: {
+              paging: false,
+              var: [`level:${levelNo}`],
+            },
+          },
+        };
+
+        console.log("Executing query:", dynamicQuery);
+
+        // Use engine.query instead of manual fetch
+        const result = await engine.query(dynamicQuery);
+
+        console.log("SQL View fetch result:", result);
+
+        setData(result as SqlViewResponse);
+        return result as SqlViewResponse;
       } catch (err) {
-        setError(err); // Handle any errors
-        return null; // Explicitly return null or some default value
+        console.error("Error fetching organisation units:", err);
+        const errorObj = err instanceof Error ? err : new Error(String(err));
+        setError(errorObj);
+        return null;
       } finally {
-        setLoading(false); // Reset the loading state
+        setLoading(false);
       }
     },
-    [mutate]
+    [engine]
   );
 
   return { loading, error, data, fetchOrganisationUnitsByLevel };

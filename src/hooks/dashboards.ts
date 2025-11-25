@@ -26,7 +26,7 @@ const DASHBOARDS_QUERY = {
 
 export const useDashboardsInfo = (): UseDashboardsInfoReturn => {
   const { loading, error, data } = useDataQuery(DASHBOARDS_QUERY);
-  return { loading, error, data };
+  return { loading, error, data: data as unknown as { dashboards: Dashboards } | undefined };
 };
 
 export interface Params {
@@ -37,12 +37,11 @@ export interface Params {
 }
 
 // Helper function to build SQL view query
-const buildSqlViewQuery = (sqlViewUid: string, criteria: string, filters: string[]) => ({
+const buildSqlViewQuery = (sqlViewUid: string, filters: string[]) => ({
   sqlViewData: {
     resource: `sqlViews/${sqlViewUid}/data`,
     params: {
       paging: "false",
-      criteria,
       filter: filters,
     },
   },
@@ -66,20 +65,27 @@ export const useSqlViewDataReport = ({
   const filters = useMemo(() => {
     const filterArray = [`timestamp:ge:${startDate}`, `timestamp:le:${endDate}`];
 
+    // Add dashboard filter if criteria is provided (extract dashboard ID from criteria)
+    if (criteria) {
+      // The criteria comes in format "favoriteuid%<dashboard-id>"
+      const dashboardId = criteria.replace("favoriteuid%", "").replace(/^%3A/, "");
+      if (dashboardId) {
+        filterArray.push(`favoriteuid:eq:${dashboardId}`);
+      }
+    }
+
     // Add organization unit filters if applicable
     if (orgUnitPaths && orgUnitPaths.length > 0) {
-      // Add organization unit path filtering logic here if needed
-      // Example: filterArray.push(`orgUnit:in:[${orgUnitPaths.join(',')}]`);
+      // For now, we'll implement username-based filtering through user data
+      // since the SQL view doesn't directly support org unit filtering
+      console.log("Organization unit filtering will be applied to user data:", orgUnitPaths);
     }
 
     return filterArray;
-  }, [startDate, endDate, orgUnitPaths]);
+  }, [startDate, endDate, orgUnitPaths, criteria]);
 
   // Memoize the query to prevent recreation on every render
-  const query = useMemo(
-    () => buildSqlViewQuery(sqlViewUid, criteria, filters),
-    [sqlViewUid, criteria, filters]
-  );
+  const query = useMemo(() => buildSqlViewQuery(sqlViewUid, filters), [sqlViewUid, filters]);
 
   const { loading, error, data, refetch } = useDataQuery(query, {
     lazy: true,

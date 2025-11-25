@@ -1,4 +1,3 @@
-// file location: src/services/fetchOrgunitData.ts
 import { useDataQuery } from "@dhis2/app-runtime";
 
 // Static query for org unit data to prevent recreation

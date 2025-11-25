@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useDashboard } from "../../../context/DashboardContext";
 import { useSystem } from "../../../context/SystemContext";
-import { useSqlViewDataReport } from "../../../hooks/dashboards";
+import { useDashboardData } from "../../../hooks/useDashboardData";
 import { useFilteredUsers } from "../../../hooks/users";
 import type { LinkedUser, VisitDetails } from "../../../types/dashboard-reportType";
+import type { UserResponse } from "../../../types/dashboard-data";
 
 import DashboardUserDetails from "./dashboard-user-details";
 
@@ -37,21 +38,15 @@ export default function DashboardReport() {
   // Add a ref to track if top users have been updated
   const topUsersUpdated = useRef(false);
 
-  // Memoize criteria to prevent recreating the query on every render
-  const criteria = useMemo(() => {
-    const favoriteuid = row?.id;
-    return favoriteuid ? `favoriteuid%${encodeURIComponent(favoriteuid)}` : "";
-  }, [row?.id]);
-
   // Memoize dashboard query parameters to prevent query recreation
   const dashboardQueryParams = useMemo(
     () => ({
       datetime: stableDateRange,
-      criteria,
+      dashboardId: row?.id,
       sqlViewUid: sqlViewUid || "",
       orgUnitPaths: stableOrgUnitPaths,
     }),
-    [stableDateRange, criteria, sqlViewUid, stableOrgUnitPaths]
+    [stableDateRange, row?.id, sqlViewUid, stableOrgUnitPaths]
   );
 
   // Dashboard data query
@@ -60,12 +55,15 @@ export default function DashboardReport() {
     error: dashboardError,
     data: dashboardData,
     refetch: refetchDashboard,
-  } = useSqlViewDataReport(dashboardQueryParams);
+    isReady,
+  } = useDashboardData(dashboardQueryParams);
 
   // User data query with the extracted usernames - memoize parameters
+  // Note: We don't filter by orgUnitPaths at API level because we want to get all users first,
+  // then filter them client-side to properly calculate dashboard stats
   const userQueryParams = useMemo(
-    () => [uniqueUsernames, stableOrgUnitPaths],
-    [uniqueUsernames, stableOrgUnitPaths]
+    () => [uniqueUsernames, [], [], []], // usernames, orgUnitPaths, orgUnitIds, userGroups
+    [uniqueUsernames]
   );
 
   const {
@@ -84,37 +82,57 @@ export default function DashboardReport() {
 
   // Initial report fetch
   useEffect(() => {
-    if (stableDateRange?.startDate && stableDateRange?.endDate && row?.id && sqlViewUid) {
+    if (
+      stableDateRange?.startDate &&
+      stableDateRange?.endDate &&
+      row?.id &&
+      sqlViewUid &&
+      isReady
+    ) {
+      console.log("Refetching dashboard data for:", row.displayName, "with params:", {
+        dateRange: stableDateRange,
+        dashboardId: row.id,
+        orgUnitPaths: stableOrgUnitPaths,
+        sqlViewUid,
+      });
       refetchDashboard();
 
       // Reset processing flags when inputs change
       dashboardDataProcessed.current = false;
       topUsersUpdated.current = false;
     }
-  }, [stableDateRange, row?.id, sqlViewUid, stableOrgUnitPaths, refetchDashboard]);
+  }, [stableDateRange, row?.id, sqlViewUid, stableOrgUnitPaths, refetchDashboard, isReady]);
 
   // Process dashboard data and extract usernames
   useEffect(() => {
-    // Check if data is available in the correct structure and hasn't been processed yet
+    // Check if data is available and hasn't been processed yet
     if (
       !dashboardLoading &&
       dashboardData?.sqlViewData?.listGrid?.rows &&
+      isReady &&
       !dashboardDataProcessed.current
     ) {
       const { rows } = dashboardData.sqlViewData.listGrid;
 
+      console.log(
+        "Processing dashboard data for dashboard:",
+        row?.displayName,
+        "rows:",
+        rows.length
+      );
+
       // Extract unique usernames from dashboard data (username is at index 1)
-      const usernames = [...new Set(rows.map((row: any[]) => row[1] as string))];
+      const usernames = [...new Set(rows.map((row: Array<string | number>) => row[1] as string))];
 
       // Set the unique usernames state
-      setUniqueUsernames(usernames as string[]);
+      setUniqueUsernames(usernames);
 
       // Calculate visit details
       const userVisits: { [key: string]: { count: number; lastVisit: string } } = {};
 
-      rows.forEach((row: any[]) => {
-        const timestamp = row[0]; // Timestamp is at index 0
-        const username = row[1]; // Username is at index 1
+      rows.forEach((row: Array<string | number>) => {
+        const timestamp = row[0] as string; // Timestamp is at index 0
+        const username = row[1] as string; // Username is at index 1
 
         if (!userVisits[username]) {
           userVisits[username] = { count: 0, lastVisit: timestamp };
@@ -162,10 +180,11 @@ export default function DashboardReport() {
   // Effect to manually trigger users refetch when usernames change
   useEffect(() => {
     if (uniqueUsernames.length > 0) {
+      console.log("Refetching user data for usernames:", uniqueUsernames.length);
       // Explicitly refetch with the current hook configuration
       refetchUsers();
     }
-  }, [uniqueUsernames, stableOrgUnitPaths, refetchUsers]);
+  }, [uniqueUsernames, refetchUsers]);
 
   // Log user data query results
   useEffect(() => {
@@ -176,24 +195,80 @@ export default function DashboardReport() {
 
   // Link user details once user data is loaded
   useEffect(() => {
-    // Only process if we have user data, visit details, and haven't updated top users yet
-    if (
-      !userLoading &&
-      userData?.users?.users &&
-      visitDetails.length > 0 &&
-      !topUsersUpdated.current
-    ) {
-      const { users } = userData.users;
+    // Only process if we have user data and visit details
+    // We need to recalculate when org units change, so we can't use the topUsersUpdated flag
+    const typedUserData = userData as unknown as UserResponse | undefined;
+    if (!userLoading && typedUserData?.users?.users && visitDetails.length > 0) {
+      const { users } = typedUserData.users;
+
+      console.log("Linking user details. Total users from API:", users.length);
+      console.log("Total visit details:", visitDetails.length);
+      console.log("Organization unit paths selected:", stableOrgUnitPaths);
+
+      // If org units are selected, filter visit details to only include users in those org units
+      let filteredVisitDetails = visitDetails;
+
+      if (stableOrgUnitPaths.length > 0) {
+        console.log("Filtering by organization unit paths:", stableOrgUnitPaths);
+
+        const usersInSelectedOrgUnits = users
+          .filter((user: any) => {
+            const userOrgUnits = user.organisationUnits || [];
+            console.log(
+              `User ${user.userCredentials?.username} has org units:`,
+              userOrgUnits.map((ou: any) => ou.displayName)
+            );
+
+            // Check if user belongs to any of the selected org units
+            // Since we may not have path info, we'll match by org unit ID or check if paths contain the org unit
+            return userOrgUnits.some((orgUnit: any) => {
+              // Check if the org unit ID is in the selected paths
+              const matchById = stableOrgUnitPaths.some((path) => path.includes(orgUnit.id));
+              // Also check direct ID match (in case paths are actually IDs)
+              const directMatch = stableOrgUnitPaths.includes(orgUnit.id);
+
+              return matchById || directMatch;
+            });
+          })
+          .map((user: any) => user.userCredentials?.username)
+          .filter(Boolean);
+
+        console.log("Users in selected org units:", usersInSelectedOrgUnits);
+
+        filteredVisitDetails = visitDetails.filter((visit) =>
+          usersInSelectedOrgUnits.includes(visit.username)
+        );
+
+        console.log(
+          "Filtered visit details:",
+          filteredVisitDetails.length,
+          "out of",
+          visitDetails.length
+        );
+      }
 
       // Map visit details to user information
-      const linkedUsersData = visitDetails.map((visit) => {
+      const linkedUsersData = filteredVisitDetails.map((visit): LinkedUser => {
         const user = users.find((u: any) => u.userCredentials?.username === visit.username);
 
         if (user) {
           return {
             ...user,
+            name:
+              user.displayName || `${user.firstName || ""} ${user.surname || ""}`.trim() || user.id,
+            username: user.userCredentials?.username || visit.username,
+            firstName: user.firstName || "",
+            surname: user.surname || "",
             visits: visit.visits,
             lastVisit: visit.lastVisit,
+            userCredentials: {
+              userRoles: (user.userCredentials as any)?.userRoles || [],
+            },
+            organisationUnits: (user.organisationUnits || []).map((ou: any) => ({
+              displayName: ou.displayName || ou.name || "",
+              id: ou.id || "",
+            })),
+            userGroups: [],
           };
         }
 
@@ -204,7 +279,7 @@ export default function DashboardReport() {
           firstName: "",
           surname: "",
           username: visit.username,
-          id: "",
+          id: visit.username,
           organisationUnits: [],
           userCredentials: { userRoles: [] },
           userGroups: [],
@@ -213,11 +288,21 @@ export default function DashboardReport() {
         };
       });
 
+      // Recalculate stats based on filtered data
+      const filteredTotalVisits = filteredVisitDetails.reduce(
+        (sum, visit) => sum + visit.visits,
+        0
+      );
+      const filteredTopUsers = [...filteredVisitDetails]
+        .sort((a, b) => b.visits - a.visits)
+        .slice(0, 5);
+
       // Create a new top users array with user details
-      const updatedTopUsers = dashboardStats.topUsers.map((topUser) => {
-        const userDetails = linkedUsersData.find((u) => u.username === topUser.username);
+      const updatedTopUsers = filteredTopUsers.map((visit) => {
+        const userDetails = linkedUsersData.find((u) => u.username === visit.username);
         return {
-          ...topUser,
+          username: visit.username,
+          visits: visit.visits,
           firstName: userDetails?.firstName || "",
           surname: userDetails?.surname || "",
         };
@@ -226,18 +311,16 @@ export default function DashboardReport() {
       // Update states in a single batch
       setLinkedUsers(linkedUsersData);
 
-      // Only update dashboardStats if the top users have changed
-      if (JSON.stringify(updatedTopUsers) !== JSON.stringify(dashboardStats.topUsers)) {
-        setDashboardStats((prev) => ({
-          ...prev,
-          topUsers: updatedTopUsers,
-        }));
-      }
+      // Update dashboard stats with filtered data
+      setDashboardStats((prev) => ({
+        ...prev,
+        totalVisits: filteredTotalVisits,
+        topUsers: updatedTopUsers,
+      }));
 
-      // Mark as updated to prevent infinite loop
-      topUsersUpdated.current = true;
+      // Don't set topUsersUpdated flag since we want to recalculate when org units change
     }
-  }, [userLoading, userData, visitDetails, dashboardStats.topUsers]);
+  }, [userLoading, userData, visitDetails, stableOrgUnitPaths]);
 
   // Reset processed flags when inputs change
   useEffect(

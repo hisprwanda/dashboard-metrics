@@ -1,4 +1,26 @@
 // src/lib/processDistrictData.ts
+
+/**
+ * Interface for processed organization unit data
+ */
+export interface ProcessedOrgUnit {
+  uid: string;
+  name: string;
+  path: string;
+}
+
+/**
+ * Interface for user data from DHIS2 API
+ */
+export interface UserData {
+  id: string;
+  name: string;
+  organisationUnits?: Array<{ id: string; name: string }>;
+  userCredentials?: {
+    lastLogin?: string;
+  };
+}
+
 /**
  * Interface representing district engagement metrics
  */
@@ -13,28 +35,86 @@ export interface DistrictEngagement {
 }
 
 /**
- * Process raw data from DHIS2 into district engagement metrics
- * @param orgUnitData Organization unit data from SQL view
+ * Process organization unit and user data into district engagement metrics
+ * @param orgUnitData Processed organization unit data with { uid, name, path } structure or raw arrays
  * @param userData User data filtered by organization units
  * @returns Array of district engagement metrics
  */
-export function processDistrictData(orgUnitData: any[], userData: any[]): DistrictEngagement[] {
+export function processDistrictData(
+  orgUnitData: (ProcessedOrgUnit | unknown[])[],
+  userData: UserData[]
+): DistrictEngagement[] {
+  console.log("🔍 processDistrictData called with:", {
+    orgUnitDataLength: orgUnitData?.length,
+    userDataLength: userData?.length,
+    sampleOrgUnit: orgUnitData?.[0],
+    sampleUser: userData?.[0],
+  });
+
   if (!orgUnitData?.length || !userData?.length) {
+    console.warn("❌ Missing data:", {
+      orgUnitData: orgUnitData?.length,
+      userData: userData?.length,
+    });
     return [];
   }
 
-  return orgUnitData.map((orgUnitRow) => {
-    // Based on the data format received from SQL view
-    const orgUnitPath = orgUnitRow[1]; // Path is at index 1
-    const orgUnitName = orgUnitRow[0]; // Name is at index 0
+  return orgUnitData.map((orgUnit) => {
+    // Type guard to check if orgUnit is a ProcessedOrgUnit
+    const isProcessedOrgUnit = (unit: ProcessedOrgUnit | unknown[]): unit is ProcessedOrgUnit => {
+      return (
+        typeof unit === "object" &&
+        unit !== null &&
+        "uid" in unit &&
+        "name" in unit &&
+        "path" in unit
+      );
+    };
 
-    // Find users belonging to this organization unit
-    const orgUnitUsers = userData.filter((user: any) =>
-      user.organisationUnits?.some((ou: any) => orgUnitPath.includes(ou.id))
-    );
+    // Handle both processed objects { uid, name, path } and raw arrays
+    let orgUnitUid: string;
+    let orgUnitName: string;
+    let orgUnitPath: string;
+
+    if (isProcessedOrgUnit(orgUnit)) {
+      // New format: processed objects
+      orgUnitUid = orgUnit.uid;
+      orgUnitName = orgUnit.name;
+      orgUnitPath = orgUnit.path;
+    } else {
+      // Legacy format: raw arrays [name, uid, ?, ?, path, level]
+      const unitArray = orgUnit as unknown[];
+      orgUnitUid = String(unitArray[1] || "");
+      orgUnitName = String(unitArray[0] || "");
+      orgUnitPath = String(unitArray[4] || "");
+    }
+
+    // Debug logging for this organization unit
+    console.log(`🏢 Processing orgUnit: ${orgUnitName} (${orgUnitUid})`);
+
+    // Find users belonging to this organization unit by checking if the org unit UID is in user's organisation units
+    // This correctly handles users assigned to multiple organization units
+    const orgUnitUsers = userData.filter((user) => {
+      const hasOrgUnit = user.organisationUnits?.some((ou) => ou.id === orgUnitUid);
+      return hasOrgUnit;
+    });
+
+    console.log(`👥 Found ${orgUnitUsers.length} users for ${orgUnitName}`);
+
+    // Debug: Show sample user org units if no users found
+    if (orgUnitUsers.length === 0 && userData.length > 0) {
+      console.log(
+        "🔍 Sample user org units:",
+        userData.slice(0, 3).map((user) => ({
+          userName: user.name,
+          orgUnits: user.organisationUnits?.map((ou) => ({ id: ou.id, name: ou.name })) || [],
+        }))
+      );
+      console.log("🎯 Looking for orgUnitUid:", orgUnitUid);
+    }
 
     // Count active users (those with lastLogin)
-    const activeUsers = orgUnitUsers.filter((user: any) => user.userCredentials?.lastLogin);
+    const activeUsers = orgUnitUsers.filter((user) => user.userCredentials?.lastLogin);
 
     // Find the most recent login date
     const lastActivityDate =
@@ -42,8 +122,8 @@ export function processDistrictData(orgUnitData: any[], userData: any[]): Distri
         ? new Date(
             Math.max(
               ...activeUsers
-                .filter((user: any) => user.userCredentials?.lastLogin)
-                .map((user: any) => new Date(user.userCredentials.lastLogin).getTime())
+                .filter((user) => user.userCredentials?.lastLogin)
+                .map((user) => new Date(user.userCredentials.lastLogin!).getTime())
             )
           )
         : null;
@@ -62,7 +142,7 @@ export function processDistrictData(orgUnitData: any[], userData: any[]): Distri
     // In a real implementation, you would calculate this from actual dashboard analytics data
     const dashboardViews = Math.max(1, activeUsers.length * 3); // Just a placeholder calculation
 
-    return {
+    const result = {
       OrgUnitName: orgUnitName,
       totalUsers: orgUnitUsers.length,
       activeUsers: activeUsers.length,
@@ -71,5 +151,8 @@ export function processDistrictData(orgUnitData: any[], userData: any[]): Distri
       isConsistentlyActive,
       dashboardViews,
     };
+
+    console.log(`✅ Final result for ${orgUnitName}:`, result);
+    return result;
   });
 }

@@ -7,6 +7,7 @@ import { FaEye } from "react-icons/fa6";
 import { RiCloseLargeFill } from "react-icons/ri";
 
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { DashboardConverted } from "@/types/dashboardsType";
 
@@ -23,8 +24,9 @@ export interface DataSourceRowProps {
 }
 
 export default function ShowData({ row, data }: DataSourceRowProps) {
-  const { state, dispatch } = useDashboard();
+  const { state, dispatch, resetContext } = useDashboard();
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
   const MAX_DATE = new Date();
   const reportKey = useRef<string>(`${Date.now()}`);
 
@@ -40,14 +42,36 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
     reportKey.current = `${Date.now()}`;
   };
 
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      // Dialog is closing - clean up everything
+      console.log("Dialog closing - cleaning up state and cache for dashboard:", row.displayName);
+
+      // Reset all context state to initial values
+      resetContext();
+
+      // Invalidate all queries to ensure fresh data on next open
+      queryClient.invalidateQueries();
+
+      // Force a new report key for fresh component mount
+      reportKey.current = `${Date.now()}`;
+    }
+  };
+
+  // Only set dashboard when dialog opens, not on every row change
   useEffect(() => {
-    dispatch({ type: "SET_DASHBOARD", payload: row });
-  }, [row, dispatch]);
+    if (open) {
+      console.log("Setting dashboard context for:", row.displayName);
+      dispatch({ type: "SET_DASHBOARD", payload: row });
+      reportKey.current = `${Date.now()}`;
+    }
+  }, [row, dispatch, open]);
 
   return (
-    <AlertDialog.Root open={open} onOpenChange={setOpen}>
+    <AlertDialog.Root open={open} onOpenChange={handleDialogOpenChange}>
       <AlertDialog.Trigger asChild>
-        <button className="w-[40px] rounded-sm bg-transparent p-1 text-stext hover:text-slate-600 hover:bg-transparent focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        <button className="w-10 rounded-sm bg-transparent p-1 text-stext hover:text-slate-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
           <FaEye className="text-xl" />
         </button>
       </AlertDialog.Trigger>
@@ -62,19 +86,22 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
               <div>
                 <OrgUnitPicker onOrgUnitsChange={handleOrgUnitsChange} />
               </div>
-              <h3 className="text-sm font-semibold text-gray-900">
-                {formatDate(state.value?.startDate)} - {formatDate(state.value?.endDate)}
-                {state.orgUnitNames.length > 0 && (
-                  <span className="ml-2 text-xs text-blue-600">
-                    ({state.orgUnitNames.length} org unit
-                    {state.orgUnitNames.length !== 1 ? "s" : ""} selected)
-                  </span>
-                )}
-              </h3>
+              <div className="flex flex-col items-start">
+                <h3 className="text-sm font-medium text-gray-700">
+                  {formatDate(state.value?.startDate)} - {formatDate(state.value?.endDate)}
+                  {state.orgUnitNames.length > 0 && (
+                    <span className="ml-2 text-xs text-blue-600">
+                      ({state.orgUnitNames.length} org unit
+                      {state.orgUnitNames.length !== 1 ? "s" : ""} selected)
+                    </span>
+                  )}
+                </h3>
+              </div>
               <AlertDialog.Cancel asChild>
                 <button
                   type="button"
-                  className="cursor-pointer text-gray-400 bg-transparent hover:bg-transparent hover:bg-gray-200"
+                  className="cursor-pointer text-gray-400 bg-transparent hover:bg-gray-200"
+                  onClick={() => handleDialogOpenChange(false)}
                   data-modal-toggle="default-modal"
                 >
                   <RiCloseLargeFill />

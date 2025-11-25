@@ -15,3 +15,12 @@ draft
 /.drafts
 /.draft
 /draft
+
+# AI generated files
+.claude/
+AGENTS.md
+CLAUDE.md
+QWEN.md
+GEMINI.md
+copilot-instructions.md
+docs/*

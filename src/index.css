@@ -1,4 +1,4 @@
-/*! tailwindcss v4.1.13 | MIT License | https://tailwindcss.com */
+/*! tailwindcss v4.1.16 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
@@ -580,7 +580,7 @@
   .table {
     display: table;
   }
-  .aspect-\[1155\/678\] {
+  .aspect-1155\/678 {
     aspect-ratio: 1155/678;
   }
   .aspect-square {
@@ -715,14 +715,11 @@
   .w-72 {
     width: calc(var(--spacing) * 72);
   }
+  .w-144\.5 {
+    width: calc(var(--spacing) * 144.5);
+  }
   .w-\[1px\] {
     width: 1px;
-  }
-  .w-\[36\.125rem\] {
-    width: 36.125rem;
-  }
-  .w-\[40px\] {
-    width: 40px;
   }
   .w-\[90vw\] {
     width: 90vw;
@@ -807,11 +804,11 @@
     --tw-translate-y: -50%;
     translate: var(--tw-translate-x) var(--tw-translate-y);
   }
+  .rotate-30 {
+    rotate: 30deg;
+  }
   .rotate-45 {
     rotate: 45deg;
-  }
-  .rotate-\[30deg\] {
-    rotate: 30deg;
   }
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
@@ -1346,12 +1343,15 @@
   .bg-yellow-500 {
     background-color: var(--color-yellow-500);
   }
-  .bg-gradient-to-r {
-    --tw-gradient-position: to right in oklab;
+  .bg-linear-to-tr {
+    --tw-gradient-position: to top right;
+    @supports (background-image: linear-gradient(in lab, red, red)) {
+      --tw-gradient-position: to top right in oklab;
+    }
     background-image: linear-gradient(var(--tw-gradient-stops));
   }
-  .bg-gradient-to-tr {
-    --tw-gradient-position: to top right in oklab;
+  .bg-gradient-to-r {
+    --tw-gradient-position: to right in oklab;
     background-image: linear-gradient(var(--tw-gradient-stops));
   }
   .from-\[\#ff80b5\] {
@@ -1648,9 +1648,6 @@
   }
   .text-gray-700 {
     color: var(--color-gray-700);
-  }
-  .text-gray-900 {
-    color: var(--color-gray-900);
   }
   .text-green-500 {
     color: var(--color-green-500);
@@ -3606,9 +3603,9 @@
       display: flex;
     }
   }
-  .sm\:w-\[72\.1875rem\] {
+  .sm\:w-288\.75 {
     @media (width >= 40rem) {
-      width: 72.1875rem;
+      width: calc(var(--spacing) * 288.75);
     }
   }
   .sm\:max-w-sm {

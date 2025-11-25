@@ -1,9 +1,18 @@
 {
   "name": "dashboard-usage",
-  "version": "2.2.0",
-  "description": "",
+  "version": "2.3.112",
+  "description": "DHIS2 Dashboard Usage Metrics - Track and analyze dashboard engagement, user activity, and inactivity patterns",
+  "author": "HISP Rwanda",
   "license": "BSD-3-Clause",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hisprwanda/dashboard-metrics.git"
+  },
+  "homepage": "https://github.com/hisprwanda/dashboard-metrics#readme",
+  "bugs": {
+    "url": "https://github.com/hisprwanda/dashboard-metrics/issues"
+  },
   "scripts": {
     "build:css": "postcss src/styles/index.css -o src/index.css",
     "watch:css": "postcss src/styles/index.css -o src/index.css -w",
