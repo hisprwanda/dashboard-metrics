@@ -4,6 +4,7 @@ import React from "react";
 
 import { CircularLoader } from "@dhis2/ui";
 
+import i18n from "../../locales";
 import { MultiSelect } from "../ui/multi-select";
 
 interface OrganizationUnitGroupsProps {
@@ -32,7 +33,11 @@ const OrganizationUnitGroups: React.FC<OrganizationUnitGroupsProps> = ({
   }
 
   if (error) {
-    return <p className="text-red-500">Error: {error.message}</p>;
+    return (
+      <p className="text-red-500">
+        {i18n.t("Error")}: {error.message}
+      </p>
+    );
   }
 
   return (
@@ -43,7 +48,7 @@ const OrganizationUnitGroups: React.FC<OrganizationUnitGroupsProps> = ({
       }))}
       onValueChange={handleChange}
       defaultValue={selectedGroups}
-      placeholder="Select organization unit groups"
+      placeholder={i18n.t("Select organization unit groups")}
       variant="inverted"
       maxCount={3}
       disabled={disabled}

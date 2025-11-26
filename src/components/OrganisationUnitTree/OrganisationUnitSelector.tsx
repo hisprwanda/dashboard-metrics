@@ -6,6 +6,7 @@ import { useDataQuery } from "@dhis2/app-runtime";
 import { Button, CircularLoader, InputField, NoticeBox, OrganisationUnitTree } from "@dhis2/ui";
 
 import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
+import i18n from "../../locales";
 
 import OrganizationUnitGroups from "./OrganizationUnitGroups";
 import OrganizationUnitLevels from "./OrganizationUnitLevels";
@@ -224,13 +225,17 @@ function OrganisationUnitMultiSelect({
     return (
       <div className="flex justify-center items-center h-64">
         <CircularLoader />
-        <p className="ml-2">Loading organization units...</p>
+        <p className="ml-2">{i18n.t("Loading organization units...")}</p>
       </div>
     );
   }
 
   if (loadError) {
-    return <p className="text-red-500 p-4">Error: {loadError.message}</p>;
+    return (
+      <p className="text-red-500 p-4">
+        {i18n.t("Error")}: {loadError.message}
+      </p>
+    );
   }
 
   return (
@@ -239,26 +244,26 @@ function OrganisationUnitMultiSelect({
       <div className="mb-4">
         <InputField
           className="w-full text-sm font-medium mb-2"
-          label="Search Organization Unit (type at least 3 characters)"
+          label={i18n.t("Search Organization Unit (type at least 3 characters)")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.value || "")}
-          placeholder="Type to search..."
+          placeholder={i18n.t("Type to search...")}
           loading={searchLoading}
           error={searchError?.message}
         />
         {searchTerm.length > 0 && searchTerm.length < 3 && (
           <p className="text-sm text-orange-500 mt-1">
-            Please type at least 3 characters to search
+            {i18n.t("Please type at least 3 characters to search")}
           </p>
         )}
         {isSearching && searchResultUnits.length === 0 && !searchLoading && (
-          <NoticeBox title="No results found" warning className="mt-2">
-            No organization units match your search criteria
+          <NoticeBox title={i18n.t("No results found")} warning className="mt-2">
+            {i18n.t("No organization units match your search criteria")}
           </NoticeBox>
         )}
         {isSearching && searchResultUnits.length > 0 && !searchLoading && (
           <p className="text-sm text-green-600 mt-1">
-            Found {searchResultUnits.length} matching organization unit(s)
+            {i18n.t("Found")} {searchResultUnits.length} {i18n.t("matching organization unit(s)")}
           </p>
         )}
       </div>
@@ -268,7 +273,7 @@ function OrganisationUnitMultiSelect({
         {/* Show search results tree when searching */}
         {isSearching && searchResultUnits.length > 0 && (
           <div>
-            <p className="text-sm font-medium mb-2">Search Results:</p>
+            <p className="text-sm font-medium mb-2">{i18n.t("Search Results")}:</p>
             <OrganisationUnitTree
               roots={searchResultUnits.map((unit) => unit.id)}
               selected={selectedOrgUnits}
@@ -303,10 +308,10 @@ function OrganisationUnitMultiSelect({
             <CircularLoader small />
             <p className="ml-2 text-sm text-gray-500">
               {searchLoading
-                ? "Searching..."
+                ? i18n.t("Searching...")
                 : levelLoading
-                  ? "Loading units by level..."
-                  : "Loading units by group..."}
+                  ? i18n.t("Loading units by level...")
+                  : i18n.t("Loading units by group...")}
             </p>
           </div>
         )}
@@ -315,7 +320,9 @@ function OrganisationUnitMultiSelect({
       {/* Selected org units display */}
       {selectedOrgUnitNames.length > 0 && (
         <div className="mb-4 p-2 bg-blue-50 rounded-md">
-          <p className="font-medium mb-1">Selected units: ({selectedOrgUnitNames.length})</p>
+          <p className="font-medium mb-1">
+            {i18n.t("Selected units")}: ({selectedOrgUnitNames.length})
+          </p>
           <div className="flex flex-wrap gap-1 max-h-[100px] overflow-auto">
             {selectedOrgUnitNames.map((name, index) => (
               <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs">
@@ -328,7 +335,7 @@ function OrganisationUnitMultiSelect({
 
       {/* Select field for organization unit level */}
       <div className="mb-5">
-        <p className="text-sm font-medium mb-2">Select Organization Unit Levels:</p>
+        <p className="text-sm font-medium mb-2">{i18n.t("Select Organization Unit Levels")}:</p>
         <OrganizationUnitLevels
           selectedLevels={selectedLevels}
           onLevelsChange={handleLevelsChange}
@@ -340,7 +347,7 @@ function OrganisationUnitMultiSelect({
 
       {/* Select field for organization unit groups */}
       <div className="mb-5">
-        <p className="text-sm font-medium mb-2">Select Organization Unit Groups:</p>
+        <p className="text-sm font-medium mb-2">{i18n.t("Select Organization Unit Groups")}:</p>
         <OrganizationUnitGroups
           selectedGroups={selectedGroups}
           onGroupsChange={handleGroupsChange}
@@ -357,7 +364,7 @@ function OrganisationUnitMultiSelect({
           onClick={handleDeselectAllClick}
           disabled={selectedOrgUnits.length === 0}
         >
-          Deselect All
+          {i18n.t("Deselect All")}
         </Button>
 
         <Button
@@ -365,8 +372,8 @@ function OrganisationUnitMultiSelect({
           onClick={handleSubmitClick}
         >
           {selectedOrgUnits.length > 0
-            ? `Submit Selected Org Units (${selectedOrgUnits.length})`
-            : "Submit Empty Selection"}
+            ? `${i18n.t("Submit Selected Org Units")} (${selectedOrgUnits.length})`
+            : i18n.t("Submit Empty Selection")}
         </Button>
       </div>
     </div>

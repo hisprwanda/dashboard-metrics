@@ -10,6 +10,7 @@ import {
   useOrganisationUnitsByLevel,
 } from "../../../hooks/organisationUnits";
 import { useFilteredUsers } from "../../../hooks/users";
+import i18n from "../../../locales";
 import type { DistrictEngagement } from "../../../lib/processDistrictData";
 import { processDistrictData } from "../../../lib/processDistrictData";
 
@@ -251,21 +252,21 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
   return (
     <div className="bg-white p-4 shadow-sm mb-4 rounded">
-      <h2 className="text-lg font-semibold mb-3">District Engagement Filters</h2>
+      <h2 className="text-lg font-semibold mb-3">{i18n.t("District Engagement Filters")}</h2>
       <div className="grid grid-cols-1 gap-6 mb-2">
         <SingleSelectField
-          label="Organization Unit Level"
+          label={i18n.t("Organization Unit Level")}
           onChange={handleOrgUnitLevelChange}
           selected={state.selectedOrgUnitLevel}
           loading={orgUnitLevelsQuery.loading}
           clearable
-          placeholder="Select organization unit level"
+          placeholder={i18n.t("Select organization unit level")}
           dataTest="org-unit-level-selector"
         >
           {orgUnitLevels.map((level: OrganisationUnitLevel) => (
             <SingleSelectOption
               key={level.id}
-              label={`${level.displayName} (Level ${level.level})`}
+              label={`${level.displayName} (${i18n.t("Level")} ${level.level})`}
               value={level.level.toString()}
             />
           ))}
@@ -278,23 +279,25 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           <CircularLoader small />
           <span className="ml-2 text-sm">
             {orgUnitLevelsQuery.loading
-              ? "Loading organization unit levels..."
+              ? i18n.t("Loading organization unit levels...")
               : processingData
-                ? "Processing district data..."
-                : "Loading user data..."}
+                ? i18n.t("Processing district data...")
+                : i18n.t("Loading user data...")}
           </span>
         </div>
       )}
 
       {(orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error) && (
         <div className="text-red-500 mt-2 text-sm">
-          Error: {(orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error)?.message}
+          {i18n.t("Error")}:{" "}
+          {(orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error)?.message}
         </div>
       )}
 
       <div className="text-sm text-gray-600 mt-2">
-        Select an organization unit level to view engagement metrics for all districts at that
-        level.
+        {i18n.t(
+          "Select an organization unit level to view engagement metrics for all districts at that level."
+        )}
       </div>
     </div>
   );

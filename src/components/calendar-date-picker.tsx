@@ -22,6 +22,7 @@ import { DateRange } from "react-day-picker";
 import { cva, VariantProps } from "class-variance-authority";
 
 import { cn } from "../lib/utils";
+import i18n from "../locales";
 import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
@@ -495,7 +496,7 @@ export const CalendarDatePicker = React.forwardRef<HTMLButtonElement, CalendarDa
                     </>
                   )
                 ) : (
-                  <span>Pick a date</span>
+                  <span>{i18n.t("Pick a date")}</span>
                 )}
               </span>
             </Button>

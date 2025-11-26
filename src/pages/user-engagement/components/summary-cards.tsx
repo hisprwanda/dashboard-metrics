@@ -1,6 +1,7 @@
 import { Badge, Card, Progress, Text, Tooltip } from "@mantine/core";
 import { IconCalendar, IconChartLine, IconUsers } from "@tabler/icons-react";
 
+import i18n from "../../../locales";
 import type { AccessRecencySummary, UserEngagementData } from "../types/user-engagement";
 
 // Summary cards component for displaying metrics
@@ -35,8 +36,8 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
   const avgLogins = data.length > 0 ? (totalLogins / data.length).toFixed(1) : "0";
 
   // Find most active and least active users
-  let mostActiveUser = { name: "None", logins: 0 };
-  let leastActiveUser = { name: "None", logins: Number.MAX_SAFE_INTEGER };
+  let mostActiveUser = { name: i18n.t("None"), logins: 0 };
+  let leastActiveUser = { name: i18n.t("None"), logins: Number.MAX_SAFE_INTEGER };
 
   data.forEach((user) => {
     if (user.loginPastMonth > mostActiveUser.logins) {
@@ -50,7 +51,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
 
   // If we didn't find a least active user, set it to none
   if (leastActiveUser.logins === Number.MAX_SAFE_INTEGER) {
-    leastActiveUser = { name: "None", logins: 0 };
+    leastActiveUser = { name: i18n.t("None"), logins: 0 };
   }
 
   return (
@@ -58,7 +59,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
       <Card withBorder shadow="sm" radius="md" p="md">
         <div className="flex justify-between items-start mb-2">
           <Text size="lg" weight={500}>
-            Access Recency
+            {i18n.t("Access Recency")}
           </Text>
           <IconCalendar size={20} color="#3b82f6" />
         </div>
@@ -66,7 +67,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
         <div className="space-y-2">
           <div>
             <div className="flex justify-between text-sm">
-              <span>Last 7 days:</span>
+              <span>{i18n.t("Last 7 days")}:</span>
               <span className="font-semibold">{lastWeekPercent}%</span>
             </div>
             <Progress value={lastWeekPercent} color="green" size="sm" />
@@ -74,7 +75,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
 
           <div>
             <div className="flex justify-between text-sm">
-              <span>Last 30 days:</span>
+              <span>{i18n.t("Last 30 days")}:</span>
               <span className="font-semibold">{lastMonthPercent}%</span>
             </div>
             <Progress value={lastMonthPercent} color="blue" size="sm" />
@@ -82,7 +83,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
 
           <div>
             <div className="flex justify-between text-sm">
-              <span>Over 30 days:</span>
+              <span>{i18n.t("Over 30 days")}:</span>
               <span className="font-semibold">{overMonthPercent}%</span>
             </div>
             <Progress value={overMonthPercent} color="orange" size="sm" />
@@ -90,7 +91,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
 
           <div>
             <div className="flex justify-between text-sm">
-              <span>Never logged in:</span>
+              <span>{i18n.t("Never logged in")}:</span>
               <span className="font-semibold">{neverPercent}%</span>
             </div>
             <Progress value={neverPercent} color="red" size="sm" />
@@ -101,7 +102,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
       <Card withBorder shadow="sm" radius="md" p="md">
         <div className="flex justify-between items-start mb-2">
           <Text size="lg" weight={500}>
-            Login Frequency
+            {i18n.t("Login Frequency")}
           </Text>
           <IconChartLine size={20} color="#3b82f6" />
         </div>
@@ -109,7 +110,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
         <div className="space-y-3">
           <div>
             <Text size="sm" weight={500}>
-              Total Logins (Past Month)
+              {i18n.t("Total Logins (Past Month)")}
             </Text>
             <Text size="xl" weight={700} color="blue">
               {totalLogins}
@@ -118,7 +119,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
 
           <div>
             <Text size="sm" weight={500}>
-              Average Logins Per User
+              {i18n.t("Average Logins Per User")}
             </Text>
             <Text size="xl" weight={700} color="indigo">
               {avgLogins}
@@ -130,7 +131,7 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
       <Card withBorder shadow="sm" radius="md" p="md">
         <div className="flex justify-between items-start mb-2">
           <Text size="lg" weight={500}>
-            User Highlights
+            {i18n.t("User Highlights")}
           </Text>
           <IconUsers size={20} color="#3b82f6" />
         </div>
@@ -138,25 +139,29 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
         <div className="space-y-3">
           <div>
             <Text size="sm" weight={500}>
-              Most Active User
+              {i18n.t("Most Active User")}
             </Text>
             <div className="flex justify-between">
               <Text size="md" className="text-ellipsis overflow-hidden">
                 {mostActiveUser.name}
               </Text>
-              <Badge color="green">{mostActiveUser.logins} logins</Badge>
+              <Badge color="green">
+                {mostActiveUser.logins} {i18n.t("logins")}
+              </Badge>
             </div>
           </div>
 
           <div>
             <Text size="sm" weight={500}>
-              Least Active User
+              {i18n.t("Least Active User")}
             </Text>
             <div className="flex justify-between">
               <Text size="md" className="text-ellipsis overflow-hidden">
                 {leastActiveUser.name}
               </Text>
-              <Badge color="yellow">{leastActiveUser.logins} logins</Badge>
+              <Badge color="yellow">
+                {leastActiveUser.logins} {i18n.t("logins")}
+              </Badge>
             </div>
           </div>
         </div>

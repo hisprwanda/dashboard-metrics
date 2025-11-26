@@ -13,6 +13,7 @@ import type { DashboardConverted } from "@/types/dashboardsType";
 
 import { useDashboard } from "../../../context/DashboardContext";
 import { formatDate } from "../../../lib/utils";
+import i18n from "../../../locales";
 
 import DatePicker from "./date-picker";
 import OrgUnitPicker from "./org-unit-picker";
@@ -89,8 +90,9 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
                   {formatDate(state.value?.startDate)} - {formatDate(state.value?.endDate)}
                   {state.orgUnitNames.length > 0 && (
                     <span className="ml-2 text-xs text-blue-600">
-                      ({state.orgUnitNames.length} org unit
-                      {state.orgUnitNames.length !== 1 ? "s" : ""} selected)
+                      ({state.orgUnitNames.length}{" "}
+                      {state.orgUnitNames.length !== 1 ? i18n.t("org units") : i18n.t("org unit")}{" "}
+                      {i18n.t("selected")})
                     </span>
                   )}
                 </h3>

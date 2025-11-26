@@ -7,6 +7,7 @@ import { differenceInDays, format } from "date-fns";
 import type { MRT_ColumnDef } from "mantine-react-table";
 import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
 
+import i18n from "../../../locales";
 import type { UserEngagementData } from "../types/user-engagement";
 
 import { FilterSection } from "./filter-section";
@@ -91,15 +92,15 @@ function LoginTrendDisplay({ trend }: { trend: number[] }) {
 function AccessRecencyBadge({ recency }: { recency: string }) {
   switch (recency) {
     case "lastWeek":
-      return <Badge color="green">Last 7 days</Badge>;
+      return <Badge color="green">{i18n.t("Last 7 days")}</Badge>;
     case "lastMonth":
-      return <Badge color="blue">Last 30 days</Badge>;
+      return <Badge color="blue">{i18n.t("Last 30 days")}</Badge>;
     case "overMonth":
-      return <Badge color="orange">Over 30 days</Badge>;
+      return <Badge color="orange">{i18n.t("Over 30 days")}</Badge>;
     case "never":
-      return <Badge color="red">Never</Badge>;
+      return <Badge color="red">{i18n.t("Never")}</Badge>;
     default:
-      return <Badge color="gray">Unknown</Badge>;
+      return <Badge color="gray">{i18n.t("Unknown")}</Badge>;
   }
 }
 
@@ -129,47 +130,49 @@ export default function DataTable() {
     () => [
       {
         accessorKey: "username",
-        header: "Username",
+        header: i18n.t("Username"),
         size: 120,
       },
       {
         accessorKey: "fullName",
-        header: "Full Name",
+        header: i18n.t("Full Name"),
         size: 150,
       },
       {
         accessorKey: "role",
-        header: "Role",
+        header: i18n.t("Role"),
         size: 130,
       },
       {
         accessorFn: (row) => row.lastLogin,
         id: "lastLogin",
-        header: "Last Login",
+        header: i18n.t("Last Login"),
         filterVariant: "date-range",
         sortingFn: "datetime",
         Cell: ({ cell }) => {
           const value = cell.getValue<Date | null>();
-          return value ? format(value, "yyyy-MM-dd") : "Never";
+          return value ? format(value, "yyyy-MM-dd") : i18n.t("Never");
         },
         size: 120,
       },
       {
         accessorKey: "loginPastMonth",
-        header: "Login Frequency (Past Month)",
+        header: i18n.t("Login Frequency (Past Month)"),
         Cell: ({ cell }) => {
           const value = cell.getValue<number>();
           return value > 0 ? (
-            <Badge color={value > 15 ? "green" : value > 5 ? "blue" : "gray"}>{value} logins</Badge>
+            <Badge color={value > 15 ? "green" : value > 5 ? "blue" : "gray"}>
+              {value} {i18n.t("logins")}
+            </Badge>
           ) : (
-            <Badge color="red">0 logins</Badge>
+            <Badge color="red">0 {i18n.t("logins")}</Badge>
           );
         },
         size: 160,
       },
       {
         accessorKey: "loginTrend",
-        header: "Login Trend (3 Months)",
+        header: i18n.t("Login Trend (3 Months)"),
         Cell: ({ cell }) => {
           const value = cell.getValue<number[]>();
           return <LoginTrendDisplay trend={value} />;
@@ -179,24 +182,25 @@ export default function DataTable() {
       },
       {
         accessorKey: "accessRecency",
-        header: "Access Recency",
+        header: i18n.t("Access Recency"),
         Cell: ({ cell }) => {
           const value = cell.getValue<string>();
           return <AccessRecencyBadge recency={value} />;
         },
         filterVariant: "select",
         filterSelectOptions: [
-          { text: "Last 7 days", value: "lastWeek" },
-          { text: "Last 30 days", value: "lastMonth" },
-          { text: "Over 30 days", value: "overMonth" },
-          { text: "Never", value: "never" },
+          { text: i18n.t("Last 7 days"), value: "lastWeek" },
+          { text: i18n.t("Last 30 days"), value: "lastMonth" },
+          { text: i18n.t("Over 30 days"), value: "overMonth" },
+          { text: i18n.t("Never"), value: "never" },
         ],
         size: 140,
       },
       {
-        accessorFn: (row) => row.organisationUnits?.map((ou) => ou.displayName).join(", ") || "N/A",
+        accessorFn: (row) =>
+          row.organisationUnits?.map((ou) => ou.displayName).join(", ") || i18n.t("N/A"),
         id: "organisationUnits",
-        header: "Organisation Units",
+        header: i18n.t("Organisation Units"),
         Cell: ({ cell }) => {
           const value = cell.getValue<string>();
           return (
@@ -231,8 +235,8 @@ export default function DataTable() {
     renderEmptyRowsFallback: () => (
       <div className="p-4 text-center">
         {userData.length === 0
-          ? "Select a user group to view user engagement data"
-          : "No matching records found"}
+          ? i18n.t("Select a user group to view user engagement data")
+          : i18n.t("No matching records found")}
       </div>
     ),
   });
