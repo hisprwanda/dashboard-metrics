@@ -1,18 +1,34 @@
+<div align="center">
+  <img src="public/dhis2-app-icon.png" alt="Dashboard Metrics App Logo" width="120" height="120">
+
 # Dashboard Metrics App
+
+  **A DHIS2 custom application for comprehensive dashboard usage analytics and user engagement tracking**
+
+  [![DHIS2](https://img.shields.io/badge/DHIS2-v2.39%2B-blue)](https://dhis2.org/)
+  [![License](https://img.shields.io/badge/license-BSD--3--Clause-green)](LICENSE)
+  [![Developed by](https://img.shields.io/badge/developed%20by-HISP%20Rwanda-orange)](https://github.com/hisprwanda)
+</div>
+
+---
 
 ### Contents
 
 - [Introduction](#introduction)
 - [Features](#features)
+- [Screenshots](#screenshots)
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
 - [Development](#development)
 - [Building](#building)
 - [Deployment](#deployment)
+- [Demo Video](#demo-video)
 
 ## Introduction
 
 The Dashboard Metrics App is a DHIS2 custom application developed by HISP Rwanda that provides analytics and tracking capabilities for dashboard usage within a DHIS2 instance. This tool helps organizations monitor and analyze how users interact with their dashboards, enabling better understanding of dashboard utilization patterns.
+
+![Dashboard Metrics Home](media/dashboard-metrics-home.png)
 
 ## Features
 
@@ -40,6 +56,8 @@ The Dashboard Metrics App is a DHIS2 custom application developed by HISP Rwanda
   - Access recency category
   - Assigned organization units
 
+![User Engagement](media/dashboard-metrics-user-engagement.png)
+
 ### 3. District Engagement
 
 - **Org-Unit Level Selector**: Pick the level (e.g., district, facility) for analysis.
@@ -51,6 +69,8 @@ The Dashboard Metrics App is a DHIS2 custom application developed by HISP Rwanda
   - Access percentage (users who have ever logged in)
   - Consistently active districts (≥1 login/week)
   - Total dashboard views
+
+![District Engagement](media/dashboard-metrics-district-engagement.png)
 
 ### 4. Inactivity Tracking
 
@@ -67,10 +87,38 @@ The Dashboard Metrics App is a DHIS2 custom application developed by HISP Rwanda
   - Dashboards assigned
   - Email address for follow-up
 
+![Inactivity Tracking](media/dashboard-metrics-inactivity-tracking.png)
+
 ### 5. Export Capabilities
 
 - **Excel Export**: Download any table or report as an Excel file.
 - **PDF Export**: Download any table or report as a PDF document.
+
+## Screenshots
+
+<div align="center">
+
+### Organization Unit Selection
+
+![Org Unit Selection](media/dashboard-metrics-org-unit-selection.png)
+
+### Dashboard Overview
+
+![Dashboard Home](media/dashboard-metrics-home.png)
+
+### User Engagement Analytics
+
+![User Engagement](media/dashboard-metrics-user-engagement.png)
+
+### District Engagement Metrics
+
+![District Engagement](media/dashboard-metrics-district-engagement.png)
+
+### Inactivity Tracking
+
+![Inactivity Tracking](media/dashboard-metrics-inactivity-tracking.png)
+
+</div>
 
 ## Prerequisites
 
@@ -132,3 +180,44 @@ You will need to provide:
 - Password
 
 > **Note:** Be sure to run `yarn build` before deploying.
+
+---
+
+## Demo Video
+
+Watch the full walkthrough of the Dashboard Metrics App in action:
+
+<div align="center">
+
+[![Dashboard Metrics Demo](media/dashboard-metrics-home.png)](https://github.com/hisprwanda/dashboard-metrics/raw/develop/media/dashboard-usage-metrics-demo.mp4)
+
+**👆 Click the image above to download and watch the demo video**
+
+*A comprehensive demonstration of all features including dashboard tracking, user engagement analytics, district metrics, and inactivity monitoring.*
+
+</div>
+
+---
+
+## Contributing
+
+We welcome contributions! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+
+This project is licensed under the BSD-3-Clause License.
+
+## Support
+
+For questions, issues, or support:
+
+- Open an issue on [GitHub Issues](https://github.com/hisprwanda/dashboard-metrics/issues)
+- Contact HISP Rwanda
+
+---
+
+<div align="center">
+
+**Developed with ❤️ by [HISP Rwanda](https://github.com/hisprwanda)**
+
+</div>
