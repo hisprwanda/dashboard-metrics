@@ -6,6 +6,7 @@ import { useDashboard } from "../../../context/DashboardContext";
 import { useSystem } from "../../../context/SystemContext";
 import { useDashboardData } from "../../../hooks/useDashboardData";
 import { useFilteredUsers } from "../../../hooks/users";
+import i18n from "../../../locales";
 import type { LinkedUser, VisitDetails } from "../../../types/dashboard-reportType";
 import type { UserResponse } from "../../../types/dashboard-data";
 
@@ -288,7 +289,7 @@ export default function DashboardReport() {
   if (!row || !value) {
     return (
       <div className="flex justify-center items-center h-40 text-gray-500">
-        No dashboard selected or date range specified.
+        {i18n.t("No dashboard selected or date range specified.")}
       </div>
     );
   }

@@ -7,6 +7,7 @@ import { differenceInDays, format } from "date-fns";
 import type { MRT_ColumnDef, MRT_TableOptions } from "mantine-react-table";
 import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
 
+import i18n from "../../../locales";
 import { FilterSection, type FilteredUser } from "./filter-section";
 
 // Define the type for inactivity tracking data
@@ -31,20 +32,20 @@ const mapUserToTableData = (user: FilteredUser): InactivityData => {
   const daysSinceLastLogin = lastLoginDate ? differenceInDays(new Date(), lastLoginDate) : null;
 
   // Determine active status based on login date
-  let activeStatus = "Active";
+  let activeStatus = i18n.t("Active");
   if (!lastLoginDate) {
-    activeStatus = "Critical"; // Never logged in
+    activeStatus = i18n.t("Critical"); // Never logged in
   } else if (daysSinceLastLogin && daysSinceLastLogin > 90) {
-    activeStatus = "Critical"; // Over 90 days
+    activeStatus = i18n.t("Critical"); // Over 90 days
   } else if (daysSinceLastLogin && daysSinceLastLogin > 60) {
-    activeStatus = "Inactive"; // 60-90 days
+    activeStatus = i18n.t("Inactive"); // 60-90 days
   } else if (daysSinceLastLogin && daysSinceLastLogin > 30) {
-    activeStatus = "Warning"; // 30-60 days
+    activeStatus = i18n.t("Warning"); // 30-60 days
   }
 
   // Extract role information
   const roles = user.userCredentials?.userRoles || [];
-  const role = roles.length > 0 ? roles[0].displayName : "Unknown";
+  const role = roles.length > 0 ? roles[0].displayName : i18n.t("Unknown");
 
   // Get assigned dashboards count (this would need to be implemented with real data)
   // For now using a placeholder value based on user groups count
@@ -96,57 +97,57 @@ export default function DataTable() {
     () => [
       {
         accessorKey: "username",
-        header: "Username",
+        header: i18n.t("Username"),
         size: 120,
       },
       {
         accessorKey: "fullName",
-        header: "Full Name",
+        header: i18n.t("Full Name"),
         size: 150,
       },
       {
         accessorKey: "role",
-        header: "Role",
+        header: i18n.t("Role"),
         size: 150,
       },
       {
         accessorFn: (row) => row.lastLoginDate,
         id: "lastLoginDate",
-        header: "Last Login",
+        header: i18n.t("Last Login"),
         filterVariant: "date-range",
         sortingFn: "datetime",
         Cell: ({ cell }) => {
           const value = cell.getValue<Date | null>();
-          return value ? format(value, "yyyy-MM-dd") : "Never";
+          return value ? format(value, "yyyy-MM-dd") : i18n.t("Never");
         },
         size: 120,
       },
       {
         accessorKey: "daysSinceLastLogin",
-        header: "Days Inactive",
+        header: i18n.t("Days Inactive"),
         Cell: ({ cell }) => {
           const value = cell.getValue<number | null>();
-          return value !== null ? value : "N/A";
+          return value !== null ? value : i18n.t("N/A");
         },
         size: 120,
       },
       {
         accessorKey: "activeStatus",
-        header: "Status",
+        header: i18n.t("Status"),
         Cell: ({ cell }) => {
           const value = cell.getValue<string>();
           let color = "";
           switch (value) {
-            case "Active":
+            case i18n.t("Active"):
               color = "green";
               break;
-            case "Warning":
+            case i18n.t("Warning"):
               color = "orange";
               break;
-            case "Inactive":
+            case i18n.t("Inactive"):
               color = "red";
               break;
-            case "Critical":
+            case i18n.t("Critical"):
               color = "darkred";
               break;
           }
@@ -156,7 +157,7 @@ export default function DataTable() {
       },
       {
         accessorKey: "assignedDashboards",
-        header: "Dashboards",
+        header: i18n.t("Dashboards"),
         size: 100,
       },
     ],
@@ -167,8 +168,8 @@ export default function DataTable() {
     () => (
       <div className="p-4 text-center">
         {userData.length === 0
-          ? "Select a user group to view user data"
-          : "No matching records found"}
+          ? i18n.t("Select a user group to view user data")
+          : i18n.t("No matching records found")}
       </div>
     ),
     [userData.length]
@@ -179,7 +180,7 @@ export default function DataTable() {
       <div className="ml-2">
         {userData.length > 0 && (
           <div className="text-sm">
-            <span className="font-semibold mr-1">Users found:</span>
+            <span className="font-semibold mr-1">{i18n.t("Users found")}:</span>
             {isLoading ? (
               <Skeleton height={18} width={30} radius="xl" />
             ) : (

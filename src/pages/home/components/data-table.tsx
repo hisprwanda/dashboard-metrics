@@ -7,6 +7,7 @@ import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
 
 import { useDashboardsInfo } from "../../../hooks/dashboards";
 import { capitalizeFirstChar } from "../../../lib/utils";
+import i18n from "../../../locales";
 import type { DashboardConverted, Visualization } from "../../../types/dashboardsType";
 
 import TableActions from "./table-actions";
@@ -62,13 +63,13 @@ export default function DataTable() {
     () => [
       {
         accessorFn: (row) => row?.name,
-        header: "Name",
+        header: i18n.t("Name"),
         size: 40,
       },
 
       {
         accessorFn: (row) => capitalizeFirstChar(row?.favorite?.toString()),
-        header: "Isfavorite",
+        header: i18n.t("Is Favorite"),
         size: 40,
       },
 
@@ -79,7 +80,7 @@ export default function DataTable() {
           return sDay;
         },
         id: "created",
-        header: "created",
+        header: i18n.t("Created"),
         filterVariant: "date-range",
         sortingFn: "datetime",
         enableColumnFilterModes: false,
@@ -90,7 +91,7 @@ export default function DataTable() {
 
       {
         accessorFn: (row) => row?.createdBy?.displayName,
-        header: "createdBy",
+        header: i18n.t("Created By"),
         size: 40,
       },
     ],

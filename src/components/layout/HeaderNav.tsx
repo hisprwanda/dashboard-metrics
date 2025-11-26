@@ -2,26 +2,32 @@ import { Link, useLocation } from "react-router-dom";
 
 import { Tooltip } from "@dhis2/ui";
 
+import i18n from "../../locales";
+
 export default function HeaderNav() {
   const location = useLocation();
   const { pathname } = location;
 
   const navLinks = [
-    { name: "Dashboard Usage", path: "/", description: "Metrics on dashboard usage patterns" },
     {
-      name: "District Engagement",
+      name: i18n.t("Dashboard Usage"),
+      path: "/",
+      description: i18n.t("Metrics on dashboard usage patterns"),
+    },
+    {
+      name: i18n.t("District Engagement"),
       path: "/district-engagement",
-      description: "Monitor engagement across districts",
+      description: i18n.t("Monitor engagement across districts"),
     },
     {
-      name: "User Engagement",
+      name: i18n.t("User Engagement"),
       path: "/user-engagement",
-      description: "Track user activity and engagement metrics",
+      description: i18n.t("Track user activity and engagement metrics"),
     },
     {
-      name: "Inactivity Tracking",
+      name: i18n.t("Inactivity Tracking"),
       path: "/inactivity-tracking",
-      description: "Identify and analyze user inactivity",
+      description: i18n.t("Identify and analyze user inactivity"),
     },
   ];
 

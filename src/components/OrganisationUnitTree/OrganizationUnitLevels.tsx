@@ -4,6 +4,7 @@ import React from "react";
 
 import { CircularLoader } from "@dhis2/ui";
 
+import i18n from "../../locales";
 import { MultiSelect } from "../ui/multi-select";
 
 interface OrganizationUnitLevelsProps {
@@ -33,7 +34,11 @@ const OrganizationUnitLevels: React.FC<OrganizationUnitLevelsProps> = ({
   }
 
   if (error) {
-    return <p className="text-red-500">Error: {error.message}</p>;
+    return (
+      <p className="text-red-500">
+        {i18n.t("Error")}: {error.message}
+      </p>
+    );
   }
 
   return (
@@ -44,7 +49,7 @@ const OrganizationUnitLevels: React.FC<OrganizationUnitLevelsProps> = ({
       }))}
       onValueChange={handleChange}
       defaultValue={selectedLevels.map(String)}
-      placeholder="Select levels"
+      placeholder={i18n.t("Select levels")}
       variant="inverted"
       maxCount={3}
       disabled={disabled}

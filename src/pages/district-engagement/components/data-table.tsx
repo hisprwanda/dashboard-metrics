@@ -6,6 +6,7 @@ import type { MRT_ColumnDef } from "mantine-react-table";
 import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
 
 import { useDashboard } from "../../../context/DashboardContext";
+import i18n from "../../../locales";
 import type { DistrictEngagement } from "../../../lib/processDistrictData";
 
 import { FilterSection } from "./filter-section";
@@ -20,45 +21,45 @@ export default function DataTable() {
     () => [
       {
         accessorKey: "OrgUnitName",
-        header: "Org Unit Name",
+        header: i18n.t("Org Unit Name"),
         size: 150,
       },
       {
         accessorKey: "totalUsers",
-        header: "Total Users",
+        header: i18n.t("Total Users"),
         size: 120,
       },
       {
         accessorKey: "activeUsers",
-        header: "Active Users",
+        header: i18n.t("Active Users"),
         size: 120,
       },
       {
         accessorKey: "lastActivity",
-        header: "Last Activity",
+        header: i18n.t("Last Activity"),
         size: 120,
       },
       {
         accessorKey: "accessPercentage",
-        header: "Access %",
+        header: i18n.t("Access %"),
         size: 100,
       },
       {
         accessorKey: "isConsistentlyActive",
-        header: "Consistently Active",
+        header: i18n.t("Consistently Active"),
         Cell: ({ cell }) => {
           const value = cell.getValue<boolean>();
           return value ? (
-            <span style={{ color: "green" }}>Yes</span>
+            <span style={{ color: "green" }}>{i18n.t("Yes")}</span>
           ) : (
-            <span style={{ color: "red" }}>No</span>
+            <span style={{ color: "red" }}>{i18n.t("No")}</span>
           );
         },
         size: 150,
       },
       {
         accessorKey: "dashboardViews",
-        header: "Dashboard Views",
+        header: i18n.t("Dashboard Views"),
         size: 150,
       },
     ],
@@ -90,8 +91,8 @@ export default function DataTable() {
     renderEmptyRowsFallback: () => (
       <div className="p-4 text-center">
         {!state.selectedOrgUnitLevel
-          ? "Please select an organization unit level to view district data"
-          : "No data found for the selected organization unit level"}
+          ? i18n.t("Please select an organization unit level to view district data")
+          : i18n.t("No data found for the selected organization unit level")}
       </div>
     ),
   });

@@ -1,5 +1,7 @@
 import React from "react";
 
+import i18n from "../locales";
+
 export default function NotFoundPage() {
   return (
     <main>
@@ -20,13 +22,15 @@ export default function NotFoundPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center">
             <p className="text-base font-semibold leading-8">404</p>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight  sm:text-5xl">Page not found</h1>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight  sm:text-5xl">
+              {i18n.t("Page not found")}
+            </h1>
             <p className="mt-4 text-base /70 sm:mt-6">
-              Sorry, we couldn’t find the page you’re looking for.
+              {i18n.t("Sorry, we couldn't find the page you're looking for.")}
             </p>
             <div className="mt-10 flex justify-center">
               <a href="/" className="text-sm font-semibold leading-7">
-                <span aria-hidden="true">&larr;</span> Back to home
+                <span aria-hidden="true">&larr;</span> {i18n.t("Back to home")}
               </a>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { subDays } from "date-fns";
 import { CircularLoader, MultiSelectField, MultiSelectOption } from "@dhis2/ui";
 
 import { useFilteredUsers, useUserGroups } from "../../../hooks/users";
+import i18n from "../../../locales";
 
 // Interface for user login status options
 type LoginStatusValue = "inactive" | "active";
@@ -221,14 +222,14 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         {/* User Groups Selector */}
         <div>
           <MultiSelectField
-            label="User Groups"
+            label={i18n.t("User Groups")}
             onChange={handleUserGroupsChange}
             selected={selectedUserGroups}
             loading={userGroupsQuery.loading}
             filterable
             clearable
-            placeholder="Select user groups"
-            noMatchText="No user groups found"
+            placeholder={i18n.t("Select user groups")}
+            noMatchText={i18n.t("No user groups found")}
             className="mb-4"
             dataTest="user-groups-selector"
           >
@@ -241,11 +242,11 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         {/* Login Status Selector */}
         <div>
           <MultiSelectField
-            label="Login Status"
+            label={i18n.t("Login Status")}
             onChange={handleLoginStatusChange}
             selected={selectedLoginStatus}
             clearable
-            placeholder="Select login status"
+            placeholder={i18n.t("Select login status")}
             className="mb-4"
             dataTest="login-status-selector"
           >
@@ -260,20 +261,20 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       <div className="flex items-center">
         {hasError && (
           <div className="text-red-500">
-            An error occurred while fetching user data. Please try again.
+            {i18n.t("An error occurred while fetching user data. Please try again.")}
           </div>
         )}
 
         {selectedUserGroups.length > 0 && filteredUsersQuery.loading && (
           <div className="flex items-center">
             <CircularLoader small />
-            <span className="ml-2">Fetching user data...</span>
+            <span className="ml-2">{i18n.t("Fetching user data...")}</span>
           </div>
         )}
       </div>
 
       {selectedUserGroups.length === 0 && (
-        <div className="p-4 text-center">Select a user group to view user data</div>
+        <div className="p-4 text-center">{i18n.t("Select a user group to view user data")}</div>
       )}
     </div>
   );

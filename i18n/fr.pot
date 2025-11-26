@@ -1,0 +1,400 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: i18next-conv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"POT-Creation-Date: 2025-11-26T14:45:36.786Z\n"
+"PO-Revision-Date: 2025-11-26T14:45:36.786Z\n"
+
+msgid "Pick a date"
+msgstr "Choisir une date"
+
+msgid "Dashboard Usage"
+msgstr "Utilisation du tableau de bord"
+
+msgid "Metrics on dashboard usage patterns"
+msgstr "Métriques sur les modèles d'utilisation du tableau de bord"
+
+msgid "District Engagement"
+msgstr "Engagement du district"
+
+msgid "Monitor engagement across districts"
+msgstr "Surveiller l'engagement dans tous les districts"
+
+msgid "User Engagement"
+msgstr "Engagement des utilisateurs"
+
+msgid "Track user activity and engagement metrics"
+msgstr "Suivre l'activité des utilisateurs et les métriques d'engagement"
+
+msgid "Inactivity Tracking"
+msgstr "Suivi d'inactivité"
+
+msgid "Identify and analyze user inactivity"
+msgstr "Identifier et analyser l'inactivité des utilisateurs"
+
+msgid "Loading organization units..."
+msgstr "Chargement des unités d'organisation..."
+
+msgid "Error"
+msgstr "Erreur"
+
+msgid "Search Organization Unit (type at least 3 characters)"
+msgstr "Rechercher une unité d'organisation (tapez au moins 3 caractères)"
+
+msgid "Type to search..."
+msgstr "Tapez pour rechercher..."
+
+msgid "Please type at least 3 characters to search"
+msgstr "Veuillez taper au moins 3 caractères pour rechercher"
+
+msgid "No results found"
+msgstr "Aucun résultat trouvé"
+
+msgid "No organization units match your search criteria"
+msgstr "Aucune unité d'organisation ne correspond à vos critères de recherche"
+
+msgid "Found"
+msgstr "Trouvé"
+
+msgid "matching organization unit(s)"
+msgstr "unité(s) d'organisation correspondante(s)"
+
+msgid "Search Results"
+msgstr "Résultats de recherche"
+
+msgid "Searching..."
+msgstr "Recherche en cours..."
+
+msgid "Loading units by level..."
+msgstr "Chargement des unités par niveau..."
+
+msgid "Loading units by group..."
+msgstr "Chargement des unités par groupe..."
+
+msgid "Selected units"
+msgstr "Unités sélectionnées"
+
+msgid "Select Organization Unit Levels"
+msgstr "Sélectionner les niveaux d'unité d'organisation"
+
+msgid "Select Organization Unit Groups"
+msgstr "Sélectionner les groupes d'unités d'organisation"
+
+msgid "Deselect All"
+msgstr "Tout désélectionner"
+
+msgid "Submit Selected Org Units"
+msgstr "Soumettre les unités d'organisation sélectionnées"
+
+msgid "Submit Empty Selection"
+msgstr "Soumettre une sélection vide"
+
+msgid "Select organization unit groups"
+msgstr "Sélectionner les groupes d'unités d'organisation"
+
+msgid "Select levels"
+msgstr "Sélectionner les niveaux"
+
+msgid "Search Organization Unit"
+msgstr "Rechercher une unité d'organisation"
+
+msgid "Selected Organization Unit Path"
+msgstr "Chemin de l'unité d'organisation sélectionnée"
+
+msgid "Selected Organization Unit ID"
+msgstr "ID de l'unité d'organisation sélectionnée"
+
+msgid "Selected Organization Unit Name"
+msgstr "Nom de l'unité d'organisation sélectionnée"
+
+msgid "Org Unit Name"
+msgstr "Nom de l'unité d'organisation"
+
+msgid "Total Users"
+msgstr "Nombre total d'utilisateurs"
+
+msgid "Active Users"
+msgstr "Utilisateurs actifs"
+
+msgid "Last Activity"
+msgstr "Dernière activité"
+
+msgid "Access %"
+msgstr "Accès %"
+
+msgid "Consistently Active"
+msgstr "Toujours actif"
+
+msgid "Yes"
+msgstr "Oui"
+
+msgid "No"
+msgstr "Non"
+
+msgid "Dashboard Views"
+msgstr "Vues du tableau de bord"
+
+msgid "Please select an organization unit level to view district data"
+msgstr "Veuillez sélectionner un niveau d'unité d'organisation pour voir les données du district"
+
+msgid "No data found for the selected organization unit level"
+msgstr "Aucune donnée trouvée pour le niveau d'unité d'organisation sélectionné"
+
+msgid "District Engagement Filters"
+msgstr "Filtres d'engagement du district"
+
+msgid "Organization Unit Level"
+msgstr "Niveau d'unité d'organisation"
+
+msgid "Select organization unit level"
+msgstr "Sélectionner le niveau d'unité d'organisation"
+
+msgid "Level"
+msgstr "Niveau"
+
+msgid "Loading organization unit levels..."
+msgstr "Chargement des niveaux d'unités d'organisation..."
+
+msgid "Processing district data..."
+msgstr "Traitement des données du district..."
+
+msgid "Loading user data..."
+msgstr "Chargement des données utilisateur..."
+
+msgid ""
+"Select an organization unit level to view engagement metrics for all "
+"districts at that level."
+msgstr ""
+"Sélectionnez un niveau d'unité d'organisation pour voir les métriques "
+"d'engagement pour tous les districts à ce niveau."
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Access Frequency"
+msgstr "Fréquence d'accès"
+
+msgid "Last Visit"
+msgstr "Dernière visite"
+
+msgid "Organisations"
+msgstr "Organisations"
+
+msgid "User Groups"
+msgstr "Groupes d'utilisateurs"
+
+msgid "Roles"
+msgstr "Rôles"
+
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+msgid "Period"
+msgstr "Période"
+
+msgid "Export Date"
+msgstr "Date d'exportation"
+
+msgid "Total Visits"
+msgstr "Nombre total de visites"
+
+msgid "Dashboard Info"
+msgstr "Informations sur le tableau de bord"
+
+msgid "User Access Data"
+msgstr "Données d'accès utilisateur"
+
+msgid "Failed to export PDF. See console for details."
+msgstr "Échec de l'exportation PDF. Voir la console pour plus de détails."
+
+msgid ""
+"No users from the selected organization units visited this dashboard in the "
+"selected period."
+msgstr ""
+"Aucun utilisateur des unités d'organisation sélectionnées n'a visité ce "
+"tableau de bord pendant la période sélectionnée."
+
+msgid "No user visit details available."
+msgstr "Aucun détail de visite d'utilisateur disponible."
+
+msgid "Top Users"
+msgstr "Meilleurs utilisateurs"
+
+msgid "None"
+msgstr "Aucun"
+
+msgid "Export to Excel"
+msgstr "Exporter vers Excel"
+
+msgid "Export to PDF"
+msgstr "Exporter vers PDF"
+
+msgid "Is Favorite"
+msgstr "Est favori"
+
+msgid "Created"
+msgstr "Créé"
+
+msgid "Created By"
+msgstr "Créé par"
+
+msgid "Select Organisation Unit"
+msgstr "Sélectionner une unité d'organisation"
+
+msgid "Select Organisation Units"
+msgstr "Sélectionner des unités d'organisation"
+
+msgid "No dashboard selected or date range specified."
+msgstr "Aucun tableau de bord sélectionné ou plage de dates spécifiée."
+
+msgid "org units"
+msgstr "unités d'organisation"
+
+msgid "org unit"
+msgstr "unité d'organisation"
+
+msgid "selected"
+msgstr "sélectionné"
+
+msgid "Active"
+msgstr "Actif"
+
+msgid "Critical"
+msgstr "Critique"
+
+msgid "Inactive"
+msgstr "Inactif"
+
+msgid "Warning"
+msgstr "Avertissement"
+
+msgid "Unknown"
+msgstr "Inconnu"
+
+msgid "Username"
+msgstr "Nom d'utilisateur"
+
+msgid "Full Name"
+msgstr "Nom complet"
+
+msgid "Role"
+msgstr "Rôle"
+
+msgid "Last Login"
+msgstr "Dernière connexion"
+
+msgid "Never"
+msgstr "Jamais"
+
+msgid "Days Inactive"
+msgstr "Jours d'inactivité"
+
+msgid "N/A"
+msgstr "N/A"
+
+msgid "Status"
+msgstr "Statut"
+
+msgid "Dashboards"
+msgstr "Tableaux de bord"
+
+msgid "Select a user group to view user data"
+msgstr "Sélectionnez un groupe d'utilisateurs pour voir les données utilisateur"
+
+msgid "No matching records found"
+msgstr "Aucun enregistrement correspondant trouvé"
+
+msgid "Users found"
+msgstr "Utilisateurs trouvés"
+
+msgid "Select user groups"
+msgstr "Sélectionner des groupes d'utilisateurs"
+
+msgid "No user groups found"
+msgstr "Aucun groupe d'utilisateurs trouvé"
+
+msgid "Login Status"
+msgstr "Statut de connexion"
+
+msgid "Select login status"
+msgstr "Sélectionner le statut de connexion"
+
+msgid "An error occurred while fetching user data. Please try again."
+msgstr "Une erreur s'est produite lors de la récupération des données utilisateur. Veuillez réessayer."
+
+msgid "Fetching user data..."
+msgstr "Récupération des données utilisateur..."
+
+msgid "Page not found"
+msgstr "Page non trouvée"
+
+msgid "Sorry, we couldn't find the page you're looking for."
+msgstr "Désolé, nous n'avons pas pu trouver la page que vous recherchez."
+
+msgid "Back to home"
+msgstr "Retour à l'accueil"
+
+msgid "Last 7 days"
+msgstr "7 derniers jours"
+
+msgid "Last 30 days"
+msgstr "30 derniers jours"
+
+msgid "Over 30 days"
+msgstr "Plus de 30 jours"
+
+msgid "Login Frequency (Past Month)"
+msgstr "Fréquence de connexion (mois dernier)"
+
+msgid "logins"
+msgstr "connexions"
+
+msgid "Login Trend (3 Months)"
+msgstr "Tendance de connexion (3 mois)"
+
+msgid "Access Recency"
+msgstr "Récence d'accès"
+
+msgid "Organisation Units"
+msgstr "Unités d'organisation"
+
+msgid "Select a user group to view user engagement data"
+msgstr "Sélectionnez un groupe d'utilisateurs pour voir les données d'engagement des utilisateurs"
+
+msgid "Never logged in"
+msgstr "Jamais connecté"
+
+msgid "Login Frequency"
+msgstr "Fréquence de connexion"
+
+msgid "Total Logins (Past Month)"
+msgstr "Nombre total de connexions (mois dernier)"
+
+msgid "Average Logins Per User"
+msgstr "Nombre moyen de connexions par utilisateur"
+
+msgid "User Highlights"
+msgstr "Points forts des utilisateurs"
+
+msgid "Most Active User"
+msgstr "Utilisateur le plus actif"
+
+msgid "Least Active User"
+msgstr "Utilisateur le moins actif"
+
+msgctxt "Application title"
+msgid "__MANIFEST_APP_TITLE"
+msgstr "Métriques d'utilisation du tableau de bord"
+
+msgctxt "Application description"
+msgid "__MANIFEST_APP_DESCRIPTION"
+msgstr ""
+"L'application Métriques d'utilisation du tableau de bord fournit des "
+"capacités d'analyse et de suivi pour l'utilisation des tableaux de bord "
+"dans une instance DHIS2. Cet outil aide les organisations à surveiller et "
+"analyser la façon dont les utilisateurs interagissent avec leurs tableaux "
+"de bord, permettant une meilleure compréhension des modèles d'utilisation "
+"des tableaux de bord."

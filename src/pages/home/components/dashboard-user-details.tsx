@@ -14,6 +14,7 @@ import {
 } from "mantine-react-table";
 import * as XLSX from "xlsx";
 
+import i18n from "../../../locales";
 import type { DateValueType, LinkedUser } from "@/types/dashboard-reportType";
 import type { DashboardConverted } from "@/types/dashboardsType";
 
@@ -55,7 +56,7 @@ export default function DashboardUserDetails({
 
           return firstName && surname ? `${firstName} ${surname} (${username})` : username;
         },
-        header: "Name",
+        header: i18n.t("Name"),
         size: 40,
         Cell: ({ row }) => {
           const firstName = row.original?.firstName || "";
@@ -79,7 +80,7 @@ export default function DashboardUserDetails({
       {
         accessorFn: (row) => row?.visits || 0,
         id: "AccessFrequency",
-        header: "Access Frequency",
+        header: i18n.t("Access Frequency"),
         size: 40,
       },
       {
@@ -90,7 +91,7 @@ export default function DashboardUserDetails({
           return sDay;
         },
         id: "lastVisit",
-        header: "Last Visit",
+        header: i18n.t("Last Visit"),
         filterVariant: "date-range",
         sortingFn: "datetime",
         enableColumnFilterModes: false,
@@ -105,20 +106,20 @@ export default function DashboardUserDetails({
         accessorFn: (row) =>
           row?.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
         id: "organisations",
-        header: "Organisations",
+        header: i18n.t("Organisations"),
         size: 40,
       },
       {
         accessorFn: (row) => row?.userGroups?.map((group) => group?.displayName).join(", ") || "",
         id: "userGroups",
-        header: "User Groups",
+        header: i18n.t("User Groups"),
         size: 40,
       },
       {
         accessorFn: (row) =>
           row?.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "",
         id: "userRoles",
-        header: "Roles",
+        header: i18n.t("Roles"),
         size: 40,
       },
     ],
@@ -142,11 +143,13 @@ export default function DashboardUserDetails({
       }
 
       return {
-        Name: displayName,
-        "User Groups": userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
-        Organisations: userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
-        "Access Frequency": userData.visits || 0,
-        "Last Visit": lastVisitDate,
+        [i18n.t("Name")]: displayName,
+        [i18n.t("User Groups")]:
+          userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
+        [i18n.t("Organisations")]:
+          userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
+        [i18n.t("Access Frequency")]: userData.visits || 0,
+        [i18n.t("Last Visit")]: lastVisitDate,
       };
     });
 
@@ -159,24 +162,24 @@ export default function DashboardUserDetails({
 
     // Create metadata in the correct format for proper cell placement
     const metadataArray = [
-      ["Dashboard", row?.displayName || "-"],
+      [i18n.t("Dashboard"), row?.displayName || "-"],
       [
-        "Period",
+        i18n.t("Period"),
         `${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
       ],
-      ["Export Date", new Date().toLocaleDateString("en-CA")],
-      ["Total Visits", dashboardStats.totalVisits.toString()],
+      [i18n.t("Export Date"), new Date().toLocaleDateString("en-CA")],
+      [i18n.t("Total Visits"), dashboardStats.totalVisits.toString()],
     ];
 
     // Convert array to worksheet (this ensures proper cell placement)
     const metadataWs = XLSX.utils.aoa_to_sheet(metadataArray);
-    XLSX.utils.book_append_sheet(wb, metadataWs, "Dashboard Info");
+    XLSX.utils.book_append_sheet(wb, metadataWs, i18n.t("Dashboard Info"));
 
     // Convert data to worksheet
     const ws = XLSX.utils.json_to_sheet(exportData);
 
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, "User Access Data");
+    XLSX.utils.book_append_sheet(wb, ws, i18n.t("User Access Data"));
 
     // Generate XLSX file and trigger download
     XLSX.writeFile(
@@ -197,24 +200,24 @@ export default function DashboardUserDetails({
 
       // Add title and metadata before the table
       doc.setFontSize(16);
-      doc.text(`Dashboard: ${row?.displayName || "-"}`, 14, 15);
+      doc.text(`${i18n.t("Dashboard")}: ${row?.displayName || "-"}`, 14, 15);
 
       doc.setFontSize(12);
       doc.text(
-        `Period: ${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
+        `${i18n.t("Period")}: ${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
         14,
         22
       );
-      doc.text(`Export Date: ${new Date().toLocaleDateString("en-CA")}`, 14, 29);
-      doc.text(`Total Visits: ${dashboardStats.totalVisits}`, 14, 36);
+      doc.text(`${i18n.t("Export Date")}: ${new Date().toLocaleDateString("en-CA")}`, 14, 29);
+      doc.text(`${i18n.t("Total Visits")}: ${dashboardStats.totalVisits}`, 14, 36);
 
       // Get table headers from columns
       const tableHeaders = [
-        "Name",
-        "User Groups",
-        "Organisations",
-        "Access Frequency",
-        "Last Visit",
+        i18n.t("Name"),
+        i18n.t("User Groups"),
+        i18n.t("Organisations"),
+        i18n.t("Access Frequency"),
+        i18n.t("Last Visit"),
       ];
 
       // Prepare table data from rows
@@ -264,7 +267,7 @@ export default function DashboardUserDetails({
         `Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.pdf`
       );
     } catch (error) {
-      alert("Failed to export PDF. See console for details.");
+      alert(i18n.t("Failed to export PDF. See console for details."));
     }
   };
 
@@ -311,8 +314,10 @@ export default function DashboardUserDetails({
         {loading
           ? ""
           : hasOrgUnitFilter && linkedUsers.length === 0
-            ? "No users from the selected organization units visited this dashboard in the selected period."
-            : "No user visit details available."}
+            ? i18n.t(
+                "No users from the selected organization units visited this dashboard in the selected period."
+              )
+            : i18n.t("No user visit details available.")}
       </div>
     ),
     renderTopToolbarCustomActions: ({ table }) => (
@@ -321,14 +326,14 @@ export default function DashboardUserDetails({
         <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-1 mb-2 bg-gray-50 rounded border border-gray-200">
           <div className="flex items-center gap-2">
             <Text size="sm" weight={500}>
-              Dashboard:
+              {i18n.t("Dashboard")}:
             </Text>
             <Text size="sm">{row?.displayName || "-"}</Text>
           </div>
 
           <div className="flex items-center gap-2">
             <Text size="sm" weight={500}>
-              Period:
+              {i18n.t("Period")}:
             </Text>
             <Text size="sm">
               {value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} -{" "}
@@ -338,7 +343,7 @@ export default function DashboardUserDetails({
 
           <div className="flex items-center gap-2">
             <Text size="sm" weight={500}>
-              Total Visits:
+              {i18n.t("Total Visits")}:
             </Text>
             <Badge color="blue">{dashboardStats.totalVisits}</Badge>
           </div>
@@ -346,7 +351,7 @@ export default function DashboardUserDetails({
           <div className="flex items-center gap-2">
             <Text size="sm" weight={500}>
               <IconUser size={14} className="inline mr-1" />
-              Top Users:
+              {i18n.t("Top Users")}:
             </Text>
             <div className="flex flex-wrap gap-1">
               {dashboardStats.topUsers.map((user, index) => (
@@ -364,7 +369,7 @@ export default function DashboardUserDetails({
               ))}
               {dashboardStats.topUsers.length === 0 && (
                 <Text size="xs" color="dimmed">
-                  None
+                  {i18n.t("None")}
                 </Text>
               )}
             </div>
@@ -381,7 +386,7 @@ export default function DashboardUserDetails({
             variant="filled"
             size="xs"
           >
-            Export to Excel
+            {i18n.t("Export to Excel")}
           </Button>
           <Button
             disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
@@ -391,7 +396,7 @@ export default function DashboardUserDetails({
             variant="filled"
             size="xs"
           >
-            Export to PDF
+            {i18n.t("Export to PDF")}
           </Button>
         </Group>
       </div>

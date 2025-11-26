@@ -1,6 +1,6 @@
 {
   "name": "dashboard-usage-metrics",
-  "version": "2.4.789",
+  "version": "2.5.12",
   "description": "DHIS2 Dashboard Usage Metrics - Track and analyze dashboard engagement, user activity, and inactivity patterns",
   "author": "HISP Rwanda",
   "license": "BSD-3-Clause",
@@ -21,6 +21,7 @@
     "start:proxy": "node scripts/start-with-proxy.js",
     "test": "d2-app-scripts test",
     "deploy": "d2-app-scripts deploy",
+    "i18n:extract": "d2-app-scripts i18n extract",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "lint:check": "eslint \"src/**/*.{ts,tsx}\"",
     "type-check": "tsc --noEmit",
