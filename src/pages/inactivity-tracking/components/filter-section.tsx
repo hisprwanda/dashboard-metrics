@@ -91,15 +91,15 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   const loginStatusOptions: UserLoginStatusOption[] = [
     {
       id: "never_logged_in",
-      label: "Never Logged In",
+      label: i18n.t("Never Logged In"),
       value: "inactive",
-      description: "Users who have never logged in",
+      description: i18n.t("Users who have never logged in"),
     },
     {
       id: "inactive_30_days",
-      label: "Inactive (30+ Days)",
+      label: i18n.t("Inactive (30+ Days)"),
       value: "active",
-      description: "Users who haven't logged in for the past 30 days",
+      description: i18n.t("Users who haven't logged in for the past 30 days"),
     },
   ];
 

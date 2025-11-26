@@ -385,6 +385,18 @@ msgstr "Utilisateur le plus actif"
 msgid "Least Active User"
 msgstr "Utilisateur le moins actif"
 
+msgid "Never Logged In"
+msgstr "Jamais connecté"
+
+msgid "Users who have never logged in"
+msgstr "Utilisateurs qui ne se sont jamais connectés"
+
+msgid "Inactive (30+ Days)"
+msgstr "Inactif (30+ jours)"
+
+msgid "Users who haven't logged in for the past 30 days"
+msgstr "Utilisateurs qui ne se sont pas connectés depuis 30 jours"
+
 msgctxt "Application title"
 msgid "__MANIFEST_APP_TITLE"
 msgstr "Métriques d'utilisation du tableau de bord"

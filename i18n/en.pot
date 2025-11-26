@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2025-11-26T14:45:36.786Z\n"
-"PO-Revision-Date: 2025-11-26T14:45:36.786Z\n"
+"POT-Creation-Date: 2025-11-26T15:11:00.219Z\n"
+"PO-Revision-Date: 2025-11-26T15:11:00.220Z\n"
 
 msgid "Pick a date"
 msgstr "Pick a date"
@@ -309,6 +309,18 @@ msgstr "No matching records found"
 
 msgid "Users found"
 msgstr "Users found"
+
+msgid "Never Logged In"
+msgstr "Never Logged In"
+
+msgid "Users who have never logged in"
+msgstr "Users who have never logged in"
+
+msgid "Inactive (30+ Days)"
+msgstr "Inactive (30+ Days)"
+
+msgid "Users who haven't logged in for the past 30 days"
+msgstr "Users who haven't logged in for the past 30 days"
 
 msgid "Select user groups"
 msgstr "Select user groups"
