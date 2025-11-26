@@ -1,6 +1,6 @@
 {
-  "name": "dashboard-usage",
-  "version": "2.3.166",
+  "name": "dashboard-usage-metrics",
+  "version": "2.4.789",
   "description": "DHIS2 Dashboard Usage Metrics - Track and analyze dashboard engagement, user activity, and inactivity patterns",
   "author": "HISP Rwanda",
   "license": "BSD-3-Clause",
