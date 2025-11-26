@@ -67,7 +67,6 @@ export default function DataTable() {
 
   // Handle data received from FilterSection
   const handleDataProcessed = (processedData: DistrictEngagement[]) => {
-    console.log("Data processed in DataTable:", processedData);
     setTableData(processedData);
   };
 

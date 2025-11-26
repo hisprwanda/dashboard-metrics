@@ -61,11 +61,6 @@ export const useOrganisationUnitsByLevel = () => {
       setError(null);
 
       try {
-        console.log("Fetching org units with params:", {
-          levelNo,
-          orgUnitSqlViewUid,
-        });
-
         // Create a dynamic query for this specific request
         const dynamicQuery = {
           sqlViewData: {
@@ -77,17 +72,12 @@ export const useOrganisationUnitsByLevel = () => {
           },
         };
 
-        console.log("Executing query:", dynamicQuery);
-
         // Use engine.query instead of manual fetch
         const result = await engine.query(dynamicQuery);
-
-        console.log("SQL View fetch result:", result);
 
         setData(result as SqlViewResponse);
         return result as SqlViewResponse;
       } catch (err) {
-        console.error("Error fetching organisation units:", err);
         const errorObj = err instanceof Error ? err : new Error(String(err));
         setError(errorObj);
         return null;

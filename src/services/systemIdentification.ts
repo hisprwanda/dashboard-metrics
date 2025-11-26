@@ -215,7 +215,6 @@ export const useDataStoreService = () => {
     try {
       return await deleteDataStoreItemMutation({});
     } catch (error) {
-      console.error("Error deleting from datastore:", error);
       throw error;
     }
   };
@@ -224,7 +223,6 @@ export const useDataStoreService = () => {
     try {
       return await deleteOrgUnitDataStoreItemMutation({});
     } catch (error) {
-      console.error("Error deleting org unit from datastore:", error);
       throw error;
     }
   };
@@ -233,7 +231,6 @@ export const useDataStoreService = () => {
     try {
       return await saveDataStoreItemMutation(data);
     } catch (error) {
-      console.error("Error saving to datastore:", error);
       throw error;
     }
   };
@@ -242,7 +239,6 @@ export const useDataStoreService = () => {
     try {
       return await saveOrgUnitDataStoreItemMutation(data);
     } catch (error) {
-      console.error("Error saving org unit to datastore:", error);
       throw error;
     }
   };
@@ -343,7 +339,6 @@ export const useInitializeSystem = () => {
         setOrgUnitSqlViewUid(orgUnitViewUid);
         setInitialized(true);
       } catch (err) {
-        console.error("Initialization error:", err);
         setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
         setLoading(false);
@@ -391,7 +386,6 @@ export const useInitializeSystem = () => {
           if (dhisError?.response?.httpStatusCode === 409 && dhisError?.response?.response?.uid) {
             uid = dhisError.response.response.uid;
           } else {
-            console.error(`Error creating SQL view for ${params.name}:`, err);
             throw err;
           }
         }
@@ -405,7 +399,7 @@ export const useInitializeSystem = () => {
       try {
         await executeSqlViews({});
       } catch (err) {
-        console.error("Error creating SQL views:", err);
+        // Silently handle error, SQL views may already be created
       }
 
       // Step 5: Save to datastore

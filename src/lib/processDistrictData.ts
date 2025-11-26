@@ -44,18 +44,7 @@ export function processDistrictData(
   orgUnitData: (ProcessedOrgUnit | unknown[])[],
   userData: UserData[]
 ): DistrictEngagement[] {
-  console.log("🔍 processDistrictData called with:", {
-    orgUnitDataLength: orgUnitData?.length,
-    userDataLength: userData?.length,
-    sampleOrgUnit: orgUnitData?.[0],
-    sampleUser: userData?.[0],
-  });
-
   if (!orgUnitData?.length || !userData?.length) {
-    console.warn("❌ Missing data:", {
-      orgUnitData: orgUnitData?.length,
-      userData: userData?.length,
-    });
     return [];
   }
 
@@ -89,29 +78,12 @@ export function processDistrictData(
       orgUnitPath = String(unitArray[4] || "");
     }
 
-    // Debug logging for this organization unit
-    console.log(`🏢 Processing orgUnit: ${orgUnitName} (${orgUnitUid})`);
-
     // Find users belonging to this organization unit by checking if the org unit UID is in user's organisation units
     // This correctly handles users assigned to multiple organization units
     const orgUnitUsers = userData.filter((user) => {
       const hasOrgUnit = user.organisationUnits?.some((ou) => ou.id === orgUnitUid);
       return hasOrgUnit;
     });
-
-    console.log(`👥 Found ${orgUnitUsers.length} users for ${orgUnitName}`);
-
-    // Debug: Show sample user org units if no users found
-    if (orgUnitUsers.length === 0 && userData.length > 0) {
-      console.log(
-        "🔍 Sample user org units:",
-        userData.slice(0, 3).map((user) => ({
-          userName: user.name,
-          orgUnits: user.organisationUnits?.map((ou) => ({ id: ou.id, name: ou.name })) || [],
-        }))
-      );
-      console.log("🎯 Looking for orgUnitUid:", orgUnitUid);
-    }
 
     // Count active users (those with lastLogin)
     const activeUsers = orgUnitUsers.filter((user) => user.userCredentials?.lastLogin);
@@ -152,7 +124,6 @@ export function processDistrictData(
       dashboardViews,
     };
 
-    console.log(`✅ Final result for ${orgUnitName}:`, result);
     return result;
   });
 }

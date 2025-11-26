@@ -74,13 +74,6 @@ export const useSqlViewDataReport = ({
       }
     }
 
-    // Add organization unit filters if applicable
-    if (orgUnitPaths && orgUnitPaths.length > 0) {
-      // For now, we'll implement username-based filtering through user data
-      // since the SQL view doesn't directly support org unit filtering
-      console.log("Organization unit filtering will be applied to user data:", orgUnitPaths);
-    }
-
     return filterArray;
   }, [startDate, endDate, orgUnitPaths, criteria]);
 
@@ -89,9 +82,6 @@ export const useSqlViewDataReport = ({
 
   const { loading, error, data, refetch } = useDataQuery(query, {
     lazy: true,
-    onError: (queryError: unknown) => {
-      console.error("Query error:", queryError);
-    },
   });
 
   return { loading, error, data, refetch };

@@ -63,9 +63,6 @@ export const useDashboardData = ({
 
   const result = useDataQuery(query || {}, {
     lazy: shouldSkip,
-    onError: (queryError: unknown) => {
-      console.error("Dashboard data query error:", queryError);
-    },
   });
 
   // Transform data to proper type

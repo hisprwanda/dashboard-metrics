@@ -46,7 +46,6 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
     setOpen(isOpen);
     if (!isOpen) {
       // Dialog is closing - clean up everything
-      console.log("Dialog closing - cleaning up state and cache for dashboard:", row.displayName);
 
       // Reset all context state to initial values
       resetContext();
@@ -62,7 +61,6 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
   // Only set dashboard when dialog opens, not on every row change
   useEffect(() => {
     if (open) {
-      console.log("Setting dashboard context for:", row.displayName);
       dispatch({ type: "SET_DASHBOARD", payload: row });
       reportKey.current = `${Date.now()}`;
     }

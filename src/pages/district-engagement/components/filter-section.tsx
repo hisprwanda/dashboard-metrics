@@ -99,7 +99,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
         setHasProcessedData(true);
       } catch (err) {
-        console.error("Error processing data:", err);
+        // Error processing data
       } finally {
         setProcessingData(false);
         if (onLoadingChange) {
@@ -136,7 +136,6 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
     // Check if system is properly initialized before attempting to fetch data
     if (!initialized) {
-      console.error("System not initialized yet");
       setProcessingData(false);
       if (onLoadingChange) {
         onLoadingChange(false);
@@ -145,7 +144,6 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     }
 
     if (!orgUnitSqlViewUid) {
-      console.error("orgUnitSqlViewUid is not available in SystemContext");
       setProcessingData(false);
       if (onLoadingChange) {
         onLoadingChange(false);
@@ -221,7 +219,6 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
         // Validate that we found all required indices
         if (uidIndex === -1 || nameIndex === -1 || pathIndex === -1) {
-          console.error("Failed to detect column indices:", { uidIndex, nameIndex, pathIndex });
           throw new Error("Could not auto-detect column structure from SQL view response");
         }
 
@@ -239,14 +236,12 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         setProcessedOrgUnits(processedUnits);
         setOrgUnitIds(processedUnits.map((unit) => unit.uid));
       } else {
-        console.error("No rows found in the SQL view result", orgUnitsResult);
         setProcessingData(false);
         if (onLoadingChange) {
           onLoadingChange(false);
         }
       }
     } catch (err) {
-      console.error("Error fetching organization units:", err);
       setProcessingData(false);
       if (onLoadingChange) {
         onLoadingChange(false);

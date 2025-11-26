@@ -73,13 +73,6 @@ export default function DashboardReport() {
     refetch: refetchUsers,
   } = useFilteredUsers(...userQueryParams);
 
-  // Log dashboard query results
-  useEffect(() => {
-    if (dashboardError) {
-      console.error("Dashboard data error:", dashboardError);
-    }
-  }, [dashboardLoading, dashboardError, dashboardData]);
-
   // Initial report fetch
   useEffect(() => {
     if (
@@ -89,12 +82,6 @@ export default function DashboardReport() {
       sqlViewUid &&
       isReady
     ) {
-      console.log("Refetching dashboard data for:", row.displayName, "with params:", {
-        dateRange: stableDateRange,
-        dashboardId: row.id,
-        orgUnitPaths: stableOrgUnitPaths,
-        sqlViewUid,
-      });
       refetchDashboard();
 
       // Reset processing flags when inputs change
@@ -113,13 +100,6 @@ export default function DashboardReport() {
       !dashboardDataProcessed.current
     ) {
       const { rows } = dashboardData.sqlViewData.listGrid;
-
-      console.log(
-        "Processing dashboard data for dashboard:",
-        row?.displayName,
-        "rows:",
-        rows.length
-      );
 
       // Extract unique usernames from dashboard data (username is at index 1)
       const usernames = [...new Set(rows.map((row: Array<string | number>) => row[1] as string))];
@@ -180,18 +160,10 @@ export default function DashboardReport() {
   // Effect to manually trigger users refetch when usernames change
   useEffect(() => {
     if (uniqueUsernames.length > 0) {
-      console.log("Refetching user data for usernames:", uniqueUsernames.length);
       // Explicitly refetch with the current hook configuration
       refetchUsers();
     }
   }, [uniqueUsernames, refetchUsers]);
-
-  // Log user data query results
-  useEffect(() => {
-    if (userError) {
-      console.error("User data error:", userError);
-    }
-  }, [userLoading, userError, userData]);
 
   // Link user details once user data is loaded
   useEffect(() => {
@@ -201,23 +173,13 @@ export default function DashboardReport() {
     if (!userLoading && typedUserData?.users?.users && visitDetails.length > 0) {
       const { users } = typedUserData.users;
 
-      console.log("Linking user details. Total users from API:", users.length);
-      console.log("Total visit details:", visitDetails.length);
-      console.log("Organization unit paths selected:", stableOrgUnitPaths);
-
       // If org units are selected, filter visit details to only include users in those org units
       let filteredVisitDetails = visitDetails;
 
       if (stableOrgUnitPaths.length > 0) {
-        console.log("Filtering by organization unit paths:", stableOrgUnitPaths);
-
         const usersInSelectedOrgUnits = users
           .filter((user: any) => {
             const userOrgUnits = user.organisationUnits || [];
-            console.log(
-              `User ${user.userCredentials?.username} has org units:`,
-              userOrgUnits.map((ou: any) => ou.displayName)
-            );
 
             // Check if user belongs to any of the selected org units
             // Since we may not have path info, we'll match by org unit ID or check if paths contain the org unit
@@ -233,17 +195,8 @@ export default function DashboardReport() {
           .map((user: any) => user.userCredentials?.username)
           .filter(Boolean);
 
-        console.log("Users in selected org units:", usersInSelectedOrgUnits);
-
         filteredVisitDetails = visitDetails.filter((visit) =>
           usersInSelectedOrgUnits.includes(visit.username)
-        );
-
-        console.log(
-          "Filtered visit details:",
-          filteredVisitDetails.length,
-          "out of",
-          visitDetails.length
         );
       }
 
