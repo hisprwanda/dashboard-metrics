@@ -41,7 +41,8 @@ const sqlParams: SqlViewParams = {
 // SQL view for organization units by level
 const orgUnitByLevelSqlParams: SqlViewParams = {
   name: "Get Organization Units By Level",
-  description: "Returns organization units at a specific level that can be dynamically specified",
+  description:
+    "Returns organization units at a specific level that can be dynamically specified",
   type: "QUERY",
   cacheStrategy: "CACHE_1_MINUTE",
   sqlQuery:
@@ -67,7 +68,13 @@ const checkSqlViewQuery = {
 const createSqlViewMutation = {
   resource: "sqlViews",
   type: "create",
-  data: ({ name, description, type, cacheStrategy, sqlQuery }: SqlViewParams) => ({
+  data: ({
+    name,
+    description,
+    type,
+    cacheStrategy,
+    sqlQuery,
+  }: SqlViewParams) => ({
     name,
     description,
     type,
@@ -119,7 +126,10 @@ export const useSqlViewService = () => {
     });
   };
 
-  const useSqlViewQuery = (viewUid: string, params: Record<string, unknown> = {}) => {
+  const useSqlViewQuery = (
+    viewUid: string,
+    params: Record<string, unknown> = {}
+  ) => {
     const memoizedQuery = useMemo(
       () => ({
         sqlViewData: {
@@ -197,15 +207,19 @@ export const useDataStoreService = () => {
     return useDataQuery(query);
   };
 
-  const [saveDataStoreItemMutation, { loading: mutateLoading, error: mutateError }] =
-    useDataMutation(dataStoreMutation);
+  const [
+    saveDataStoreItemMutation,
+    { loading: mutateLoading, error: mutateError },
+  ] = useDataMutation(dataStoreMutation);
   const [
     saveOrgUnitDataStoreItemMutation,
     { loading: orgUnitMutateLoading, error: orgUnitMutateError },
   ] = useDataMutation(orgUnitDataStoreMutation);
 
-  const [deleteDataStoreItemMutation, { loading: deleteLoading, error: deleteError }] =
-    useDataMutation(deleteDataStoreMutation);
+  const [
+    deleteDataStoreItemMutation,
+    { loading: deleteLoading, error: deleteError },
+  ] = useDataMutation(deleteDataStoreMutation);
   const [
     deleteOrgUnitDataStoreItemMutation,
     { loading: deleteOrgUnitLoading, error: deleteOrgUnitError },
@@ -227,7 +241,10 @@ export const useDataStoreService = () => {
     }
   };
 
-  const saveDataStoreItem = async (key: string, data: DataStoreItem): Promise<unknown> => {
+  const saveDataStoreItem = async (
+    key: string,
+    data: DataStoreItem
+  ): Promise<unknown> => {
     try {
       return await saveDataStoreItemMutation(data);
     } catch (error) {
@@ -235,7 +252,10 @@ export const useDataStoreService = () => {
     }
   };
 
-  const saveOrgUnitDataStoreItem = async (key: string, data: DataStoreItem): Promise<unknown> => {
+  const saveOrgUnitDataStoreItem = async (
+    key: string,
+    data: DataStoreItem
+  ): Promise<unknown> => {
     try {
       return await saveOrgUnitDataStoreItemMutation(data);
     } catch (error) {
@@ -260,7 +280,9 @@ export const useDataStoreService = () => {
 export const useInitializeSystem = () => {
   const [initialized, setInitialized] = useState(false);
   const [sqlViewUid, setSqlViewUid] = useState<string | null>(null);
-  const [orgUnitSqlViewUid, setOrgUnitSqlViewUid] = useState<string | null>(null);
+  const [orgUnitSqlViewUid, setOrgUnitSqlViewUid] = useState<string | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [initializationAttempted, setInitializationAttempted] = useState(false);
@@ -274,10 +296,12 @@ export const useInitializeSystem = () => {
     deleteOrgUnitDataStoreItem,
   } = useDataStoreService();
 
-  const { createSqlView, executeSqlViews, useCheckSqlViewExistsQuery } = useSqlViewService();
+  const { createSqlView, executeSqlViews, useCheckSqlViewExistsQuery } =
+    useSqlViewService();
 
   const { loading: dsLoading, data: dsData } = useDataStoreItem();
-  const { loading: orgUnitDsLoading, data: orgUnitDsData } = useOrgUnitDataStoreItem();
+  const { loading: orgUnitDsLoading, data: orgUnitDsData } =
+    useOrgUnitDataStoreItem();
 
   const {
     data: sqlViewData,
@@ -307,7 +331,12 @@ export const useInitializeSystem = () => {
     }
 
     const init = async () => {
-      if (dsLoading || checkSqlViewLoading || orgUnitDsLoading || checkOrgUnitSqlViewLoading) {
+      if (
+        dsLoading ||
+        checkSqlViewLoading ||
+        orgUnitDsLoading ||
+        checkOrgUnitSqlViewLoading
+      ) {
         return;
       }
 
@@ -359,7 +388,10 @@ export const useInitializeSystem = () => {
         const existingViewResponse = await checkFunction();
         const existingSqlViews = existingViewResponse?.sqlViews?.sqlViews;
 
-        if (existingSqlViews?.length > 0 && existingSqlViews[0].name === params.name) {
+        if (
+          existingSqlViews?.length > 0 &&
+          existingSqlViews[0].name === params.name
+        ) {
           // SQL view exists and matches our name, use it
           return dataStoreData.uid;
         }
@@ -383,7 +415,10 @@ export const useInitializeSystem = () => {
         } catch (err) {
           // Handle 409 conflict (view already exists)
           const dhisError = err as DHIS2Error;
-          if (dhisError?.response?.httpStatusCode === 409 && dhisError?.response?.response?.uid) {
+          if (
+            dhisError?.response?.httpStatusCode === 409 &&
+            dhisError?.response?.response?.uid
+          ) {
             uid = dhisError.response.response.uid;
           } else {
             throw err;

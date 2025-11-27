@@ -102,16 +102,16 @@ Based on documentation from <https://developers.dhis2.org/docs/ui/webcomponents>
 
 ### 2.1 Mantine Components → DHIS2 UI
 
-| Current (Mantine) | DHIS2 UI Replacement | Notes |
-|-------------------|----------------------|-------|
+| Current (Mantine)   | DHIS2 UI Replacement                                | Notes                                                                                  |
+| ------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `MantineReactTable` | `DataTable` + `DataTableRow` + `DataTableCell` etc. | Complete rewrite required. DHIS2 DataTable has sorting, filtering, pagination built-in |
-| `Badge` | `Tag` | DHIS2 Tag component supports colors and variants |
-| `Tooltip` | `Tooltip` | Direct replacement available |
-| `Card` | `Card` | Direct replacement available |
-| `Progress` | Custom with `LinearLoader` or CSS | May need custom implementation |
-| `Text` | Standard HTML tags with DHIS2 styling | Use `<p>`, `<span>`, etc. |
-| `Button` | `Button` | DHIS2 Button has primary, secondary, destructive variants |
-| `Group` | `ButtonStrip` or `Box` with flex | Use ButtonStrip for button groups, Box for general layouts |
+| `Badge`             | `Tag`                                               | DHIS2 Tag component supports colors and variants                                       |
+| `Tooltip`           | `Tooltip`                                           | Direct replacement available                                                           |
+| `Card`              | `Card`                                              | Direct replacement available                                                           |
+| `Progress`          | Custom with `LinearLoader` or CSS                   | May need custom implementation                                                         |
+| `Text`              | Standard HTML tags with DHIS2 styling               | Use `<p>`, `<span>`, etc.                                                              |
+| `Button`            | `Button`                                            | DHIS2 Button has primary, secondary, destructive variants                              |
+| `Group`             | `ButtonStrip` or `Box` with flex                    | Use ButtonStrip for button groups, Box for general layouts                             |
 
 **Files affected:**
 
@@ -124,22 +124,22 @@ Based on documentation from <https://developers.dhis2.org/docs/ui/webcomponents>
 
 ### 2.2 Radix UI / shadcn → DHIS2 UI
 
-| Current (Radix/shadcn) | DHIS2 UI Replacement | Notes |
-|------------------------|----------------------|-------|
-| `@radix-ui/react-dialog` / `AlertDialog` | `Modal` + `ModalTitle` + `ModalContent` + `ModalActions` | DHIS2 Modal component |
-| `Button` (shadcn) | `Button` | DHIS2 Button with variants |
-| `@radix-ui/react-tooltip` | `Tooltip` | Direct replacement |
-| `@radix-ui/react-popover` | `Popover` | Direct replacement |
-| `@radix-ui/react-select` | `SingleSelect` or `MultiSelect` | Already partially migrated |
-| `@radix-ui/react-checkbox` | `Checkbox` / `CheckboxField` | Direct replacement |
-| `@radix-ui/react-switch` | `Switch` / `SwitchField` | Direct replacement |
-| `@radix-ui/react-avatar` | `UserAvatar` | Use DHIS2 UserAvatar |
-| `@radix-ui/react-dropdown-menu` | `Menu` / `MenuItem` / `FlyoutMenu` | DHIS2 Menu components |
-| `@radix-ui/react-label` | `Label` | Direct replacement |
-| `@radix-ui/react-separator` | `Divider` | DHIS2 Divider component |
-| `@radix-ui/react-toggle` / `@radix-ui/react-toggle-group` | `SegmentedControl` or `Switch` | Depends on use case |
-| `@radix-ui/react-toast` | `AlertBar` / `AlertStack` | DHIS2 alert system |
-| Custom Table (shadcn) | `Table` or `DataTable` | DHIS2 table components |
+| Current (Radix/shadcn)                                    | DHIS2 UI Replacement                                     | Notes                      |
+| --------------------------------------------------------- | -------------------------------------------------------- | -------------------------- |
+| `@radix-ui/react-dialog` / `AlertDialog`                  | `Modal` + `ModalTitle` + `ModalContent` + `ModalActions` | DHIS2 Modal component      |
+| `Button` (shadcn)                                         | `Button`                                                 | DHIS2 Button with variants |
+| `@radix-ui/react-tooltip`                                 | `Tooltip`                                                | Direct replacement         |
+| `@radix-ui/react-popover`                                 | `Popover`                                                | Direct replacement         |
+| `@radix-ui/react-select`                                  | `SingleSelect` or `MultiSelect`                          | Already partially migrated |
+| `@radix-ui/react-checkbox`                                | `Checkbox` / `CheckboxField`                             | Direct replacement         |
+| `@radix-ui/react-switch`                                  | `Switch` / `SwitchField`                                 | Direct replacement         |
+| `@radix-ui/react-avatar`                                  | `UserAvatar`                                             | Use DHIS2 UserAvatar       |
+| `@radix-ui/react-dropdown-menu`                           | `Menu` / `MenuItem` / `FlyoutMenu`                       | DHIS2 Menu components      |
+| `@radix-ui/react-label`                                   | `Label`                                                  | Direct replacement         |
+| `@radix-ui/react-separator`                               | `Divider`                                                | DHIS2 Divider component    |
+| `@radix-ui/react-toggle` / `@radix-ui/react-toggle-group` | `SegmentedControl` or `Switch`                           | Depends on use case        |
+| `@radix-ui/react-toast`                                   | `AlertBar` / `AlertStack`                                | DHIS2 alert system         |
+| Custom Table (shadcn)                                     | `Table` or `DataTable`                                   | DHIS2 table components     |
 
 **Files affected:**
 
@@ -573,16 +573,16 @@ DHIS2 UI may conflict with other libraries (e.g., Tailwind, React Router).
 
 ## 7. Timeline Estimate
 
-| Phase | Duration | Effort Level |
-|-------|----------|--------------|
-| Phase 1: Preparation | 2 days | Low |
-| Phase 2: Core Component Migration | 5 days | High |
-| Phase 3: Remove Custom UI Components | 1 day | Medium |
-| Phase 4: Dependency Cleanup | 1 day | Low |
-| Phase 5: Styling Adjustments | 2 days | Medium |
-| Phase 6: Testing & QA | 3 days | High |
-| Phase 7: Documentation & Submission | 1 day | Low |
-| **Total** | **15 days** | **High** |
+| Phase                                | Duration    | Effort Level |
+| ------------------------------------ | ----------- | ------------ |
+| Phase 1: Preparation                 | 2 days      | Low          |
+| Phase 2: Core Component Migration    | 5 days      | High         |
+| Phase 3: Remove Custom UI Components | 1 day       | Medium       |
+| Phase 4: Dependency Cleanup          | 1 day       | Low          |
+| Phase 5: Styling Adjustments         | 2 days      | Medium       |
+| Phase 6: Testing & QA                | 3 days      | High         |
+| Phase 7: Documentation & Submission  | 1 day       | Low          |
+| **Total**                            | **15 days** | **High**     |
 
 **Note:** This is an estimate for a single developer working full-time. Actual timeline may vary based on:
 
@@ -826,4 +826,4 @@ Use this checklist to track progress during migration:
 
 **End of Migration Plan**
 
-*This plan will be updated as the migration progresses. Please document any deviations or additional findings.*
+_This plan will be updated as the migration progresses. Please document any deviations or additional findings._

@@ -29,7 +29,9 @@ import { FilterSection } from "./filter-section";
 export default function DataTableComponent() {
   const [tableData, setTableData] = useState<DistrictEngagement[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sorting, setSorting] = useState<SortingState>([{ id: "activeUsers", desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "activeUsers", desc: true },
+  ]);
   const { state } = useDashboard();
 
   // Define columns for the table
@@ -109,7 +111,10 @@ export default function DataTableComponent() {
   return (
     <div className="mb-9">
       {/* Filters */}
-      <FilterSection onLoadingChange={setIsLoading} onDataProcessed={handleDataProcessed} />
+      <FilterSection
+        onLoadingChange={setIsLoading}
+        onDataProcessed={handleDataProcessed}
+      />
 
       {/* Table */}
       <div className="bg-white shadow-sm">
@@ -152,8 +157,12 @@ export default function DataTableComponent() {
                   <DataTableCell colSpan={columns.length}>
                     <div className="p-4 text-center">
                       {!state.selectedOrgUnitLevel
-                        ? i18n.t("Please select an organization unit level to view district data")
-                        : i18n.t("No data found for the selected organization unit level")}
+                        ? i18n.t(
+                            "Please select an organization unit level to view district data"
+                          )
+                        : i18n.t(
+                            "No data found for the selected organization unit level"
+                          )}
                     </div>
                   </DataTableCell>
                 </DataTableRow>
@@ -164,7 +173,8 @@ export default function DataTableComponent() {
                       <DataTableCell key={cell.id}>
                         {typeof cell.column.columnDef.cell === "function"
                           ? cell.column.columnDef.cell(cell.getContext())
-                          : cell.getValue() !== null && cell.getValue() !== undefined
+                          : cell.getValue() !== null &&
+                              cell.getValue() !== undefined
                             ? String(cell.getValue())
                             : ""}
                       </DataTableCell>

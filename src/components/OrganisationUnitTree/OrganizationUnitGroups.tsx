@@ -50,7 +50,11 @@ const OrganizationUnitGroups: React.FC<OrganizationUnitGroupsProps> = ({
       disabled={disabled}
     >
       {orgUnitGroups.map((group: any) => (
-        <MultiSelectOption key={group.id} value={group.id} label={group.displayName} />
+        <MultiSelectOption
+          key={group.id}
+          value={group.id}
+          label={group.displayName}
+        />
       ))}
     </MultiSelectField>
   );

@@ -50,7 +50,9 @@ export function processDistrictData(
 
   return orgUnitData.map((orgUnit) => {
     // Type guard to check if orgUnit is a ProcessedOrgUnit
-    const isProcessedOrgUnit = (unit: ProcessedOrgUnit | unknown[]): unit is ProcessedOrgUnit => {
+    const isProcessedOrgUnit = (
+      unit: ProcessedOrgUnit | unknown[]
+    ): unit is ProcessedOrgUnit => {
       return (
         typeof unit === "object" &&
         unit !== null &&
@@ -81,12 +83,16 @@ export function processDistrictData(
     // Find users belonging to this organization unit by checking if the org unit UID is in user's organisation units
     // This correctly handles users assigned to multiple organization units
     const orgUnitUsers = userData.filter((user) => {
-      const hasOrgUnit = user.organisationUnits?.some((ou) => ou.id === orgUnitUid);
+      const hasOrgUnit = user.organisationUnits?.some(
+        (ou) => ou.id === orgUnitUid
+      );
       return hasOrgUnit;
     });
 
     // Count active users (those with lastLogin)
-    const activeUsers = orgUnitUsers.filter((user) => user.userCredentials?.lastLogin);
+    const activeUsers = orgUnitUsers.filter(
+      (user) => user.userCredentials?.lastLogin
+    );
 
     // Find the most recent login date
     const lastActivityDate =
@@ -95,17 +101,23 @@ export function processDistrictData(
             Math.max(
               ...activeUsers
                 .filter((user) => user.userCredentials?.lastLogin)
-                .map((user) => new Date(user.userCredentials.lastLogin!).getTime())
+                .map((user) =>
+                  new Date(user.userCredentials.lastLogin!).getTime()
+                )
             )
           )
         : null;
 
     // Format date as string or return placeholder
-    const lastActivity = lastActivityDate ? lastActivityDate.toLocaleDateString() : "No activity";
+    const lastActivity = lastActivityDate
+      ? lastActivityDate.toLocaleDateString()
+      : "No activity";
 
     // Calculate access percentage
     const accessPercentage =
-      orgUnitUsers.length > 0 ? Math.round((activeUsers.length / orgUnitUsers.length) * 100) : 0;
+      orgUnitUsers.length > 0
+        ? Math.round((activeUsers.length / orgUnitUsers.length) * 100)
+        : 0;
 
     // Determine if consistently active (more than 50% active users)
     const isConsistentlyActive = accessPercentage >= 50;

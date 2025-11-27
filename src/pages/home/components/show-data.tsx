@@ -5,7 +5,13 @@
 import { useEffect, useRef, useState } from "react";
 import { FaEye } from "react-icons/fa6";
 
-import { Button, Modal, ModalActions, ModalContent, ModalTitle } from "@dhis2/ui";
+import {
+  Button,
+  Modal,
+  ModalActions,
+  ModalContent,
+  ModalTitle,
+} from "@dhis2/ui";
 import { useQueryClient } from "@tanstack/react-query";
 
 import type { DashboardConverted } from "@/types/dashboardsType";
@@ -30,7 +36,9 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
   const MAX_DATE = new Date();
   const reportKey = useRef<string>(`${Date.now()}`);
 
-  const handleValueChange = (newValue: { startDate: Date | null; endDate: Date | null } | null) => {
+  const handleValueChange = (
+    newValue: { startDate: Date | null; endDate: Date | null } | null
+  ) => {
     if (newValue && (newValue.startDate || newValue.endDate)) {
       dispatch({ type: "SET_DATE_RANGE", payload: newValue });
       reportKey.current = `${Date.now()}`;
@@ -79,18 +87,25 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
           <ModalTitle>
             <div className="flex justify-between items-center py-2">
               <div className="w-[300px] flex items-start justify-between gap-20">
-                <DatePicker value={state.value} onChange={handleValueChange} maxDate={MAX_DATE} />
+                <DatePicker
+                  value={state.value}
+                  onChange={handleValueChange}
+                  maxDate={MAX_DATE}
+                />
               </div>
               <div>
                 <OrgUnitPicker onOrgUnitsChange={handleOrgUnitsChange} />
               </div>
               <div className="flex flex-col items-start">
                 <h3 className="text-sm font-medium text-gray-700">
-                  {formatDate(state.value?.startDate)} - {formatDate(state.value?.endDate)}
+                  {formatDate(state.value?.startDate)} -{" "}
+                  {formatDate(state.value?.endDate)}
                   {state.orgUnitNames.length > 0 && (
                     <span className="ml-2 text-xs text-blue-600">
                       ({state.orgUnitNames.length}{" "}
-                      {state.orgUnitNames.length !== 1 ? i18n.t("org units") : i18n.t("org unit")}{" "}
+                      {state.orgUnitNames.length !== 1
+                        ? i18n.t("org units")
+                        : i18n.t("org unit")}{" "}
                       {i18n.t("selected")})
                     </span>
                   )}

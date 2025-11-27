@@ -12,7 +12,11 @@ interface DatePickerComponentProps {
   maxDate: Date;
 }
 
-export default function DatePicker({ value, onChange, maxDate }: DatePickerComponentProps) {
+export default function DatePicker({
+  value,
+  onChange,
+  maxDate,
+}: DatePickerComponentProps) {
   const { state, dispatch } = useDashboard();
 
   // Use ref to track previous value to prevent unnecessary re-renders
@@ -32,7 +36,10 @@ export default function DatePicker({ value, onChange, maxDate }: DatePickerCompo
   };
 
   // Convert DateRange format back to DateValueType
-  const convertToDateValueType = (dateRange: { from: Date; to: Date }): DateValueType => {
+  const convertToDateValueType = (dateRange: {
+    from: Date;
+    to: Date;
+  }): DateValueType => {
     return {
       startDate: dateRange.from,
       endDate: dateRange.to,
@@ -45,7 +52,8 @@ export default function DatePicker({ value, onChange, maxDate }: DatePickerCompo
 
     // Skip if the value hasn't actually changed
     if (
-      prevValueRef.current?.startDate?.getTime() === newValue.startDate?.getTime() &&
+      prevValueRef.current?.startDate?.getTime() ===
+        newValue.startDate?.getTime() &&
       prevValueRef.current?.endDate?.getTime() === newValue.endDate?.getTime()
     ) {
       return;

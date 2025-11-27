@@ -7,7 +7,10 @@ import { useSystem } from "../../../context/SystemContext";
 import { useDashboardData } from "../../../hooks/useDashboardData";
 import { useFilteredUsers } from "../../../hooks/users";
 import i18n from "../../../locales";
-import type { LinkedUser, VisitDetails } from "../../../types/dashboard-reportType";
+import type {
+  LinkedUser,
+  VisitDetails,
+} from "../../../types/dashboard-reportType";
 import type { UserResponse } from "../../../types/dashboard-data";
 
 import DashboardUserDetails from "./dashboard-user-details";
@@ -27,9 +30,18 @@ export default function DashboardReport() {
   const [linkedUsers, setLinkedUsers] = useState<LinkedUser[]>([]);
   const [dashboardStats, setDashboardStats] = useState({
     totalVisits: 0,
-    topUsers: [] as { username: string; visits: number; firstName?: string; surname?: string }[],
+    topUsers: [] as {
+      username: string;
+      visits: number;
+      firstName?: string;
+      surname?: string;
+    }[],
     topDay: { date: null as Date | null, count: 0 },
-    topWeek: { startDate: null as Date | null, endDate: null as Date | null, count: 0 },
+    topWeek: {
+      startDate: null as Date | null,
+      endDate: null as Date | null,
+      count: 0,
+    },
     topMonth: { month: "", year: "", count: 0 },
   });
   const { sqlViewUid } = useSystem();
@@ -89,7 +101,14 @@ export default function DashboardReport() {
       dashboardDataProcessed.current = false;
       topUsersUpdated.current = false;
     }
-  }, [stableDateRange, row?.id, sqlViewUid, stableOrgUnitPaths, refetchDashboard, isReady]);
+  }, [
+    stableDateRange,
+    row?.id,
+    sqlViewUid,
+    stableOrgUnitPaths,
+    refetchDashboard,
+    isReady,
+  ]);
 
   // Process dashboard data and extract usernames
   useEffect(() => {
@@ -103,13 +122,17 @@ export default function DashboardReport() {
       const { rows } = dashboardData.sqlViewData.listGrid;
 
       // Extract unique usernames from dashboard data (username is at index 1)
-      const usernames = [...new Set(rows.map((row: Array<string | number>) => row[1] as string))];
+      const usernames = [
+        ...new Set(rows.map((row: Array<string | number>) => row[1] as string)),
+      ];
 
       // Set the unique usernames state
       setUniqueUsernames(usernames);
 
       // Calculate visit details
-      const userVisits: { [key: string]: { count: number; lastVisit: string } } = {};
+      const userVisits: {
+        [key: string]: { count: number; lastVisit: string };
+      } = {};
 
       rows.forEach((row: Array<string | number>) => {
         const timestamp = row[0] as string; // Timestamp is at index 0
@@ -140,7 +163,9 @@ export default function DashboardReport() {
       const totalVisits = rows.length;
 
       // Find top users
-      const topUsers = [...visitDetailsArray].sort((a, b) => b.visits - a.visits).slice(0, 5);
+      const topUsers = [...visitDetailsArray]
+        .sort((a, b) => b.visits - a.visits)
+        .slice(0, 5);
 
       // Update states in a single batch to avoid cascading updates
       setVisitDetails(visitDetailsArray);
@@ -171,7 +196,11 @@ export default function DashboardReport() {
     // Only process if we have user data and visit details
     // We need to recalculate when org units change, so we can't use the topUsersUpdated flag
     const typedUserData = userData as unknown as UserResponse | undefined;
-    if (!userLoading && typedUserData?.users?.users && visitDetails.length > 0) {
+    if (
+      !userLoading &&
+      typedUserData?.users?.users &&
+      visitDetails.length > 0
+    ) {
       const { users } = typedUserData.users;
 
       // If org units are selected, filter visit details to only include users in those org units
@@ -186,7 +215,9 @@ export default function DashboardReport() {
             // Since we may not have path info, we'll match by org unit ID or check if paths contain the org unit
             return userOrgUnits.some((orgUnit: any) => {
               // Check if the org unit ID is in the selected paths
-              const matchById = stableOrgUnitPaths.some((path) => path.includes(orgUnit.id));
+              const matchById = stableOrgUnitPaths.some((path) =>
+                path.includes(orgUnit.id)
+              );
               // Also check direct ID match (in case paths are actually IDs)
               const directMatch = stableOrgUnitPaths.includes(orgUnit.id);
 
@@ -203,13 +234,17 @@ export default function DashboardReport() {
 
       // Map visit details to user information
       const linkedUsersData = filteredVisitDetails.map((visit): LinkedUser => {
-        const user = users.find((u: any) => u.userCredentials?.username === visit.username);
+        const user = users.find(
+          (u: any) => u.userCredentials?.username === visit.username
+        );
 
         if (user) {
           return {
             ...user,
             name:
-              user.displayName || `${user.firstName || ""} ${user.surname || ""}`.trim() || user.id,
+              user.displayName ||
+              `${user.firstName || ""} ${user.surname || ""}`.trim() ||
+              user.id,
             username: user.userCredentials?.username || visit.username,
             firstName: user.firstName || "",
             surname: user.surname || "",
@@ -218,10 +253,12 @@ export default function DashboardReport() {
             userCredentials: {
               userRoles: (user.userCredentials as any)?.userRoles || [],
             },
-            organisationUnits: (user.organisationUnits || []).map((ou: any) => ({
-              displayName: ou.displayName || ou.name || "",
-              id: ou.id || "",
-            })),
+            organisationUnits: (user.organisationUnits || []).map(
+              (ou: any) => ({
+                displayName: ou.displayName || ou.name || "",
+                id: ou.id || "",
+              })
+            ),
             userGroups: [],
           };
         }
@@ -253,7 +290,9 @@ export default function DashboardReport() {
 
       // Create a new top users array with user details
       const updatedTopUsers = filteredTopUsers.map((visit) => {
-        const userDetails = linkedUsersData.find((u) => u.username === visit.username);
+        const userDetails = linkedUsersData.find(
+          (u) => u.username === visit.username
+        );
         return {
           username: visit.username,
           visits: visit.visits,

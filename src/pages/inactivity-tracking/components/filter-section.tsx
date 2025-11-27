@@ -52,7 +52,9 @@ const isUserGroupArray = (value: unknown): value is UserGroup[] =>
   Array.isArray(value) &&
   value.every(
     (group) =>
-      isRecord(group) && typeof group.id === "string" && typeof group.displayName === "string"
+      isRecord(group) &&
+      typeof group.id === "string" &&
+      typeof group.displayName === "string"
   );
 
 const isFilteredUser = (value: unknown): value is FilteredUser =>
@@ -77,7 +79,9 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   const [selectedUserGroups, setSelectedUserGroups] = useState<string[]>([]);
 
   // State for selected login status
-  const [selectedLoginStatus, setSelectedLoginStatus] = useState<LoginStatusValue[]>([]);
+  const [selectedLoginStatus, setSelectedLoginStatus] = useState<
+    LoginStatusValue[]
+  >([]);
 
   // State to track fetched users
   const [fetchedUsers, setFetchedUsers] = useState<FilteredUser[]>([]);
@@ -113,7 +117,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
   // Update loading state based on query status
   useEffect(() => {
-    const isLoading = selectedUserGroups.length > 0 && filteredUsersQuery.loading;
+    const isLoading =
+      selectedUserGroups.length > 0 && filteredUsersQuery.loading;
     onLoadingChange(isLoading);
   }, [selectedUserGroups, filteredUsersQuery.loading, onLoadingChange]);
 
@@ -151,7 +156,10 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             }
 
             const lastLoginDate = new Date(lastLogin);
-            return Number.isFinite(lastLoginDate.getTime()) && lastLoginDate < thresholdDate;
+            return (
+              Number.isFinite(lastLoginDate.getTime()) &&
+              lastLoginDate < thresholdDate
+            );
           })
           .forEach((user) => {
             filteredUserMap.set(user.id, user);
@@ -201,17 +209,23 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   }, [applyLoginStatusFilter, fetchedUsers]);
 
   // Handle user group selection change
-  const handleUserGroupsChange = useCallback(({ selected }: { selected: string[] }) => {
-    // Reset fetched users when selection changes to force data update
-    setFetchedUsers([]);
-    setSelectedUserGroups(selected);
-  }, []);
+  const handleUserGroupsChange = useCallback(
+    ({ selected }: { selected: string[] }) => {
+      // Reset fetched users when selection changes to force data update
+      setFetchedUsers([]);
+      setSelectedUserGroups(selected);
+    },
+    []
+  );
 
   // Handle login status selection change
-  const handleLoginStatusChange = useCallback(({ selected }: { selected: string[] }) => {
-    const validSelections = selected.filter(isLoginStatusValue);
-    setSelectedLoginStatus(validSelections);
-  }, []);
+  const handleLoginStatusChange = useCallback(
+    ({ selected }: { selected: string[] }) => {
+      const validSelections = selected.filter(isLoginStatusValue);
+      setSelectedLoginStatus(validSelections);
+    },
+    []
+  );
 
   // Handle any errors
   const hasError = filteredUsersQuery.error && selectedUserGroups.length > 0;
@@ -234,7 +248,11 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             dataTest="user-groups-selector"
           >
             {userGroups.map((group) => (
-              <MultiSelectOption key={group.id} label={group.displayName} value={group.id} />
+              <MultiSelectOption
+                key={group.id}
+                label={group.displayName}
+                value={group.id}
+              />
             ))}
           </MultiSelectField>
         </div>
@@ -251,7 +269,11 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             dataTest="login-status-selector"
           >
             {loginStatusOptions.map((option) => (
-              <MultiSelectOption key={option.id} label={option.label} value={option.value} />
+              <MultiSelectOption
+                key={option.id}
+                label={option.label}
+                value={option.value}
+              />
             ))}
           </MultiSelectField>
         </div>
@@ -261,7 +283,9 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       <div className="flex items-center">
         {hasError && (
           <div className="text-red-500">
-            {i18n.t("An error occurred while fetching user data. Please try again.")}
+            {i18n.t(
+              "An error occurred while fetching user data. Please try again."
+            )}
           </div>
         )}
 
@@ -274,7 +298,9 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       </div>
 
       {selectedUserGroups.length === 0 && (
-        <div className="p-4 text-center">{i18n.t("Select a user group to view user data")}</div>
+        <div className="p-4 text-center">
+          {i18n.t("Select a user group to view user data")}
+        </div>
       )}
     </div>
   );

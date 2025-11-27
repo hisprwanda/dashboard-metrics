@@ -214,7 +214,13 @@ export const useUsersByLoginStatus = (
 ) => {
   // Memoize the query to prevent recreation on every render
   const query = useMemo(
-    () => buildLoginStatusQuery(lastLoginStatus, lastLoginDate, inactiveSince, disabled),
+    () =>
+      buildLoginStatusQuery(
+        lastLoginStatus,
+        lastLoginDate,
+        inactiveSince,
+        disabled
+      ),
     [lastLoginStatus, lastLoginDate, inactiveSince, disabled]
   );
 

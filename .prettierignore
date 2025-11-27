@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+
+# github workflow files
+.github/workflows/
+
+# Logs
+*.log
+
+# Environment variables
+.env*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# TypeScript
+coverage/
+.nyc_output/
+
+# Vite
+.vite/
+
+# ESLint cache
+.eslintcache
+
+# DHIS2
+.d2/

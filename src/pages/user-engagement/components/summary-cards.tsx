@@ -1,7 +1,10 @@
 import { Card, Tag } from "@dhis2/ui";
 
 import i18n from "../../../locales";
-import type { AccessRecencySummary, UserEngagementData } from "../types/user-engagement";
+import type {
+  AccessRecencySummary,
+  UserEngagementData,
+} from "../types/user-engagement";
 
 // Summary cards component for displaying metrics
 export function SummaryCards({ data }: { data: UserEngagementData[] }) {
@@ -21,29 +24,43 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
 
   // Calculate percentages
   const lastWeekPercent =
-    data.length > 0 ? Math.round((accessSummary.lastWeek / data.length) * 100) : 0;
+    data.length > 0
+      ? Math.round((accessSummary.lastWeek / data.length) * 100)
+      : 0;
   const lastMonthPercent =
-    data.length > 0 ? Math.round((accessSummary.lastMonth / data.length) * 100) : 0;
+    data.length > 0
+      ? Math.round((accessSummary.lastMonth / data.length) * 100)
+      : 0;
   const overMonthPercent =
-    data.length > 0 ? Math.round((accessSummary.overMonth / data.length) * 100) : 0;
-  const neverPercent = data.length > 0 ? Math.round((accessSummary.never / data.length) * 100) : 0;
+    data.length > 0
+      ? Math.round((accessSummary.overMonth / data.length) * 100)
+      : 0;
+  const neverPercent =
+    data.length > 0 ? Math.round((accessSummary.never / data.length) * 100) : 0;
 
   // Calculate total logins in the past month
   const totalLogins = data.reduce((sum, user) => sum + user.loginPastMonth, 0);
 
   // Calculate average logins per user
-  const avgLogins = data.length > 0 ? (totalLogins / data.length).toFixed(1) : "0";
+  const avgLogins =
+    data.length > 0 ? (totalLogins / data.length).toFixed(1) : "0";
 
   // Find most active and least active users
   let mostActiveUser = { name: i18n.t("None"), logins: 0 };
-  let leastActiveUser = { name: i18n.t("None"), logins: Number.MAX_SAFE_INTEGER };
+  let leastActiveUser = {
+    name: i18n.t("None"),
+    logins: Number.MAX_SAFE_INTEGER,
+  };
 
   data.forEach((user) => {
     if (user.loginPastMonth > mostActiveUser.logins) {
       mostActiveUser = { name: user.fullName, logins: user.loginPastMonth };
     }
 
-    if (user.loginPastMonth < leastActiveUser.logins && user.loginPastMonth > 0) {
+    if (
+      user.loginPastMonth < leastActiveUser.logins &&
+      user.loginPastMonth > 0
+    ) {
       leastActiveUser = { name: user.fullName, logins: user.loginPastMonth };
     }
   });
@@ -120,7 +137,10 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
               <span className="font-semibold">{neverPercent}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-red-600 h-2 rounded-full" style={{ width: `${neverPercent}%` }} />
+              <div
+                className="bg-red-600 h-2 rounded-full"
+                style={{ width: `${neverPercent}%` }}
+              />
             </div>
           </div>
         </div>
@@ -147,12 +167,16 @@ export function SummaryCards({ data }: { data: UserEngagementData[] }) {
 
         <div className="space-y-3 p-4 pt-0">
           <div>
-            <p className="text-sm font-medium">{i18n.t("Total Logins (Past Month)")}</p>
+            <p className="text-sm font-medium">
+              {i18n.t("Total Logins (Past Month)")}
+            </p>
             <p className="text-2xl font-bold text-blue-600">{totalLogins}</p>
           </div>
 
           <div>
-            <p className="text-sm font-medium">{i18n.t("Average Logins Per User")}</p>
+            <p className="text-sm font-medium">
+              {i18n.t("Average Logins Per User")}
+            </p>
             <p className="text-2xl font-bold text-indigo-600">{avgLogins}</p>
           </div>
         </div>

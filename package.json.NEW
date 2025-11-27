@@ -1,6 +1,6 @@
 {
   "name": "dashboard-usage-metrics",
-  "version": "2.7.15",
+  "version": "2.6.15",
   "description": "DHIS2 Dashboard Usage Metrics - Track and analyze dashboard engagement, user activity, and inactivity patterns",
   "author": "HISP Rwanda",
   "license": "BSD-3-Clause",
@@ -18,15 +18,16 @@
     "start": "d2-app-scripts start",
     "test": "d2-app-scripts test",
     "deploy": "d2-app-scripts deploy",
-    "lint": "eslint src --fix",
+    "i18n:extract": "d2-app-scripts i18n extract",
+    "lint": "eslint src types --fix",
     "format": "prettier --write .",
-    "lint:check": "eslint src",
+    "lint:check": "eslint src types",
     "format:check": "prettier --check .",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@dhis2/app-runtime": "^3.14.6",
-    "@dhis2/ui": "10.9.1",
+    "@dhis2/ui": "^10.9.1",
     "@emotion/react": "^11.14.0",
     "@hookform/resolvers": "^5.2.2",
     "@tailwindcss/vite": "^4.1.16",

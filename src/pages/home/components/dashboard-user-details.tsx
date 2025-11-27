@@ -34,7 +34,12 @@ import type { DashboardConverted } from "@/types/dashboardsType";
 
 interface DashboardStats {
   totalVisits: number;
-  topUsers: { username: string; visits: number; firstName?: string; surname?: string }[];
+  topUsers: {
+    username: string;
+    visits: number;
+    firstName?: string;
+    surname?: string;
+  }[];
   topDay: { date: Date | null; count: number };
   topWeek: { startDate: Date | null; endDate: Date | null; count: number };
   topMonth: { month: string; year: string; count: number };
@@ -57,7 +62,9 @@ export default function DashboardUserDetails({
   hasOrgUnitFilter = false,
   dashboardStats,
 }: DashboardUserDetailsComponentProps) {
-  const [sorting, setSorting] = useState<SortingState>([{ id: "visits", desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "visits", desc: true },
+  ]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
@@ -72,7 +79,9 @@ export default function DashboardUserDetails({
           const surname = row?.surname || "";
           const username = row?.username || "";
 
-          return firstName && surname ? `${firstName} ${surname} (${username})` : username;
+          return firstName && surname
+            ? `${firstName} ${surname} (${username})`
+            : username;
         },
         id: "name",
         header: i18n.t("Name"),
@@ -119,20 +128,24 @@ export default function DashboardUserDetails({
       },
       {
         accessorFn: (row) =>
-          row?.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
+          row?.organisationUnits?.map((org) => org?.displayName).join(", ") ||
+          "",
         id: "organisations",
         header: i18n.t("Organisations"),
         size: 200,
       },
       {
-        accessorFn: (row) => row?.userGroups?.map((group) => group?.displayName).join(", ") || "",
+        accessorFn: (row) =>
+          row?.userGroups?.map((group) => group?.displayName).join(", ") || "",
         id: "userGroups",
         header: i18n.t("User Groups"),
         size: 200,
       },
       {
         accessorFn: (row) =>
-          row?.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "",
+          row?.userCredentials?.userRoles
+            ?.map((role) => role?.displayName)
+            .join(", ") || "",
         id: "userRoles",
         header: i18n.t("Roles"),
         size: 200,
@@ -165,7 +178,10 @@ export default function DashboardUserDetails({
       const firstName = userData.firstName || "";
       const surname = userData.surname || "";
       const username = userData.username || "";
-      const displayName = firstName && surname ? `${firstName} ${surname} (${username})` : username;
+      const displayName =
+        firstName && surname
+          ? `${firstName} ${surname} (${username})`
+          : username;
 
       // Format the date for export
       let lastVisitDate = "-";
@@ -177,9 +193,12 @@ export default function DashboardUserDetails({
       return {
         [i18n.t("Name")]: displayName,
         [i18n.t("User Groups")]:
-          userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
+          userData.userGroups?.map((group) => group?.displayName).join(", ") ||
+          "",
         [i18n.t("Organisations")]:
-          userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
+          userData.organisationUnits
+            ?.map((org) => org?.displayName)
+            .join(", ") || "",
         [i18n.t("Access Frequency")]: userData.visits || 0,
         [i18n.t("Last Visit")]: lastVisitDate,
       };
@@ -242,8 +261,16 @@ export default function DashboardUserDetails({
         14,
         22
       );
-      doc.text(`${i18n.t("Export Date")}: ${new Date().toLocaleDateString("en-CA")}`, 14, 29);
-      doc.text(`${i18n.t("Total Visits")}: ${dashboardStats.totalVisits}`, 14, 36);
+      doc.text(
+        `${i18n.t("Export Date")}: ${new Date().toLocaleDateString("en-CA")}`,
+        14,
+        29
+      );
+      doc.text(
+        `${i18n.t("Total Visits")}: ${dashboardStats.totalVisits}`,
+        14,
+        36
+      );
 
       // Get table headers from columns
       const tableHeaders = [
@@ -261,7 +288,9 @@ export default function DashboardUserDetails({
         const surname = userData.surname || "";
         const username = userData.username || "";
         const displayName =
-          firstName && surname ? `${firstName} ${surname} (${username})` : username;
+          firstName && surname
+            ? `${firstName} ${surname} (${username})`
+            : username;
 
         // Format the date for export
         let lastVisitDate = "-";
@@ -272,8 +301,11 @@ export default function DashboardUserDetails({
 
         return [
           displayName,
-          userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
-          userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
+          userData.userGroups?.map((group) => group?.displayName).join(", ") ||
+            "",
+          userData.organisationUnits
+            ?.map((org) => org?.displayName)
+            .join(", ") || "",
           (userData.visits || 0).toString(),
           lastVisitDate,
         ];
@@ -331,13 +363,18 @@ export default function DashboardUserDetails({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{i18n.t("Period")}:</span>
             <span className="text-sm">
-              {value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} -{" "}
+              {value?.startDate
+                ? value.startDate.toLocaleDateString("en-CA")
+                : "-"}{" "}
+              -{" "}
               {value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{i18n.t("Total Visits")}:</span>
+            <span className="text-sm font-medium">
+              {i18n.t("Total Visits")}:
+            </span>
             <Tag positive>{dashboardStats.totalVisits}</Tag>
           </div>
 
@@ -390,7 +427,9 @@ export default function DashboardUserDetails({
           />
           <ButtonStrip>
             <Button
-              disabled={table.getFilteredRowModel().rows.length === 0 || loading}
+              disabled={
+                table.getFilteredRowModel().rows.length === 0 || loading
+              }
               onClick={handleExportXLSX}
               icon={
                 <svg
@@ -414,7 +453,9 @@ export default function DashboardUserDetails({
               {i18n.t("Export to Excel")}
             </Button>
             <Button
-              disabled={table.getFilteredRowModel().rows.length === 0 || loading}
+              disabled={
+                table.getFilteredRowModel().rows.length === 0 || loading
+              }
               onClick={handleExportPDF}
               icon={
                 <svg
@@ -491,7 +532,8 @@ export default function DashboardUserDetails({
                     <DataTableCell key={cell.id}>
                       {typeof cell.column.columnDef.cell === "function"
                         ? cell.column.columnDef.cell(cell.getContext())
-                        : cell.getValue() !== null && cell.getValue() !== undefined
+                        : cell.getValue() !== null &&
+                            cell.getValue() !== undefined
                           ? String(cell.getValue())
                           : ""}
                     </DataTableCell>
@@ -506,8 +548,9 @@ export default function DashboardUserDetails({
         {table.getRowModel().rows.length > 0 && (
           <div className="flex justify-between items-center mt-4 px-2 text-sm text-gray-600">
             <div>
-              {i18n.t("Showing")} {table.getRowModel().rows.length} {i18n.t("of")}{" "}
-              {table.getFilteredRowModel().rows.length} {i18n.t("results")}
+              {i18n.t("Showing")} {table.getRowModel().rows.length}{" "}
+              {i18n.t("of")} {table.getFilteredRowModel().rows.length}{" "}
+              {i18n.t("results")}
             </div>
           </div>
         )}

@@ -40,10 +40,14 @@ interface InactivityData {
 const mapUserToTableData = (user: FilteredUser): InactivityData => {
   // Extract last login date (if any)
   const lastLoginTimestamp = user.userCredentials?.lastLogin;
-  const lastLoginDate = lastLoginTimestamp ? new Date(lastLoginTimestamp) : null;
+  const lastLoginDate = lastLoginTimestamp
+    ? new Date(lastLoginTimestamp)
+    : null;
 
   // Calculate days since last login
-  const daysSinceLastLogin = lastLoginDate ? differenceInDays(new Date(), lastLoginDate) : null;
+  const daysSinceLastLogin = lastLoginDate
+    ? differenceInDays(new Date(), lastLoginDate)
+    : null;
 
   // Determine active status based on login date
   let activeStatus = i18n.t("Active");
@@ -81,10 +85,15 @@ export default function DataTable() {
   // State to hold the filtered user data
   const [userData, setUserData] = useState<FilteredUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sorting, setSorting] = useState<SortingState>([{ id: "daysSinceLastLogin", desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "daysSinceLastLogin", desc: true },
+  ]);
 
   // Transform API data into table format
-  const tableData = useMemo<InactivityData[]>(() => userData.map(mapUserToTableData), [userData]);
+  const tableData = useMemo<InactivityData[]>(
+    () => userData.map(mapUserToTableData),
+    [userData]
+  );
 
   // Handler for user data updates from filter component
   const handleUserDataChange = useCallback((newUserData: FilteredUser[]) => {
@@ -198,8 +207,14 @@ export default function DataTable() {
         {userData.length > 0 && (
           <div className="p-2">
             <div className="text-sm">
-              <span className="font-semibold mr-1">{i18n.t("Users found")}:</span>
-              {isLoading ? <CircularLoader small /> : <span>{userData.length}</span>}
+              <span className="font-semibold mr-1">
+                {i18n.t("Users found")}:
+              </span>
+              {isLoading ? (
+                <CircularLoader small />
+              ) : (
+                <span>{userData.length}</span>
+              )}
             </div>
           </div>
         )}
@@ -255,7 +270,8 @@ export default function DataTable() {
                       <DataTableCell key={cell.id}>
                         {typeof cell.column.columnDef.cell === "function"
                           ? cell.column.columnDef.cell(cell.getContext())
-                          : cell.getValue() !== null && cell.getValue() !== undefined
+                          : cell.getValue() !== null &&
+                              cell.getValue() !== undefined
                             ? String(cell.getValue())
                             : ""}
                       </DataTableCell>

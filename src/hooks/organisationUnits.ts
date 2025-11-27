@@ -56,7 +56,10 @@ export const useOrganisationUnitsByLevel = () => {
   const [data, setData] = useState<SqlViewResponse | null>(null);
 
   const fetchOrganisationUnitsByLevel = useCallback(
-    async (levelNo: string, orgUnitSqlViewUid: string): Promise<SqlViewResponse | null> => {
+    async (
+      levelNo: string,
+      orgUnitSqlViewUid: string
+    ): Promise<SqlViewResponse | null> => {
       setLoading(true);
       setError(null);
 
