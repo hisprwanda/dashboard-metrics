@@ -1,9 +1,24 @@
 // file location: src/pages/home/components/data-table.tsx
 
-import { useCallback, useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import type { MRT_ColumnDef, MRT_Row, MRT_TableOptions } from "mantine-react-table";
-import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
+import {
+  DataTable as DHIS2DataTable,
+  DataTableHead,
+  DataTableBody,
+  DataTableRow,
+  DataTableCell,
+  DataTableColumnHeader,
+  CircularLoader,
+} from "@dhis2/ui";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  type ColumnDef,
+  type SortingState,
+} from "@tanstack/react-table";
 
 import { useDashboardsInfo } from "../../../hooks/dashboards";
 import { capitalizeFirstChar } from "../../../lib/utils";
@@ -12,23 +27,9 @@ import type { DashboardConverted, Visualization } from "../../../types/dashboard
 
 import TableActions from "./table-actions";
 
-const TABLE_INITIAL_STATE = {
-  sorting: [{ id: "created", desc: false }],
-  density: "xs" as const,
-  columnPinning: {
-    left: ["mrt-row-actions"],
-    right: ["type"],
-  },
-};
-
-const TABLE_CONTAINER_PROPS = {
-  sx: {
-    minHeight: "300px",
-  },
-} as const;
-
 export default function DataTable() {
   const { loading, data } = useDashboardsInfo();
+  const [sorting, setSorting] = useState<SortingState>([{ id: "created", desc: false }]);
 
   const dashboards = data?.dashboards?.dashboards;
 
@@ -59,20 +60,27 @@ export default function DataTable() {
     });
   }, [dashboards]);
 
-  const columns = useMemo<MRT_ColumnDef<DashboardConverted>[]>(
+  const columns = useMemo<ColumnDef<DashboardConverted>[]>(
     () => [
       {
-        accessorFn: (row) => row?.name,
-        header: i18n.t("Name"),
-        size: 40,
+        id: "actions",
+        header: "",
+        cell: ({ row }) => <TableActions row={row.original} data={transformedDashboards} />,
+        size: 60,
+        enableSorting: false,
       },
-
+      {
+        accessorFn: (row) => row?.name,
+        id: "name",
+        header: i18n.t("Name"),
+        size: 200,
+      },
       {
         accessorFn: (row) => capitalizeFirstChar(row?.favorite?.toString()),
+        id: "favorite",
         header: i18n.t("Is Favorite"),
-        size: 40,
+        size: 120,
       },
-
       {
         accessorFn: (row) => {
           const sDay = new Date(row.created);
@@ -81,48 +89,96 @@ export default function DataTable() {
         },
         id: "created",
         header: i18n.t("Created"),
-        filterVariant: "date-range",
-        sortingFn: "datetime",
-        enableColumnFilterModes: false,
-        Cell: ({ cell }) => cell.getValue<Date>()?.toLocaleDateString("en-CA"),
-        Header: ({ column }) => <em>{column.columnDef.header}</em>,
-        size: 50,
+        cell: ({ getValue }) => {
+          const date = getValue<Date>();
+          return date?.toLocaleDateString("en-CA") ?? "";
+        },
+        size: 150,
       },
-
       {
         accessorFn: (row) => row?.createdBy?.displayName,
+        id: "createdBy",
         header: i18n.t("Created By"),
-        size: 40,
+        size: 180,
       },
     ],
-    []
-  );
-
-  const renderRowActions = useCallback(
-    ({ row }: { row: MRT_Row<DashboardConverted> }) => (
-      <TableActions row={row.original} data={transformedDashboards} />
-    ),
     [transformedDashboards]
   );
 
-  const tableOptions = useMemo<MRT_TableOptions<DashboardConverted>>(
-    () => ({
-      columns,
-      data: transformedDashboards,
-      enableFullScreenToggle: false,
-      enableDensityToggle: false,
-      initialState: TABLE_INITIAL_STATE,
-      mantineTableContainerProps: TABLE_CONTAINER_PROPS,
-      enableRowActions: true,
-      renderRowActions,
-      state: {
-        isLoading: loading,
-      },
-    }),
-    [columns, transformedDashboards, loading, renderRowActions]
+  const table = useReactTable({
+    data: transformedDashboards,
+    columns,
+    state: {
+      sorting,
+    },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <CircularLoader />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <DHIS2DataTable>
+        <DataTableHead>
+          <DataTableRow>
+            {table.getHeaderGroups()[0]?.headers.map((header) => (
+              <DataTableColumnHeader
+                key={header.id}
+                onSortIconClick={() => {
+                  if (header.column.getCanSort()) {
+                    header.column.toggleSorting();
+                  }
+                }}
+                sortDirection={
+                  header.column.getIsSorted()
+                    ? header.column.getIsSorted() === "asc"
+                      ? "asc"
+                      : "desc"
+                    : "default"
+                }
+              >
+                {header.isPlaceholder
+                  ? null
+                  : typeof header.column.columnDef.header === "string"
+                    ? header.column.columnDef.header
+                    : ""}
+              </DataTableColumnHeader>
+            ))}
+          </DataTableRow>
+        </DataTableHead>
+        <DataTableBody>
+          {table.getRowModel().rows.length === 0 ? (
+            <DataTableRow>
+              <DataTableCell colSpan={columns.length}>
+                <div className="text-center py-4 text-gray-500">{i18n.t("No data available")}</div>
+              </DataTableCell>
+            </DataTableRow>
+          ) : (
+            table.getRowModel().rows.map((row) => (
+              <DataTableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <DataTableCell key={cell.id}>
+                    {typeof cell.column.columnDef.cell === "function"
+                      ? cell.column.columnDef.cell(cell.getContext())
+                      : cell.getValue() !== null && cell.getValue() !== undefined
+                        ? String(cell.getValue())
+                        : ""}
+                  </DataTableCell>
+                ))}
+              </DataTableRow>
+            ))
+          )}
+        </DataTableBody>
+      </DHIS2DataTable>
+    </div>
   );
-
-  const table = useMantineReactTable(tableOptions);
-
-  return <MantineReactTable table={table} />;
 }

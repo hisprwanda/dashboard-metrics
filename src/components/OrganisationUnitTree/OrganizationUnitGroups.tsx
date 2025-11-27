@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
-import { CircularLoader } from "@dhis2/ui";
+import { CircularLoader, MultiSelectField, MultiSelectOption } from "@dhis2/ui";
 
 import i18n from "../../locales";
-import { MultiSelect } from "../ui/multi-select";
 
 interface OrganizationUnitGroupsProps {
   selectedGroups: string[];
@@ -24,8 +23,11 @@ const OrganizationUnitGroups: React.FC<OrganizationUnitGroupsProps> = ({
   isLoading = false,
   error = null,
 }) => {
-  const handleChange = (selected: string[]) => {
-    onGroupsChange(selected);
+  const [selected, setSelected] = useState<string[]>(selectedGroups);
+
+  const handleChange = ({ selected: newSelected }: { selected: string[] }) => {
+    setSelected(newSelected);
+    onGroupsChange(newSelected);
   };
 
   if (isLoading) {
@@ -41,18 +43,16 @@ const OrganizationUnitGroups: React.FC<OrganizationUnitGroupsProps> = ({
   }
 
   return (
-    <MultiSelect
-      options={orgUnitGroups.map((group: any) => ({
-        value: group.id,
-        label: group.displayName,
-      }))}
-      onValueChange={handleChange}
-      defaultValue={selectedGroups}
-      placeholder={i18n.t("Select organization unit groups")}
-      variant="inverted"
-      maxCount={3}
+    <MultiSelectField
+      selected={selected}
+      onChange={handleChange}
+      label={i18n.t("Select organization unit groups")}
       disabled={disabled}
-    />
+    >
+      {orgUnitGroups.map((group: any) => (
+        <MultiSelectOption key={group.id} value={group.id} label={group.displayName} />
+      ))}
+    </MultiSelectField>
   );
 };
 

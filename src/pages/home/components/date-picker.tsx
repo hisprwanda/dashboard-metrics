@@ -80,7 +80,6 @@ export default function DatePicker({ value, onChange, maxDate }: DatePickerCompo
       onDateSelect={handleDateSelect}
       numberOfMonths={2}
       closeOnSelect={false}
-      variant="outline"
       className="w-auto"
     />
   );

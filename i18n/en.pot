@@ -5,11 +5,17 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2025-11-26T15:11:00.219Z\n"
-"PO-Revision-Date: 2025-11-26T15:11:00.220Z\n"
+"POT-Creation-Date: 2025-11-26T17:54:06.111Z\n"
+"PO-Revision-Date: 2025-11-26T17:54:06.112Z\n"
 
 msgid "Pick a date"
 msgstr "Pick a date"
+
+msgid "Select Date Range"
+msgstr "Select Date Range"
+
+msgid "Close"
+msgstr "Close"
 
 msgid "Dashboard Usage"
 msgstr "Dashboard Usage"
@@ -210,6 +216,21 @@ msgstr "User Access Data"
 msgid "Failed to export PDF. See console for details."
 msgstr "Failed to export PDF. See console for details."
 
+msgid "Top Users"
+msgstr "Top Users"
+
+msgid "None"
+msgstr "None"
+
+msgid "Search all columns..."
+msgstr "Search all columns..."
+
+msgid "Export to Excel"
+msgstr "Export to Excel"
+
+msgid "Export to PDF"
+msgstr "Export to PDF"
+
 msgid ""
 "No users from the selected organization units visited this dashboard in the "
 "selected period."
@@ -220,17 +241,14 @@ msgstr ""
 msgid "No user visit details available."
 msgstr "No user visit details available."
 
-msgid "Top Users"
-msgstr "Top Users"
+msgid "Showing"
+msgstr "Showing"
 
-msgid "None"
-msgstr "None"
+msgid "of"
+msgstr "of"
 
-msgid "Export to Excel"
-msgstr "Export to Excel"
-
-msgid "Export to PDF"
-msgstr "Export to PDF"
+msgid "results"
+msgstr "results"
 
 msgid "Is Favorite"
 msgstr "Is Favorite"
@@ -241,11 +259,17 @@ msgstr "Created"
 msgid "Created By"
 msgstr "Created By"
 
+msgid "No data available"
+msgstr "No data available"
+
 msgid "Select Organisation Unit"
 msgstr "Select Organisation Unit"
 
 msgid "Select Organisation Units"
 msgstr "Select Organisation Units"
+
+msgid "Cancel"
+msgstr "Cancel"
 
 msgid "No dashboard selected or date range specified."
 msgstr "No dashboard selected or date range specified."
@@ -301,14 +325,14 @@ msgstr "Status"
 msgid "Dashboards"
 msgstr "Dashboards"
 
+msgid "Users found"
+msgstr "Users found"
+
 msgid "Select a user group to view user data"
 msgstr "Select a user group to view user data"
 
 msgid "No matching records found"
 msgstr "No matching records found"
-
-msgid "Users found"
-msgstr "Users found"
 
 msgid "Never Logged In"
 msgstr "Never Logged In"

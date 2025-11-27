@@ -1,17 +1,31 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import { Badge, Button, Group, Text } from "@mantine/core";
-import { IconEye, IconFile, IconFileSpreadsheet, IconUser } from "@tabler/icons-react";
+import {
+  DataTable,
+  DataTableHead,
+  DataTableBody,
+  DataTableRow,
+  DataTableCell,
+  DataTableColumnHeader,
+  Tag,
+  Button,
+  ButtonStrip,
+  CircularLoader,
+} from "@dhis2/ui";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  type ColumnDef,
+  type SortingState,
+  type ColumnFiltersState,
+} from "@tanstack/react-table";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import {
-  MantineReactTable,
-  type MRT_ColumnDef,
-  type MRT_Row,
-  useMantineReactTable,
-} from "mantine-react-table";
 import * as XLSX from "xlsx";
 
 import i18n from "../../../locales";
@@ -43,10 +57,14 @@ export default function DashboardUserDetails({
   hasOrgUnitFilter = false,
   dashboardStats,
 }: DashboardUserDetailsComponentProps) {
+  const [sorting, setSorting] = useState<SortingState>([{ id: "visits", desc: true }]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
+
   // Ensure we have a safe default for linkedUsers when data is loading
   const safeLinkedUsers = loading ? [] : linkedUsers;
 
-  const columns = useMemo<MRT_ColumnDef<LinkedUser>[]>(
+  const columns = useMemo<ColumnDef<LinkedUser>[]>(
     () => [
       {
         accessorFn: (row) => {
@@ -56,9 +74,9 @@ export default function DashboardUserDetails({
 
           return firstName && surname ? `${firstName} ${surname} (${username})` : username;
         },
+        id: "name",
         header: i18n.t("Name"),
-        size: 40,
-        Cell: ({ row }) => {
+        cell: ({ row }) => {
           const firstName = row.original?.firstName || "";
           const surname = row.original?.surname || "";
           const username = row.original?.username || "";
@@ -76,12 +94,13 @@ export default function DashboardUserDetails({
             </div>
           );
         },
+        size: 200,
       },
       {
         accessorFn: (row) => row?.visits || 0,
-        id: "AccessFrequency",
+        id: "visits",
         header: i18n.t("Access Frequency"),
-        size: 40,
+        size: 150,
       },
       {
         accessorFn: (row) => {
@@ -92,43 +111,56 @@ export default function DashboardUserDetails({
         },
         id: "lastVisit",
         header: i18n.t("Last Visit"),
-        filterVariant: "date-range",
-        sortingFn: "datetime",
-        enableColumnFilterModes: false,
-        Cell: ({ cell }) => {
-          const date = cell.getValue<Date>();
+        cell: ({ getValue }) => {
+          const date = getValue<Date | null>();
           return date ? date.toLocaleDateString("en-CA") : "-";
         },
-        Header: ({ column }) => <em>{column.columnDef.header}</em>,
-        size: 50,
+        size: 150,
       },
       {
         accessorFn: (row) =>
           row?.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
         id: "organisations",
         header: i18n.t("Organisations"),
-        size: 40,
+        size: 200,
       },
       {
         accessorFn: (row) => row?.userGroups?.map((group) => group?.displayName).join(", ") || "",
         id: "userGroups",
         header: i18n.t("User Groups"),
-        size: 40,
+        size: 200,
       },
       {
         accessorFn: (row) =>
           row?.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "",
         id: "userRoles",
         header: i18n.t("Roles"),
-        size: 40,
+        size: 200,
       },
     ],
     []
   );
 
+  const table = useReactTable({
+    data: safeLinkedUsers,
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
   // Function to prepare data for export
-  const prepareDataForExport = (rows: MRT_Row<LinkedUser>[]) =>
-    rows.map((row) => {
+  const prepareDataForExport = () =>
+    table.getFilteredRowModel().rows.map((row) => {
       const userData = row.original;
       const firstName = userData.firstName || "";
       const surname = userData.surname || "";
@@ -154,8 +186,8 @@ export default function DashboardUserDetails({
     });
 
   // Export to Excel/XLSX
-  const handleExportXLSX = (rows: MRT_Row<LinkedUser>[]) => {
-    const exportData = prepareDataForExport(rows);
+  const handleExportXLSX = () => {
+    const exportData = prepareDataForExport();
 
     // Create a new workbook
     const wb = XLSX.utils.book_new();
@@ -189,8 +221,10 @@ export default function DashboardUserDetails({
   };
 
   // Export to PDF
-  const handleExportPDF = (rows: MRT_Row<LinkedUser>[]) => {
+  const handleExportPDF = () => {
     try {
+      const exportRows = table.getFilteredRowModel().rows;
+
       // Create PDF document (landscape)
       const doc = new jsPDF({
         orientation: "landscape",
@@ -221,7 +255,7 @@ export default function DashboardUserDetails({
       ];
 
       // Prepare table data from rows
-      const tableData = rows.map((row) => {
+      const tableData = exportRows.map((row) => {
         const userData = row.original;
         const firstName = userData.firstName || "";
         const surname = userData.surname || "";
@@ -273,140 +307,210 @@ export default function DashboardUserDetails({
 
   // Handle filtering by top user
   const handleFilterByUser = (username: string) => {
-    const table = document.querySelector(".mantine-Table-root");
-    if (table) {
-      // Find the search input and set its value
-      const searchInput = table.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-      if (searchInput) {
-        searchInput.value = username;
-        searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      }
-    }
+    setGlobalFilter(username);
   };
 
-  const table = useMantineReactTable({
-    columns,
-    data: safeLinkedUsers,
-    state: {
-      isLoading: loading,
-      columnVisibility: {
-        userGroups: false,
-        userRoles: false,
-      },
-    },
-    enableFullScreenToggle: false,
-    enableHiding: true,
-    initialState: {
-      sorting: [{ id: "AccessFrequency", desc: true }],
-      density: "xs",
-      columnPinning: {
-        left: ["Name", "AccessFrequency", "lastVisit"],
-        right: [],
-      },
-    },
-    mantineTableContainerProps: {
-      sx: {
-        minHeight: "300px",
-      },
-    },
-    renderEmptyRowsFallback: () => (
-      <div className="flex justify-center items-center h-40 text-gray-500">
-        {loading
-          ? ""
-          : hasOrgUnitFilter && linkedUsers.length === 0
-            ? i18n.t(
-                "No users from the selected organization units visited this dashboard in the selected period."
-              )
-            : i18n.t("No user visit details available.")}
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <CircularLoader />
       </div>
-    ),
-    renderTopToolbarCustomActions: ({ table }) => (
-      <div className="w-full">
+    );
+  }
+
+  return (
+    <div className="w-full min-h-[85vh] overflow-y-scroll bg-gradient-to-r from-white to-gray-50 shadow-lg rounded-xl p-6 mx-auto border border-gray-300 hover:shadow-2xl transition-shadow duration-300">
+      <div className="h-[79vh] overflow-y-scroll">
         {/* Compact Dashboard Info Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-1 mb-2 bg-gray-50 rounded border border-gray-200">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 mb-4 bg-gray-50 rounded border border-gray-200">
           <div className="flex items-center gap-2">
-            <Text size="sm" weight={500}>
-              {i18n.t("Dashboard")}:
-            </Text>
-            <Text size="sm">{row?.displayName || "-"}</Text>
+            <span className="text-sm font-medium">{i18n.t("Dashboard")}:</span>
+            <span className="text-sm">{row?.displayName || "-"}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <Text size="sm" weight={500}>
-              {i18n.t("Period")}:
-            </Text>
-            <Text size="sm">
+            <span className="text-sm font-medium">{i18n.t("Period")}:</span>
+            <span className="text-sm">
               {value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} -{" "}
               {value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}
-            </Text>
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <Text size="sm" weight={500}>
-              {i18n.t("Total Visits")}:
-            </Text>
-            <Badge color="blue">{dashboardStats.totalVisits}</Badge>
+            <span className="text-sm font-medium">{i18n.t("Total Visits")}:</span>
+            <Tag positive>{dashboardStats.totalVisits}</Tag>
           </div>
 
           <div className="flex items-center gap-2">
-            <Text size="sm" weight={500}>
-              <IconUser size={14} className="inline mr-1" />
+            <span className="text-sm font-medium">
+              <svg
+                className="inline mr-1 h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
               {i18n.t("Top Users")}:
-            </Text>
+            </span>
             <div className="flex flex-wrap gap-1">
               {dashboardStats.topUsers.map((user, index) => (
-                <Badge
+                <Tag
                   key={index}
-                  size="sm"
-                  color="green"
-                  className="cursor-pointer hover:bg-green-600"
+                  positive
+                  className="cursor-pointer hover:opacity-80"
                   onClick={() => handleFilterByUser(user.username)}
                 >
                   {user.firstName && user.surname
                     ? `${user.firstName} ${user.surname} (${user.visits})`
                     : `${user.username} (${user.visits})`}
-                </Badge>
+                </Tag>
               ))}
               {dashboardStats.topUsers.length === 0 && (
-                <Text size="xs" color="dimmed">
-                  {i18n.t("None")}
-                </Text>
+                <span className="text-xs text-gray-500">{i18n.t("None")}</span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Export and Column Visibility buttons */}
-        <Group position="right" spacing="xs" className="px-2">
-          <Button
-            disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
-            onClick={() => handleExportXLSX(table.getPrePaginationRowModel().rows)}
-            leftIcon={<IconFileSpreadsheet size={18} />}
-            color="green"
-            variant="filled"
-            size="xs"
-          >
-            {i18n.t("Export to Excel")}
-          </Button>
-          <Button
-            disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
-            onClick={() => handleExportPDF(table.getPrePaginationRowModel().rows)}
-            leftIcon={<IconFile size={18} />}
-            color="red"
-            variant="filled"
-            size="xs"
-          >
-            {i18n.t("Export to PDF")}
-          </Button>
-        </Group>
-      </div>
-    ),
-  });
+        {/* Export and Filter buttons */}
+        <div className="flex justify-between items-center mb-4 px-2">
+          <input
+            type="text"
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder={i18n.t("Search all columns...")}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+          />
+          <ButtonStrip>
+            <Button
+              disabled={table.getFilteredRowModel().rows.length === 0 || loading}
+              onClick={handleExportXLSX}
+              icon={
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              }
+              primary
+              small
+            >
+              {i18n.t("Export to Excel")}
+            </Button>
+            <Button
+              disabled={table.getFilteredRowModel().rows.length === 0 || loading}
+              onClick={handleExportPDF}
+              icon={
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  />
+                </svg>
+              }
+              destructive
+              small
+            >
+              {i18n.t("Export to PDF")}
+            </Button>
+          </ButtonStrip>
+        </div>
 
-  return (
-    <div className="w-full min-h-[85vh] overflow-y-scroll bg-gradient-to-r from-white to-gray-50 shadow-lg rounded-xl p-6 mx-auto border border-gray-300 hover:shadow-2xl transition-shadow duration-300">
-      <div className="h-[79vh] overflow-y-scroll">
-        <MantineReactTable table={table} />
+        {/* Data Table */}
+        <DataTable>
+          <DataTableHead>
+            <DataTableRow>
+              {table.getHeaderGroups()[0]?.headers.map((header) => (
+                <DataTableColumnHeader
+                  key={header.id}
+                  onSortIconClick={() => {
+                    if (header.column.getCanSort()) {
+                      header.column.toggleSorting();
+                    }
+                  }}
+                  sortDirection={
+                    header.column.getIsSorted()
+                      ? header.column.getIsSorted() === "asc"
+                        ? "asc"
+                        : "desc"
+                      : "default"
+                  }
+                >
+                  {header.isPlaceholder
+                    ? null
+                    : typeof header.column.columnDef.header === "string"
+                      ? header.column.columnDef.header
+                      : ""}
+                </DataTableColumnHeader>
+              ))}
+            </DataTableRow>
+          </DataTableHead>
+          <DataTableBody>
+            {table.getRowModel().rows.length === 0 ? (
+              <DataTableRow>
+                <DataTableCell colSpan={columns.length}>
+                  <div className="flex justify-center items-center h-40 text-gray-500">
+                    {loading
+                      ? ""
+                      : hasOrgUnitFilter && linkedUsers.length === 0
+                        ? i18n.t(
+                            "No users from the selected organization units visited this dashboard in the selected period."
+                          )
+                        : i18n.t("No user visit details available.")}
+                  </div>
+                </DataTableCell>
+              </DataTableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <DataTableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <DataTableCell key={cell.id}>
+                      {typeof cell.column.columnDef.cell === "function"
+                        ? cell.column.columnDef.cell(cell.getContext())
+                        : cell.getValue() !== null && cell.getValue() !== undefined
+                          ? String(cell.getValue())
+                          : ""}
+                    </DataTableCell>
+                  ))}
+                </DataTableRow>
+              ))
+            )}
+          </DataTableBody>
+        </DataTable>
+
+        {/* Pagination Info */}
+        {table.getRowModel().rows.length > 0 && (
+          <div className="flex justify-between items-center mt-4 px-2 text-sm text-gray-600">
+            <div>
+              {i18n.t("Showing")} {table.getRowModel().rows.length} {i18n.t("of")}{" "}
+              {table.getFilteredRowModel().rows.length} {i18n.t("results")}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

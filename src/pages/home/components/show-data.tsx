@@ -4,9 +4,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FaEye } from "react-icons/fa6";
-import { RiCloseLargeFill } from "react-icons/ri";
 
-import * as AlertDialog from "@radix-ui/react-alert-dialog";
+import { Button, Modal, ModalActions, ModalContent, ModalTitle } from "@dhis2/ui";
 import { useQueryClient } from "@tanstack/react-query";
 
 import type { DashboardConverted } from "@/types/dashboardsType";
@@ -68,18 +67,18 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
   }, [row, dispatch, open]);
 
   return (
-    <AlertDialog.Root open={open} onOpenChange={handleDialogOpenChange}>
-      <AlertDialog.Trigger asChild>
-        <button className="w-10 rounded-sm bg-transparent p-1 text-stext hover:text-slate-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-          <FaEye className="text-xl" />
-        </button>
-      </AlertDialog.Trigger>
-      <AlertDialog.Portal>
-        <AlertDialog.Overlay className="bg-blackA6 data-[state=open]:animate-overlayShow fixed inset-0" />
-        <AlertDialog.Content className="fixed top-[50%] left-[50%] max-h-[95vh] w-[90vw] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-white p-[25px] shadow-[0px_10px_38px_-10px_rgba(0,0,0,0.35),0px_10px_20px_-15px_rgba(0,0,0,0.2)] focus:outline-hidden">
-          <AlertDialog.Title className="text-mauve12 -mt-4 font-medium">
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="w-10 rounded-sm bg-transparent p-1 text-stext hover:text-slate-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <FaEye className="text-xl" />
+      </button>
+      {open && (
+        <Modal large onClose={() => handleDialogOpenChange(false)}>
+          <ModalTitle>
             <div className="flex justify-between items-center py-2">
-              <div className="w-[300px] flex items-start justify-between gap-20 ">
+              <div className="w-[300px] flex items-start justify-between gap-20">
                 <DatePicker value={state.value} onChange={handleValueChange} maxDate={MAX_DATE} />
               </div>
               <div>
@@ -97,21 +96,18 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
                   )}
                 </h3>
               </div>
-              <AlertDialog.Cancel asChild>
-                <button
-                  type="button"
-                  className="cursor-pointer text-gray-400 bg-transparent hover:bg-gray-200"
-                  onClick={() => handleDialogOpenChange(false)}
-                  data-modal-toggle="default-modal"
-                >
-                  <RiCloseLargeFill />
-                </button>
-              </AlertDialog.Cancel>
             </div>
-          </AlertDialog.Title>
-          <DashboardReport key={reportKey.current} />
-        </AlertDialog.Content>
-      </AlertDialog.Portal>
-    </AlertDialog.Root>
+          </ModalTitle>
+          <ModalContent>
+            <DashboardReport key={reportKey.current} />
+          </ModalContent>
+          <ModalActions>
+            <Button onClick={() => handleDialogOpenChange(false)} secondary>
+              {i18n.t("Close")}
+            </Button>
+          </ModalActions>
+        </Modal>
+      )}
+    </>
   );
 }
