@@ -26,7 +26,9 @@ interface DashboardContextType {
   resetContext: () => void;
 }
 
-const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
+const DashboardContext = createContext<DashboardContextType | undefined>(
+  undefined
+);
 
 // Set default date range to last 7 days
 const getDefaultDateRange = () => {
@@ -47,7 +49,10 @@ const initialState: DashboardState = {
   selectedOrgUnitLevel: "", // Initialize as empty string
 };
 
-const dashboardReducer = (state: DashboardState, action: DashboardAction): DashboardState => {
+const dashboardReducer = (
+  state: DashboardState,
+  action: DashboardAction
+): DashboardState => {
   switch (action.type) {
     case "SET_DASHBOARD":
       return {
@@ -81,7 +86,9 @@ interface DashboardProviderProps {
   children: React.ReactNode;
 }
 
-export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
+export const DashboardProvider: React.FC<DashboardProviderProps> = ({
+  children,
+}) => {
   const [state, dispatch] = useReducer(dashboardReducer, initialState);
 
   // Function to reset context to initial state
@@ -95,7 +102,11 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
     [state, dispatch, resetContext]
   );
 
-  return <DashboardContext.Provider value={contextValue}>{children}</DashboardContext.Provider>;
+  return (
+    <DashboardContext.Provider value={contextValue}>
+      {children}
+    </DashboardContext.Provider>
+  );
 };
 
 export const useDashboard = (): DashboardContextType => {

@@ -3,11 +3,12 @@
 
 # Dashboard Metrics App
 
-  **A DHIS2 custom application for comprehensive dashboard usage analytics and user engagement tracking**
+**A DHIS2 custom application for comprehensive dashboard usage analytics and user engagement tracking**
 
-  [![DHIS2](https://img.shields.io/badge/DHIS2-v2.39%2B-blue)](https://dhis2.org/)
-  [![License](https://img.shields.io/badge/license-BSD--3--Clause-green)](LICENSE)
-  [![Developed by](https://img.shields.io/badge/developed%20by-HISP%20Rwanda-orange)](https://github.com/hisprwanda)
+[![DHIS2](https://img.shields.io/badge/DHIS2-v2.39%2B-blue)](https://dhis2.org/)
+[![License](https://img.shields.io/badge/license-BSD--3--Clause-green)](LICENSE)
+[![Developed by](https://img.shields.io/badge/developed%20by-HISP%20Rwanda-orange)](https://github.com/hisprwanda)
+
 </div>
 
 ---
@@ -193,7 +194,7 @@ Watch the full walkthrough of the Dashboard Metrics App in action:
 
 **👆 Click the image above to download and watch the demo video**
 
-*A comprehensive demonstration of all features including dashboard tracking, user engagement analytics, district metrics, and inactivity monitoring.*
+_A comprehensive demonstration of all features including dashboard tracking, user engagement analytics, district metrics, and inactivity monitoring._
 
 </div>
 

@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+.b1r {
+  @apply border border-red-600;
+}

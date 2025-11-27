@@ -24,3 +24,9 @@ QWEN.md
 GEMINI.md
 copilot-instructions.md
 docs/*
+
+# Vite
+.vite/
+
+# ESLint cache
+.eslintcache

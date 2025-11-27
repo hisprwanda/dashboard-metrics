@@ -23,13 +23,18 @@ import {
 import { useDashboardsInfo } from "../../../hooks/dashboards";
 import { capitalizeFirstChar } from "../../../lib/utils";
 import i18n from "../../../locales";
-import type { DashboardConverted, Visualization } from "../../../types/dashboardsType";
+import type {
+  DashboardConverted,
+  Visualization,
+} from "../../../types/dashboardsType";
 
 import TableActions from "./table-actions";
 
 export default function DataTable() {
   const { loading, data } = useDashboardsInfo();
-  const [sorting, setSorting] = useState<SortingState>([{ id: "created", desc: false }]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "created", desc: false },
+  ]);
 
   const dashboards = data?.dashboards?.dashboards;
 
@@ -40,7 +45,9 @@ export default function DataTable() {
 
     return dashboards.map((dashboard) => {
       const visualizations: Visualization[] = dashboard.dashboardItems
-        .filter((item) => item.visualization?.id && item.visualization.displayName)
+        .filter(
+          (item) => item.visualization?.id && item.visualization.displayName
+        )
         .map((item) => ({
           id: item?.visualization?.id as string,
           displayName: item?.visualization?.displayName as string,
@@ -65,7 +72,9 @@ export default function DataTable() {
       {
         id: "actions",
         header: "",
-        cell: ({ row }) => <TableActions row={row.original} data={transformedDashboards} />,
+        cell: ({ row }) => (
+          <TableActions row={row.original} data={transformedDashboards} />
+        ),
         size: 60,
         enableSorting: false,
       },
@@ -159,7 +168,9 @@ export default function DataTable() {
           {table.getRowModel().rows.length === 0 ? (
             <DataTableRow>
               <DataTableCell colSpan={columns.length}>
-                <div className="text-center py-4 text-gray-500">{i18n.t("No data available")}</div>
+                <div className="text-center py-4 text-gray-500">
+                  {i18n.t("No data available")}
+                </div>
               </DataTableCell>
             </DataTableRow>
           ) : (
@@ -169,7 +180,8 @@ export default function DataTable() {
                   <DataTableCell key={cell.id}>
                     {typeof cell.column.columnDef.cell === "function"
                       ? cell.column.columnDef.cell(cell.getContext())
-                      : cell.getValue() !== null && cell.getValue() !== undefined
+                      : cell.getValue() !== null &&
+                          cell.getValue() !== undefined
                         ? String(cell.getValue())
                         : ""}
                   </DataTableCell>

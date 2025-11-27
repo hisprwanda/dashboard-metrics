@@ -23,7 +23,9 @@ const OrganizationUnitLevels: React.FC<OrganizationUnitLevelsProps> = ({
   isLoading = false,
   error = null,
 }) => {
-  const [selected, setSelected] = useState<string[]>(selectedLevels.map(String));
+  const [selected, setSelected] = useState<string[]>(
+    selectedLevels.map(String)
+  );
 
   const handleChange = ({ selected: newSelected }: { selected: string[] }) => {
     setSelected(newSelected);

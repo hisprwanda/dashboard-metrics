@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 
 import { useDataQuery } from "@dhis2/app-runtime";
-import { Button, CircularLoader, InputField, NoticeBox, OrganisationUnitTree } from "@dhis2/ui";
+import {
+  Button,
+  CircularLoader,
+  InputField,
+  NoticeBox,
+  OrganisationUnitTree,
+} from "@dhis2/ui";
 
 import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
 import i18n from "../../locales";
@@ -28,8 +34,10 @@ function OrganisationUnitMultiSelect({
 }: OrganisationUnitMultiSelectProps) {
   // Use the preloaded data
   const orgUnits = preloadedData?.orgUnits?.organisationUnits || [];
-  const orgUnitLevels = preloadedData?.orgUnitLevels?.organisationUnitLevels || [];
-  const orgUnitGroups = preloadedData?.orgUnitGroups?.organisationUnitGroups || [];
+  const orgUnitLevels =
+    preloadedData?.orgUnitLevels?.organisationUnitLevels || [];
+  const orgUnitGroups =
+    preloadedData?.orgUnitGroups?.organisationUnitGroups || [];
   const currentUserOrgUnit = preloadedData?.currentUser?.organisationUnits?.[0];
 
   const {
@@ -42,7 +50,9 @@ function OrganisationUnitMultiSelect({
   } = useOrgUnitSelection(orgUnits);
 
   // Get names of selected org units
-  const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
+  const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>(
+    []
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [searchResultUnits, setSearchResultUnits] = useState<any[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<number[]>([]);
@@ -244,7 +254,9 @@ function OrganisationUnitMultiSelect({
       <div className="mb-4">
         <InputField
           className="w-full text-sm font-medium mb-2"
-          label={i18n.t("Search Organization Unit (type at least 3 characters)")}
+          label={i18n.t(
+            "Search Organization Unit (type at least 3 characters)"
+          )}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.value || "")}
           placeholder={i18n.t("Type to search...")}
@@ -257,13 +269,18 @@ function OrganisationUnitMultiSelect({
           </p>
         )}
         {isSearching && searchResultUnits.length === 0 && !searchLoading && (
-          <NoticeBox title={i18n.t("No results found")} warning className="mt-2">
+          <NoticeBox
+            title={i18n.t("No results found")}
+            warning
+            className="mt-2"
+          >
             {i18n.t("No organization units match your search criteria")}
           </NoticeBox>
         )}
         {isSearching && searchResultUnits.length > 0 && !searchLoading && (
           <p className="text-sm text-green-600 mt-1">
-            {i18n.t("Found")} {searchResultUnits.length} {i18n.t("matching organization unit(s)")}
+            {i18n.t("Found")} {searchResultUnits.length}{" "}
+            {i18n.t("matching organization unit(s)")}
           </p>
         )}
       </div>
@@ -273,14 +290,18 @@ function OrganisationUnitMultiSelect({
         {/* Show search results tree when searching */}
         {isSearching && searchResultUnits.length > 0 && (
           <div>
-            <p className="text-sm font-medium mb-2">{i18n.t("Search Results")}:</p>
+            <p className="text-sm font-medium mb-2">
+              {i18n.t("Search Results")}:
+            </p>
             <OrganisationUnitTree
               roots={searchResultUnits.map((unit) => unit.id)}
               selected={selectedOrgUnits}
               onChange={({ path }) => handleOrgUnitClick(path)}
               singleSelection={false}
               renderNodeLabel={({ node }) => (
-                <span className="text-green-600 font-medium">{node.displayName}</span>
+                <span className="text-green-600 font-medium">
+                  {node.displayName}
+                </span>
               )}
               initiallyExpanded={searchResultUnits.map((unit) => unit.path)}
               disableSelection={false}
@@ -289,18 +310,21 @@ function OrganisationUnitMultiSelect({
         )}
 
         {/* Show regular tree when not searching */}
-        {(!isSearching || searchResultUnits.length === 0) && currentUserOrgUnit && (
-          <OrganisationUnitTree
-            roots={[currentUserOrgUnit.id]}
-            selected={selectedOrgUnits}
-            onChange={({ path }) => handleOrgUnitClick(path)}
-            singleSelection={false}
-            renderNodeLabel={({ node }) => (
-              <span className="text-blue-600 font-medium">{node.displayName}</span>
-            )}
-            disableSelection={false}
-          />
-        )}
+        {(!isSearching || searchResultUnits.length === 0) &&
+          currentUserOrgUnit && (
+            <OrganisationUnitTree
+              roots={[currentUserOrgUnit.id]}
+              selected={selectedOrgUnits}
+              onChange={({ path }) => handleOrgUnitClick(path)}
+              singleSelection={false}
+              renderNodeLabel={({ node }) => (
+                <span className="text-blue-600 font-medium">
+                  {node.displayName}
+                </span>
+              )}
+              disableSelection={false}
+            />
+          )}
 
         {/* Loading indicator */}
         {(searchLoading || levelLoading || groupLoading) && (
@@ -325,7 +349,10 @@ function OrganisationUnitMultiSelect({
           </p>
           <div className="flex flex-wrap gap-1 max-h-[100px] overflow-auto">
             {selectedOrgUnitNames.map((name, index) => (
-              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs">
+              <span
+                key={index}
+                className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs"
+              >
                 {name}
               </span>
             ))}
@@ -335,7 +362,9 @@ function OrganisationUnitMultiSelect({
 
       {/* Select field for organization unit level */}
       <div className="mb-5">
-        <p className="text-sm font-medium mb-2">{i18n.t("Select Organization Unit Levels")}:</p>
+        <p className="text-sm font-medium mb-2">
+          {i18n.t("Select Organization Unit Levels")}:
+        </p>
         <OrganizationUnitLevels
           selectedLevels={selectedLevels}
           onLevelsChange={handleLevelsChange}
@@ -347,7 +376,9 @@ function OrganisationUnitMultiSelect({
 
       {/* Select field for organization unit groups */}
       <div className="mb-5">
-        <p className="text-sm font-medium mb-2">{i18n.t("Select Organization Unit Groups")}:</p>
+        <p className="text-sm font-medium mb-2">
+          {i18n.t("Select Organization Unit Groups")}:
+        </p>
         <OrganizationUnitGroups
           selectedGroups={selectedGroups}
           onGroupsChange={handleGroupsChange}

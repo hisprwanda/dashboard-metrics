@@ -31,7 +31,10 @@ export const useDashboardData = ({
 
   // Build filters array
   const filters = useMemo(() => {
-    const filterArray = [`timestamp:ge:${startDate}`, `timestamp:le:${endDate}`];
+    const filterArray = [
+      `timestamp:ge:${startDate}`,
+      `timestamp:le:${endDate}`,
+    ];
 
     // Add dashboard filter if dashboard ID is provided
     if (dashboardId) {

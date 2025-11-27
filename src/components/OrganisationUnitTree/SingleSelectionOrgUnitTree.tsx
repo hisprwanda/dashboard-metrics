@@ -3,7 +3,10 @@ import React, { useMemo, useState } from "react";
 
 import { CircularLoader, InputField, OrganisationUnitTree } from "@dhis2/ui";
 
-import { filterSingleOrgUnits, handleOrgSingleUnitSelection } from "../../lib/helper";
+import {
+  filterSingleOrgUnits,
+  handleOrgSingleUnitSelection,
+} from "../../lib/helper";
 import i18n from "../../locales";
 import { useSingleOrgUnitData } from "../../services/fetchOrgunitData";
 import type { OrgUnit } from "../../types/organisationUnit";
@@ -68,9 +71,13 @@ function SingleSelectionOrgUnitTree() {
             onChange={handleOrgUnitClick}
             singleSelection
             renderNodeLabel={({ node }) => (
-              <span className="text-blue-600 font-medium">{node.displayName}</span>
+              <span className="text-blue-600 font-medium">
+                {node.displayName}
+              </span>
             )}
-            filter={filteredOrgUnitPaths.length ? filteredOrgUnitPaths : undefined}
+            filter={
+              filteredOrgUnitPaths.length ? filteredOrgUnitPaths : undefined
+            }
           />
         )}
       </div>
@@ -84,7 +91,8 @@ function SingleSelectionOrgUnitTree() {
             {i18n.t("Selected Organization Unit ID")}: {selectedOrgUnit.id}
           </p>
           <p>
-            {i18n.t("Selected Organization Unit Name")}: {selectedOrgUnit.displayName}
+            {i18n.t("Selected Organization Unit Name")}:{" "}
+            {selectedOrgUnit.displayName}
           </p>
         </div>
       )}

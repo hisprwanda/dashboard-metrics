@@ -38,15 +38,22 @@ const mapUserToTableData = (user: unknown): UserEngagementData => {
   const userObj = user as Record<string, unknown>;
 
   // Extract last login date (if any)
-  const userCredentials = userObj.userCredentials as Record<string, unknown> | undefined;
+  const userCredentials = userObj.userCredentials as
+    | Record<string, unknown>
+    | undefined;
   const lastLoginTimestamp = userCredentials?.lastLogin;
-  const lastLoginDate = lastLoginTimestamp ? new Date(lastLoginTimestamp as string) : null;
+  const lastLoginDate = lastLoginTimestamp
+    ? new Date(lastLoginTimestamp as string)
+    : null;
 
   // Calculate days since last login
-  const daysSinceLastLogin = lastLoginDate ? differenceInDays(new Date(), lastLoginDate) : null;
+  const daysSinceLastLogin = lastLoginDate
+    ? differenceInDays(new Date(), lastLoginDate)
+    : null;
 
   // Extract role information
-  const roles = (userCredentials?.userRoles as Array<{ displayName: string }>) || [];
+  const roles =
+    (userCredentials?.userRoles as Array<{ displayName: string }>) || [];
   const role = roles.length > 0 ? roles[0].displayName : "Unknown";
 
   // Retrieve login metrics from the processed data
@@ -131,7 +138,9 @@ export default function DataTable() {
   // State to hold the filtered user data
   const [userData, setUserData] = useState<unknown[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sorting, setSorting] = useState<SortingState>([{ id: "loginPastMonth", desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "loginPastMonth", desc: true },
+  ]);
 
   // Transform API data into table format
   const tableData = useMemo<UserEngagementData[]>(
@@ -219,7 +228,8 @@ export default function DataTable() {
       },
       {
         accessorFn: (row) =>
-          row.organisationUnits?.map((ou) => ou.displayName).join(", ") || i18n.t("N/A"),
+          row.organisationUnits?.map((ou) => ou.displayName).join(", ") ||
+          i18n.t("N/A"),
         id: "organisationUnits",
         header: i18n.t("Organisation Units"),
         cell: ({ getValue }) => {
@@ -300,7 +310,9 @@ export default function DataTable() {
                   <DataTableCell colSpan={columns.length}>
                     <div className="p-4 text-center">
                       {userData.length === 0
-                        ? i18n.t("Select a user group to view user engagement data")
+                        ? i18n.t(
+                            "Select a user group to view user engagement data"
+                          )
                         : i18n.t("No matching records found")}
                     </div>
                   </DataTableCell>
@@ -312,7 +324,8 @@ export default function DataTable() {
                       <DataTableCell key={cell.id}>
                         {typeof cell.column.columnDef.cell === "function"
                           ? cell.column.columnDef.cell(cell.getContext())
-                          : cell.getValue() !== null && cell.getValue() !== undefined
+                          : cell.getValue() !== null &&
+                              cell.getValue() !== undefined
                             ? String(cell.getValue())
                             : ""}
                       </DataTableCell>

@@ -4,7 +4,14 @@
 
 import { useEffect, useState } from "react";
 
-import { Button, CircularLoader, Modal, ModalActions, ModalContent, ModalTitle } from "@dhis2/ui";
+import {
+  Button,
+  CircularLoader,
+  Modal,
+  ModalActions,
+  ModalContent,
+  ModalTitle,
+} from "@dhis2/ui";
 
 import OrganisationUnitMultiSelect from "../../../components/OrganisationUnitTree/OrganisationUnitSelector";
 import { useDashboard } from "../../../context/DashboardContext";
@@ -15,7 +22,9 @@ interface OrgUnitPickerProps {
   onOrgUnitsChange?: (paths: string[], names: string[]) => void;
 }
 
-export default function OrgUnitPicker({ onOrgUnitsChange }: OrgUnitPickerProps) {
+export default function OrgUnitPicker({
+  onOrgUnitsChange,
+}: OrgUnitPickerProps) {
   const [open, setOpen] = useState(false);
   const { state, dispatch } = useDashboard();
   const { loading, error, data } = useOrgUnitData();
