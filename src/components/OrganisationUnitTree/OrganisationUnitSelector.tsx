@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import { useDataQuery } from "@dhis2/app-runtime";
 import {
@@ -57,6 +57,16 @@ function OrganisationUnitMultiSelect({
   const [searchResultUnits, setSearchResultUnits] = useState<any[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<number[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  // Track which org units were added by levels and groups for removal
+  const [orgUnitsByLevelMap, setOrgUnitsByLevelMap] = useState<
+    Record<number, string[]>
+  >({});
+  const [orgUnitsByGroupMap, setOrgUnitsByGroupMap] = useState<
+    Record<string, string[]>
+  >({});
+  // Refs to track which level/group we're currently fetching
+  const pendingLevelRef = useRef<number | null>(null);
+  const pendingGroupRef = useRef<string | null>(null);
 
   // Query for searching org units - this is the DHIS2 way to search
   const searchQuery = {
@@ -135,21 +145,89 @@ function OrganisationUnitMultiSelect({
   }, [searchData, isSearching]);
 
   // Handle level selection changes
-  const handleLevelsChange = (levels: number[]) => {
-    setSelectedLevels(levels);
+  const handleLevelsChange = async (newLevels: number[]) => {
+    const previousLevels = selectedLevels;
+    setSelectedLevels(newLevels);
 
-    // For each selected level, fetch the org units
-    levels.forEach((level) => {
+    // Find levels that were removed
+    const removedLevels = previousLevels.filter(
+      (level) => !newLevels.includes(level)
+    );
+
+    // Find levels that were added
+    const addedLevels = newLevels.filter(
+      (level) => !previousLevels.includes(level)
+    );
+
+    // Remove org units for deselected levels
+    if (removedLevels.length > 0) {
+      const pathsToRemove: string[] = [];
+      removedLevels.forEach((level) => {
+        const paths = orgUnitsByLevelMap[level] || [];
+        pathsToRemove.push(...paths);
+      });
+
+      if (pathsToRemove.length > 0) {
+        setSelectedOrgUnits((prevSelected) =>
+          prevSelected.filter((path) => !pathsToRemove.includes(path))
+        );
+
+        // Clean up the map
+        setOrgUnitsByLevelMap((prev) => {
+          const newMap = { ...prev };
+          removedLevels.forEach((level) => delete newMap[level]);
+          return newMap;
+        });
+      }
+    }
+
+    // Fetch org units for newly added levels
+    addedLevels.forEach((level) => {
+      pendingLevelRef.current = level;
       getOrgUnitsByLevel({ level });
     });
   };
 
   // Handle group selection changes
-  const handleGroupsChange = (groups: string[]) => {
-    setSelectedGroups(groups);
+  const handleGroupsChange = async (newGroups: string[]) => {
+    const previousGroups = selectedGroups;
+    setSelectedGroups(newGroups);
 
-    // For each selected group, fetch the org units
-    groups.forEach((groupId) => {
+    // Find groups that were removed
+    const removedGroups = previousGroups.filter(
+      (group) => !newGroups.includes(group)
+    );
+
+    // Find groups that were added
+    const addedGroups = newGroups.filter(
+      (group) => !previousGroups.includes(group)
+    );
+
+    // Remove org units for deselected groups
+    if (removedGroups.length > 0) {
+      const pathsToRemove: string[] = [];
+      removedGroups.forEach((group) => {
+        const paths = orgUnitsByGroupMap[group] || [];
+        pathsToRemove.push(...paths);
+      });
+
+      if (pathsToRemove.length > 0) {
+        setSelectedOrgUnits((prevSelected) =>
+          prevSelected.filter((path) => !pathsToRemove.includes(path))
+        );
+
+        // Clean up the map
+        setOrgUnitsByGroupMap((prev) => {
+          const newMap = { ...prev };
+          removedGroups.forEach((group) => delete newMap[group]);
+          return newMap;
+        });
+      }
+    }
+
+    // Fetch org units for newly added groups
+    addedGroups.forEach((groupId) => {
+      pendingGroupRef.current = groupId;
       getOrgUnitsByGroup({ groupId });
     });
   };
@@ -159,6 +237,20 @@ function OrganisationUnitMultiSelect({
     if (levelData) {
       const levelResults = levelData.orgUnitsByLevel.organisationUnits || [];
       const paths = levelResults.map((unit: any) => unit.path);
+
+      // Use the pending level ref or get level from first result
+      const level =
+        pendingLevelRef.current ??
+        (levelResults.length > 0 ? levelResults[0].level : null);
+
+      if (level !== null) {
+        // Store the mapping of level to paths
+        setOrgUnitsByLevelMap((prev) => ({
+          ...prev,
+          [level]: paths,
+        }));
+        pendingLevelRef.current = null;
+      }
 
       // Add to existing selection instead of replacing
       setSelectedOrgUnits((prevSelected) => {
@@ -174,6 +266,18 @@ function OrganisationUnitMultiSelect({
     if (groupData) {
       const groupResults = groupData.orgUnitsByGroup.organisationUnits || [];
       const paths = groupResults.map((unit: any) => unit.path);
+
+      // Use the pending group ref to know which group this data is for
+      const groupId = pendingGroupRef.current;
+
+      if (groupId !== null) {
+        // Store the mapping of group to paths
+        setOrgUnitsByGroupMap((prev) => ({
+          ...prev,
+          [groupId]: paths,
+        }));
+        pendingGroupRef.current = null;
+      }
 
       // Add to existing selection instead of replacing
       setSelectedOrgUnits((prevSelected) => {
@@ -228,7 +332,9 @@ function OrganisationUnitMultiSelect({
     setSelectedLevels([]);
     setSelectedGroups([]);
 
-    // Log for debugging
+    // Clear the level/group to org units mappings
+    setOrgUnitsByLevelMap({});
+    setOrgUnitsByGroupMap({});
   };
 
   if (isLoading) {

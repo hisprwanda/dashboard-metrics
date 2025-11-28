@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2025-11-28T07:42:12.341Z\n"
-"PO-Revision-Date: 2025-11-28T07:42:12.341Z\n"
+"POT-Creation-Date: 2025-11-28T08:11:42.442Z\n"
+"PO-Revision-Date: 2025-11-28T08:11:42.442Z\n"
 
 msgid "Dashboard Usage"
 msgstr "Dashboard Usage"
@@ -231,15 +231,6 @@ msgstr ""
 
 msgid "No user visit details available."
 msgstr "No user visit details available."
-
-msgid "Showing"
-msgstr "Showing"
-
-msgid "of"
-msgstr "of"
-
-msgid "results"
-msgstr "results"
 
 msgid "Is Favorite"
 msgstr "Is Favorite"
