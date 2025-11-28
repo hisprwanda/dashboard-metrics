@@ -1,6 +1,6 @@
 // file location: src/hooks/users.ts
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useDataQuery, useDataMutation } from "@dhis2/app-runtime";
 
 // Static query builder function to avoid recreation
@@ -67,13 +67,13 @@ export const useFilteredUsers = (
   userGroups: string[] = [],
   disabled?: boolean
 ) => {
-  // Memoize the query to prevent recreation on every render
-  const query = useMemo(
-    () => buildUsersQuery(usernames, orgUnitPaths, orgUnitIds, userGroups, disabled),
-    [usernames, orgUnitPaths, orgUnitIds, userGroups, disabled]
-  );
+  // Create stable string keys for comparison to detect actual value changes
+  const usernamesKey = usernames.join(",");
+  const orgUnitPathsKey = orgUnitPaths.join(",");
+  const orgUnitIdsKey = orgUnitIds.join(",");
+  const userGroupsKey = userGroups.join(",");
 
-  // Only run the query if we have meaningful filters or need all users
+  // Only run the query if we have meaningful filters
   const shouldSkip =
     usernames.length === 0 &&
     orgUnitPaths.length === 0 &&
@@ -81,9 +81,54 @@ export const useFilteredUsers = (
     userGroups.length === 0 &&
     disabled === undefined;
 
+  // Build the query with current filter values
+  const query = useMemo(() => {
+    const filters: string[] = [];
+
+    if (usernames.length > 0) {
+      filters.push(`userCredentials.username:in:[${usernames.join(",")}]`);
+    }
+    if (orgUnitPaths.length > 0) {
+      filters.push(`organisationUnits.path:in:[${orgUnitPaths.join(",")}]`);
+    }
+    if (orgUnitIds.length > 0) {
+      filters.push(`organisationUnits.id:in:[${orgUnitIds.join(",")}]`);
+    }
+    if (userGroups.length > 0) {
+      filters.push(`userGroups.id:in:[${userGroups.join(",")}]`);
+    }
+    if (disabled) {
+      filters.push("userCredentials.disabled:eq:true");
+    }
+
+    return {
+      users: {
+        resource: "users",
+        params: {
+          paging: false,
+          fields:
+            "id,firstName,surname,username,name,displayName,phoneNumber,jobTitle,userCredentials[username,lastLogin,disabled,userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]",
+          ...(filters.length > 0 ? { filter: filters } : {}),
+        },
+      },
+    };
+  }, [usernamesKey, orgUnitPathsKey, orgUnitIdsKey, userGroupsKey, disabled]);
+
   const result = useDataQuery(query, {
-    lazy: shouldSkip, // Skip initial query if no filters
+    lazy: shouldSkip,
   });
+
+  // Track previous key to detect changes
+  const prevKeyRef = useRef<string>("");
+  const currentKey = `${usernamesKey}|${orgUnitPathsKey}|${orgUnitIdsKey}|${userGroupsKey}|${disabled}`;
+
+  // Refetch when filters change and we have meaningful filters
+  useEffect(() => {
+    if (!shouldSkip && currentKey !== prevKeyRef.current) {
+      prevKeyRef.current = currentKey;
+      result.refetch();
+    }
+  }, [currentKey, shouldSkip, result.refetch]);
 
   return result;
 };
@@ -167,7 +212,13 @@ export const useUsersByLoginStatus = (
 ) => {
   // Memoize the query to prevent recreation on every render
   const query = useMemo(
-    () => buildLoginStatusQuery(lastLoginStatus, lastLoginDate, inactiveSince, disabled),
+    () =>
+      buildLoginStatusQuery(
+        lastLoginStatus,
+        lastLoginDate,
+        inactiveSince,
+        disabled
+      ),
     [lastLoginStatus, lastLoginDate, inactiveSince, disabled]
   );
 

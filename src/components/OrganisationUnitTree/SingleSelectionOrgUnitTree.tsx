@@ -3,7 +3,11 @@ import React, { useMemo, useState } from "react";
 
 import { CircularLoader, InputField, OrganisationUnitTree } from "@dhis2/ui";
 
-import { filterSingleOrgUnits, handleOrgSingleUnitSelection } from "../../lib/helper";
+import {
+  filterSingleOrgUnits,
+  handleOrgSingleUnitSelection,
+} from "../../lib/helper";
+import i18n from "../../locales";
 import { useSingleOrgUnitData } from "../../services/fetchOrgunitData";
 import type { OrgUnit } from "../../types/organisationUnit";
 
@@ -36,22 +40,26 @@ function SingleSelectionOrgUnitTree() {
   }
 
   if (error) {
-    return <p className="text-red-500">Error: {error.message}</p>;
+    return (
+      <p className="text-red-500">
+        {i18n.t("Error")}: {error.message}
+      </p>
+    );
   }
 
   return (
     <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
       <h2 className="text-2xl font-semibold mb-4 text-center">
-        Single Selection: Choose an Organization Unit
+        {i18n.t("Single Selection: Choose an Organization Unit")}
       </h2>
 
       <div className="mb-4">
         <InputField
           className="w-full"
-          label="Search Organization Unit"
+          label={i18n.t("Search Organization Unit")}
           value={searchTerm}
           onChange={(e) => handleSearchChange(e.value)}
-          placeholder="Type to search..."
+          placeholder={i18n.t("Type to search...")}
         />
       </div>
 
@@ -63,18 +71,29 @@ function SingleSelectionOrgUnitTree() {
             onChange={handleOrgUnitClick}
             singleSelection
             renderNodeLabel={({ node }) => (
-              <span className="text-blue-600 font-medium">{node.displayName}</span>
+              <span className="text-blue-600 font-medium">
+                {node.displayName}
+              </span>
             )}
-            filter={filteredOrgUnitPaths.length ? filteredOrgUnitPaths : undefined}
+            filter={
+              filteredOrgUnitPaths.length ? filteredOrgUnitPaths : undefined
+            }
           />
         )}
       </div>
 
       {selectedOrgUnit && (
         <div className="text-center text-lg text-green-600">
-          <p>Selected Organization Unit Path: {selectedOrgUnit.path}</p>
-          <p>Selected Organization Unit ID: {selectedOrgUnit.id}</p>
-          <p>Selected Organization Unit Name: {selectedOrgUnit.displayName}</p>
+          <p>
+            {i18n.t("Selected Organization Unit Path")}: {selectedOrgUnit.path}
+          </p>
+          <p>
+            {i18n.t("Selected Organization Unit ID")}: {selectedOrgUnit.id}
+          </p>
+          <p>
+            {i18n.t("Selected Organization Unit Name")}:{" "}
+            {selectedOrgUnit.displayName}
+          </p>
         </div>
       )}
     </div>

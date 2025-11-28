@@ -5,17 +5,403 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2025-10-25T08:23:09.892Z\n"
-"PO-Revision-Date: 2025-10-25T08:23:09.892Z\n"
+"POT-Creation-Date: 2025-11-28T08:11:42.442Z\n"
+"PO-Revision-Date: 2025-11-28T08:11:42.442Z\n"
 
-msgctxt "Application title"
-msgid "__MANIFEST_APP_TITLE"
-msgstr "Dashboard Usage Metrics"
+msgid "Dashboard Usage"
+msgstr "Dashboard Usage"
 
-msgctxt "Application description"
-msgid "__MANIFEST_APP_DESCRIPTION"
+msgid "Metrics on dashboard usage patterns"
+msgstr "Metrics on dashboard usage patterns"
+
+msgid "District Engagement"
+msgstr "District Engagement"
+
+msgid "Monitor engagement across districts"
+msgstr "Monitor engagement across districts"
+
+msgid "User Engagement"
+msgstr "User Engagement"
+
+msgid "Track user activity and engagement metrics"
+msgstr "Track user activity and engagement metrics"
+
+msgid "Inactivity Tracking"
+msgstr "Inactivity Tracking"
+
+msgid "Identify and analyze user inactivity"
+msgstr "Identify and analyze user inactivity"
+
+msgid "Loading organization units..."
+msgstr "Loading organization units..."
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Search Organization Unit (type at least 3 characters)"
+msgstr "Search Organization Unit (type at least 3 characters)"
+
+msgid "Type to search..."
+msgstr "Type to search..."
+
+msgid "Please type at least 3 characters to search"
+msgstr "Please type at least 3 characters to search"
+
+msgid "No results found"
+msgstr "No results found"
+
+msgid "No organization units match your search criteria"
+msgstr "No organization units match your search criteria"
+
+msgid "Found"
+msgstr "Found"
+
+msgid "matching organization unit(s)"
+msgstr "matching organization unit(s)"
+
+msgid "Search Results"
+msgstr "Search Results"
+
+msgid "Searching..."
+msgstr "Searching..."
+
+msgid "Loading units by level..."
+msgstr "Loading units by level..."
+
+msgid "Loading units by group..."
+msgstr "Loading units by group..."
+
+msgid "Selected units"
+msgstr "Selected units"
+
+msgid "Select Organization Unit Levels"
+msgstr "Select Organization Unit Levels"
+
+msgid "Select Organization Unit Groups"
+msgstr "Select Organization Unit Groups"
+
+msgid "Deselect All"
+msgstr "Deselect All"
+
+msgid "Submit Selected Org Units"
+msgstr "Submit Selected Org Units"
+
+msgid "Submit Empty Selection"
+msgstr "Submit Empty Selection"
+
+msgid "Select organization unit groups"
+msgstr "Select organization unit groups"
+
+msgid "Select levels"
+msgstr "Select levels"
+
+msgid "Search Organization Unit"
+msgstr "Search Organization Unit"
+
+msgid "Selected Organization Unit Path"
+msgstr "Selected Organization Unit Path"
+
+msgid "Selected Organization Unit ID"
+msgstr "Selected Organization Unit ID"
+
+msgid "Selected Organization Unit Name"
+msgstr "Selected Organization Unit Name"
+
+msgid "Org Unit Name"
+msgstr "Org Unit Name"
+
+msgid "Total Users"
+msgstr "Total Users"
+
+msgid "Active Users"
+msgstr "Active Users"
+
+msgid "Last Activity"
+msgstr "Last Activity"
+
+msgid "Access %"
+msgstr "Access %"
+
+msgid "Consistently Active"
+msgstr "Consistently Active"
+
+msgid "Yes"
+msgstr "Yes"
+
+msgid "No"
+msgstr "No"
+
+msgid "Dashboard Views"
+msgstr "Dashboard Views"
+
+msgid "Please select an organization unit level to view district data"
+msgstr "Please select an organization unit level to view district data"
+
+msgid "No data found for the selected organization unit level"
+msgstr "No data found for the selected organization unit level"
+
+msgid "District Engagement Filters"
+msgstr "District Engagement Filters"
+
+msgid "Organization Unit Level"
+msgstr "Organization Unit Level"
+
+msgid "Select organization unit level"
+msgstr "Select organization unit level"
+
+msgid "Level"
+msgstr "Level"
+
+msgid "Loading organization unit levels..."
+msgstr "Loading organization unit levels..."
+
+msgid "Processing district data..."
+msgstr "Processing district data..."
+
+msgid "Loading user data..."
+msgstr "Loading user data..."
+
+msgid ""
+"Select an organization unit level to view engagement metrics for all "
+"districts at that level."
 msgstr ""
-"The Dashboard Usage Metrics app provides analytics and tracking "
-"capabilities for dashboard usage within a DHIS2 instance. This tool helps "
-"organizations monitor and analyze how users interact with their dashboards, "
-"enabling better understanding of dashboard utilization patterns."
+"Select an organization unit level to view engagement metrics for all "
+"districts at that level."
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Access Frequency"
+msgstr "Access Frequency"
+
+msgid "Last Visit"
+msgstr "Last Visit"
+
+msgid "Organisations"
+msgstr "Organisations"
+
+msgid "User Groups"
+msgstr "User Groups"
+
+msgid "Roles"
+msgstr "Roles"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Period"
+msgstr "Period"
+
+msgid "Export Date"
+msgstr "Export Date"
+
+msgid "Total Visits"
+msgstr "Total Visits"
+
+msgid "Dashboard Info"
+msgstr "Dashboard Info"
+
+msgid "User Access Data"
+msgstr "User Access Data"
+
+msgid "Failed to export PDF. See console for details."
+msgstr "Failed to export PDF. See console for details."
+
+msgid "Top Users"
+msgstr "Top Users"
+
+msgid "None"
+msgstr "None"
+
+msgid "Search all columns..."
+msgstr "Search all columns..."
+
+msgid "Export to Excel"
+msgstr "Export to Excel"
+
+msgid "Export to PDF"
+msgstr "Export to PDF"
+
+msgid ""
+"No users from the selected organization units visited this dashboard in the "
+"selected period."
+msgstr ""
+"No users from the selected organization units visited this dashboard in the "
+"selected period."
+
+msgid "No user visit details available."
+msgstr "No user visit details available."
+
+msgid "Is Favorite"
+msgstr "Is Favorite"
+
+msgid "Created"
+msgstr "Created"
+
+msgid "Created By"
+msgstr "Created By"
+
+msgid "No data available"
+msgstr "No data available"
+
+msgid "Select Organisation Unit"
+msgstr "Select Organisation Unit"
+
+msgid "Select Organisation Units"
+msgstr "Select Organisation Units"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "No dashboard selected or date range specified."
+msgstr "No dashboard selected or date range specified."
+
+msgid "org units"
+msgstr "org units"
+
+msgid "org unit"
+msgstr "org unit"
+
+msgid "selected"
+msgstr "selected"
+
+msgid "Close"
+msgstr "Close"
+
+msgid "Active"
+msgstr "Active"
+
+msgid "Critical"
+msgstr "Critical"
+
+msgid "Inactive"
+msgstr "Inactive"
+
+msgid "Warning"
+msgstr "Warning"
+
+msgid "Unknown"
+msgstr "Unknown"
+
+msgid "Username"
+msgstr "Username"
+
+msgid "Full Name"
+msgstr "Full Name"
+
+msgid "Role"
+msgstr "Role"
+
+msgid "Last Login"
+msgstr "Last Login"
+
+msgid "Never"
+msgstr "Never"
+
+msgid "Days Inactive"
+msgstr "Days Inactive"
+
+msgid "N/A"
+msgstr "N/A"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Dashboards"
+msgstr "Dashboards"
+
+msgid "Users found"
+msgstr "Users found"
+
+msgid "Select a user group to view user data"
+msgstr "Select a user group to view user data"
+
+msgid "No matching records found"
+msgstr "No matching records found"
+
+msgid "Never Logged In"
+msgstr "Never Logged In"
+
+msgid "Users who have never logged in"
+msgstr "Users who have never logged in"
+
+msgid "Inactive (30+ Days)"
+msgstr "Inactive (30+ Days)"
+
+msgid "Users who haven't logged in for the past 30 days"
+msgstr "Users who haven't logged in for the past 30 days"
+
+msgid "Select user groups"
+msgstr "Select user groups"
+
+msgid "No user groups found"
+msgstr "No user groups found"
+
+msgid "Login Status"
+msgstr "Login Status"
+
+msgid "Select login status"
+msgstr "Select login status"
+
+msgid "An error occurred while fetching user data. Please try again."
+msgstr "An error occurred while fetching user data. Please try again."
+
+msgid "Fetching user data..."
+msgstr "Fetching user data..."
+
+msgid "Page not found"
+msgstr "Page not found"
+
+msgid "Sorry, we couldn't find the page you're looking for."
+msgstr "Sorry, we couldn't find the page you're looking for."
+
+msgid "Back to home"
+msgstr "Back to home"
+
+msgid "Last 7 days"
+msgstr "Last 7 days"
+
+msgid "Last 30 days"
+msgstr "Last 30 days"
+
+msgid "Over 30 days"
+msgstr "Over 30 days"
+
+msgid "Login Frequency (Past Month)"
+msgstr "Login Frequency (Past Month)"
+
+msgid "logins"
+msgstr "logins"
+
+msgid "Login Trend (3 Months)"
+msgstr "Login Trend (3 Months)"
+
+msgid "Access Recency"
+msgstr "Access Recency"
+
+msgid "Organisation Units"
+msgstr "Organisation Units"
+
+msgid "Select a user group to view user engagement data"
+msgstr "Select a user group to view user engagement data"
+
+msgid "Never logged in"
+msgstr "Never logged in"
+
+msgid "Login Frequency"
+msgstr "Login Frequency"
+
+msgid "Total Logins (Past Month)"
+msgstr "Total Logins (Past Month)"
+
+msgid "Average Logins Per User"
+msgstr "Average Logins Per User"
+
+msgid "User Highlights"
+msgstr "User Highlights"
+
+msgid "Most Active User"
+msgstr "Most Active User"
+
+msgid "Least Active User"
+msgstr "Least Active User"

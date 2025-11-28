@@ -1,25 +1,47 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import { Badge, Button, Group, Text } from "@mantine/core";
-import { IconEye, IconFile, IconFileSpreadsheet, IconUser } from "@tabler/icons-react";
+import {
+  DataTable,
+  DataTableHead,
+  DataTableBody,
+  DataTableRow,
+  DataTableCell,
+  DataTableColumnHeader,
+  Tag,
+  Button,
+  ButtonStrip,
+  CircularLoader,
+  Pagination,
+} from "@dhis2/ui";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  type ColumnDef,
+  type SortingState,
+  type ColumnFiltersState,
+  type PaginationState,
+} from "@tanstack/react-table";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import {
-  MantineReactTable,
-  type MRT_ColumnDef,
-  type MRT_Row,
-  useMantineReactTable,
-} from "mantine-react-table";
 import * as XLSX from "xlsx";
 
+import i18n from "../../../locales";
 import type { DateValueType, LinkedUser } from "@/types/dashboard-reportType";
 import type { DashboardConverted } from "@/types/dashboardsType";
 
 interface DashboardStats {
   totalVisits: number;
-  topUsers: { username: string; visits: number; firstName?: string; surname?: string }[];
+  topUsers: {
+    username: string;
+    visits: number;
+    firstName?: string;
+    surname?: string;
+  }[];
   topDay: { date: Date | null; count: number };
   topWeek: { startDate: Date | null; endDate: Date | null; count: number };
   topMonth: { month: string; year: string; count: number };
@@ -42,10 +64,20 @@ export default function DashboardUserDetails({
   hasOrgUnitFilter = false,
   dashboardStats,
 }: DashboardUserDetailsComponentProps) {
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "visits", desc: true },
+  ]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
   // Ensure we have a safe default for linkedUsers when data is loading
   const safeLinkedUsers = loading ? [] : linkedUsers;
 
-  const columns = useMemo<MRT_ColumnDef<LinkedUser>[]>(
+  const columns = useMemo<ColumnDef<LinkedUser>[]>(
     () => [
       {
         accessorFn: (row) => {
@@ -53,11 +85,13 @@ export default function DashboardUserDetails({
           const surname = row?.surname || "";
           const username = row?.username || "";
 
-          return firstName && surname ? `${firstName} ${surname} (${username})` : username;
+          return firstName && surname
+            ? `${firstName} ${surname} (${username})`
+            : username;
         },
-        header: "Name",
-        size: 40,
-        Cell: ({ row }) => {
+        id: "name",
+        header: i18n.t("Name"),
+        cell: ({ row }) => {
           const firstName = row.original?.firstName || "";
           const surname = row.original?.surname || "";
           const username = row.original?.username || "";
@@ -75,12 +109,13 @@ export default function DashboardUserDetails({
             </div>
           );
         },
+        size: 200,
       },
       {
         accessorFn: (row) => row?.visits || 0,
-        id: "AccessFrequency",
-        header: "Access Frequency",
-        size: 40,
+        id: "visits",
+        header: i18n.t("Access Frequency"),
+        size: 150,
       },
       {
         accessorFn: (row) => {
@@ -90,49 +125,71 @@ export default function DashboardUserDetails({
           return sDay;
         },
         id: "lastVisit",
-        header: "Last Visit",
-        filterVariant: "date-range",
-        sortingFn: "datetime",
-        enableColumnFilterModes: false,
-        Cell: ({ cell }) => {
-          const date = cell.getValue<Date>();
+        header: i18n.t("Last Visit"),
+        cell: ({ getValue }) => {
+          const date = getValue<Date | null>();
           return date ? date.toLocaleDateString("en-CA") : "-";
         },
-        Header: ({ column }) => <em>{column.columnDef.header}</em>,
-        size: 50,
+        size: 150,
       },
       {
         accessorFn: (row) =>
-          row?.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
+          row?.organisationUnits?.map((org) => org?.displayName).join(", ") ||
+          "",
         id: "organisations",
-        header: "Organisations",
-        size: 40,
-      },
-      {
-        accessorFn: (row) => row?.userGroups?.map((group) => group?.displayName).join(", ") || "",
-        id: "userGroups",
-        header: "User Groups",
-        size: 40,
+        header: i18n.t("Organisations"),
+        size: 200,
       },
       {
         accessorFn: (row) =>
-          row?.userCredentials?.userRoles?.map((role) => role?.displayName).join(", ") || "",
+          row?.userGroups?.map((group) => group?.displayName).join(", ") || "",
+        id: "userGroups",
+        header: i18n.t("User Groups"),
+        size: 200,
+      },
+      {
+        accessorFn: (row) =>
+          row?.userCredentials?.userRoles
+            ?.map((role) => role?.displayName)
+            .join(", ") || "",
         id: "userRoles",
-        header: "Roles",
-        size: 40,
+        header: i18n.t("Roles"),
+        size: 200,
       },
     ],
     []
   );
 
+  const table = useReactTable({
+    data: safeLinkedUsers,
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter,
+      pagination,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
   // Function to prepare data for export
-  const prepareDataForExport = (rows: MRT_Row<LinkedUser>[]) =>
-    rows.map((row) => {
+  const prepareDataForExport = () =>
+    table.getFilteredRowModel().rows.map((row) => {
       const userData = row.original;
       const firstName = userData.firstName || "";
       const surname = userData.surname || "";
       const username = userData.username || "";
-      const displayName = firstName && surname ? `${firstName} ${surname} (${username})` : username;
+      const displayName =
+        firstName && surname
+          ? `${firstName} ${surname} (${username})`
+          : username;
 
       // Format the date for export
       let lastVisitDate = "-";
@@ -142,41 +199,46 @@ export default function DashboardUserDetails({
       }
 
       return {
-        Name: displayName,
-        "User Groups": userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
-        Organisations: userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
-        "Access Frequency": userData.visits || 0,
-        "Last Visit": lastVisitDate,
+        [i18n.t("Name")]: displayName,
+        [i18n.t("User Groups")]:
+          userData.userGroups?.map((group) => group?.displayName).join(", ") ||
+          "",
+        [i18n.t("Organisations")]:
+          userData.organisationUnits
+            ?.map((org) => org?.displayName)
+            .join(", ") || "",
+        [i18n.t("Access Frequency")]: userData.visits || 0,
+        [i18n.t("Last Visit")]: lastVisitDate,
       };
     });
 
   // Export to Excel/XLSX
-  const handleExportXLSX = (rows: MRT_Row<LinkedUser>[]) => {
-    const exportData = prepareDataForExport(rows);
+  const handleExportXLSX = () => {
+    const exportData = prepareDataForExport();
 
     // Create a new workbook
     const wb = XLSX.utils.book_new();
 
     // Create metadata in the correct format for proper cell placement
     const metadataArray = [
-      ["Dashboard", row?.displayName || "-"],
+      [i18n.t("Dashboard"), row?.displayName || "-"],
       [
-        "Period",
+        i18n.t("Period"),
         `${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
       ],
-      ["Export Date", new Date().toLocaleDateString("en-CA")],
-      ["Total Visits", dashboardStats.totalVisits.toString()],
+      [i18n.t("Export Date"), new Date().toLocaleDateString("en-CA")],
+      [i18n.t("Total Visits"), dashboardStats.totalVisits.toString()],
     ];
 
     // Convert array to worksheet (this ensures proper cell placement)
     const metadataWs = XLSX.utils.aoa_to_sheet(metadataArray);
-    XLSX.utils.book_append_sheet(wb, metadataWs, "Dashboard Info");
+    XLSX.utils.book_append_sheet(wb, metadataWs, i18n.t("Dashboard Info"));
 
     // Convert data to worksheet
     const ws = XLSX.utils.json_to_sheet(exportData);
 
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, "User Access Data");
+    XLSX.utils.book_append_sheet(wb, ws, i18n.t("User Access Data"));
 
     // Generate XLSX file and trigger download
     XLSX.writeFile(
@@ -186,8 +248,10 @@ export default function DashboardUserDetails({
   };
 
   // Export to PDF
-  const handleExportPDF = (rows: MRT_Row<LinkedUser>[]) => {
+  const handleExportPDF = () => {
     try {
+      const exportRows = table.getFilteredRowModel().rows;
+
       // Create PDF document (landscape)
       const doc = new jsPDF({
         orientation: "landscape",
@@ -197,34 +261,44 @@ export default function DashboardUserDetails({
 
       // Add title and metadata before the table
       doc.setFontSize(16);
-      doc.text(`Dashboard: ${row?.displayName || "-"}`, 14, 15);
+      doc.text(`${i18n.t("Dashboard")}: ${row?.displayName || "-"}`, 14, 15);
 
       doc.setFontSize(12);
       doc.text(
-        `Period: ${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
+        `${i18n.t("Period")}: ${value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} - ${value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}`,
         14,
         22
       );
-      doc.text(`Export Date: ${new Date().toLocaleDateString("en-CA")}`, 14, 29);
-      doc.text(`Total Visits: ${dashboardStats.totalVisits}`, 14, 36);
+      doc.text(
+        `${i18n.t("Export Date")}: ${new Date().toLocaleDateString("en-CA")}`,
+        14,
+        29
+      );
+      doc.text(
+        `${i18n.t("Total Visits")}: ${dashboardStats.totalVisits}`,
+        14,
+        36
+      );
 
       // Get table headers from columns
       const tableHeaders = [
-        "Name",
-        "User Groups",
-        "Organisations",
-        "Access Frequency",
-        "Last Visit",
+        i18n.t("Name"),
+        i18n.t("User Groups"),
+        i18n.t("Organisations"),
+        i18n.t("Access Frequency"),
+        i18n.t("Last Visit"),
       ];
 
       // Prepare table data from rows
-      const tableData = rows.map((row) => {
+      const tableData = exportRows.map((row) => {
         const userData = row.original;
         const firstName = userData.firstName || "";
         const surname = userData.surname || "";
         const username = userData.username || "";
         const displayName =
-          firstName && surname ? `${firstName} ${surname} (${username})` : username;
+          firstName && surname
+            ? `${firstName} ${surname} (${username})`
+            : username;
 
         // Format the date for export
         let lastVisitDate = "-";
@@ -235,8 +309,11 @@ export default function DashboardUserDetails({
 
         return [
           displayName,
-          userData.userGroups?.map((group) => group?.displayName).join(", ") || "",
-          userData.organisationUnits?.map((org) => org?.displayName).join(", ") || "",
+          userData.userGroups?.map((group) => group?.displayName).join(", ") ||
+            "",
+          userData.organisationUnits
+            ?.map((org) => org?.displayName)
+            .join(", ") || "",
           (userData.visits || 0).toString(),
           lastVisitDate,
         ];
@@ -264,144 +341,234 @@ export default function DashboardUserDetails({
         `Dashboard_${row?.displayName || "Export"}_${new Date().toISOString().split("T")[0]}.pdf`
       );
     } catch (error) {
-      alert("Failed to export PDF. See console for details.");
+      alert(i18n.t("Failed to export PDF. See console for details."));
     }
   };
 
   // Handle filtering by top user
   const handleFilterByUser = (username: string) => {
-    const table = document.querySelector(".mantine-Table-root");
-    if (table) {
-      // Find the search input and set its value
-      const searchInput = table.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-      if (searchInput) {
-        searchInput.value = username;
-        searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      }
-    }
+    setGlobalFilter(username);
   };
 
-  const table = useMantineReactTable({
-    columns,
-    data: safeLinkedUsers,
-    state: {
-      isLoading: loading,
-      columnVisibility: {
-        userGroups: false,
-        userRoles: false,
-      },
-    },
-    enableFullScreenToggle: false,
-    enableHiding: true,
-    initialState: {
-      sorting: [{ id: "AccessFrequency", desc: true }],
-      density: "xs",
-      columnPinning: {
-        left: ["Name", "AccessFrequency", "lastVisit"],
-        right: [],
-      },
-    },
-    mantineTableContainerProps: {
-      sx: {
-        minHeight: "300px",
-      },
-    },
-    renderEmptyRowsFallback: () => (
-      <div className="flex justify-center items-center h-40 text-gray-500">
-        {loading
-          ? ""
-          : hasOrgUnitFilter && linkedUsers.length === 0
-            ? "No users from the selected organization units visited this dashboard in the selected period."
-            : "No user visit details available."}
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <CircularLoader />
       </div>
-    ),
-    renderTopToolbarCustomActions: ({ table }) => (
-      <div className="w-full">
+    );
+  }
+
+  return (
+    <div className="w-full min-h-[85vh] overflow-y-scroll bg-gradient-to-r from-white to-gray-50 shadow-lg rounded-xl p-6 mx-auto border border-gray-300 hover:shadow-2xl transition-shadow duration-300">
+      <div className="h-[79vh] overflow-y-scroll">
         {/* Compact Dashboard Info Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-1 mb-2 bg-gray-50 rounded border border-gray-200">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 mb-4 bg-gray-50 rounded border border-gray-200">
           <div className="flex items-center gap-2">
-            <Text size="sm" weight={500}>
-              Dashboard:
-            </Text>
-            <Text size="sm">{row?.displayName || "-"}</Text>
+            <span className="text-sm font-medium">{i18n.t("Dashboard")}:</span>
+            <span className="text-sm">{row?.displayName || "-"}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <Text size="sm" weight={500}>
-              Period:
-            </Text>
-            <Text size="sm">
-              {value?.startDate ? value.startDate.toLocaleDateString("en-CA") : "-"} -{" "}
+            <span className="text-sm font-medium">{i18n.t("Period")}:</span>
+            <span className="text-sm">
+              {value?.startDate
+                ? value.startDate.toLocaleDateString("en-CA")
+                : "-"}{" "}
+              -{" "}
               {value?.endDate ? value.endDate.toLocaleDateString("en-CA") : "-"}
-            </Text>
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <Text size="sm" weight={500}>
-              Total Visits:
-            </Text>
-            <Badge color="blue">{dashboardStats.totalVisits}</Badge>
+            <span className="text-sm font-medium">
+              {i18n.t("Total Visits")}:
+            </span>
+            <Tag positive>{dashboardStats.totalVisits}</Tag>
           </div>
 
           <div className="flex items-center gap-2">
-            <Text size="sm" weight={500}>
-              <IconUser size={14} className="inline mr-1" />
-              Top Users:
-            </Text>
+            <span className="text-sm font-medium">
+              <svg
+                className="inline mr-1 h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              {i18n.t("Top Users")}:
+            </span>
             <div className="flex flex-wrap gap-1">
               {dashboardStats.topUsers.map((user, index) => (
-                <Badge
+                <Tag
                   key={index}
-                  size="sm"
-                  color="green"
-                  className="cursor-pointer hover:bg-green-600"
+                  positive
+                  className="cursor-pointer hover:opacity-80"
                   onClick={() => handleFilterByUser(user.username)}
                 >
                   {user.firstName && user.surname
                     ? `${user.firstName} ${user.surname} (${user.visits})`
                     : `${user.username} (${user.visits})`}
-                </Badge>
+                </Tag>
               ))}
               {dashboardStats.topUsers.length === 0 && (
-                <Text size="xs" color="dimmed">
-                  None
-                </Text>
+                <span className="text-xs text-gray-500">{i18n.t("None")}</span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Export and Column Visibility buttons */}
-        <Group position="right" spacing="xs" className="px-2">
-          <Button
-            disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
-            onClick={() => handleExportXLSX(table.getPrePaginationRowModel().rows)}
-            leftIcon={<IconFileSpreadsheet size={18} />}
-            color="green"
-            variant="filled"
-            size="xs"
-          >
-            Export to Excel
-          </Button>
-          <Button
-            disabled={table.getPrePaginationRowModel().rows.length === 0 || loading}
-            onClick={() => handleExportPDF(table.getPrePaginationRowModel().rows)}
-            leftIcon={<IconFile size={18} />}
-            color="red"
-            variant="filled"
-            size="xs"
-          >
-            Export to PDF
-          </Button>
-        </Group>
-      </div>
-    ),
-  });
+        {/* Export and Filter buttons */}
+        <div className="flex justify-between items-center mb-4 px-2">
+          <input
+            type="text"
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder={i18n.t("Search all columns...")}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+          />
+          <ButtonStrip>
+            <Button
+              disabled={
+                table.getFilteredRowModel().rows.length === 0 || loading
+              }
+              onClick={handleExportXLSX}
+              icon={
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              }
+              primary
+              small
+            >
+              {i18n.t("Export to Excel")}
+            </Button>
+            <Button
+              disabled={
+                table.getFilteredRowModel().rows.length === 0 || loading
+              }
+              onClick={handleExportPDF}
+              icon={
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  />
+                </svg>
+              }
+              destructive
+              small
+            >
+              {i18n.t("Export to PDF")}
+            </Button>
+          </ButtonStrip>
+        </div>
 
-  return (
-    <div className="w-full min-h-[85vh] overflow-y-scroll bg-gradient-to-r from-white to-gray-50 shadow-lg rounded-xl p-6 mx-auto border border-gray-300 hover:shadow-2xl transition-shadow duration-300">
-      <div className="h-[79vh] overflow-y-scroll">
-        <MantineReactTable table={table} />
+        {/* Data Table */}
+        <DataTable>
+          <DataTableHead>
+            <DataTableRow>
+              {table.getHeaderGroups()[0]?.headers.map((header) => (
+                <DataTableColumnHeader
+                  key={header.id}
+                  onSortIconClick={() => {
+                    if (header.column.getCanSort()) {
+                      header.column.toggleSorting();
+                    }
+                  }}
+                  sortDirection={
+                    header.column.getIsSorted()
+                      ? header.column.getIsSorted() === "asc"
+                        ? "asc"
+                        : "desc"
+                      : "default"
+                  }
+                >
+                  {header.isPlaceholder
+                    ? null
+                    : typeof header.column.columnDef.header === "string"
+                      ? header.column.columnDef.header
+                      : ""}
+                </DataTableColumnHeader>
+              ))}
+            </DataTableRow>
+          </DataTableHead>
+          <DataTableBody>
+            {table.getRowModel().rows.length === 0 ? (
+              <DataTableRow>
+                <DataTableCell colSpan={columns.length}>
+                  <div className="flex justify-center items-center h-40 text-gray-500">
+                    {loading
+                      ? ""
+                      : hasOrgUnitFilter && linkedUsers.length === 0
+                        ? i18n.t(
+                            "No users from the selected organization units visited this dashboard in the selected period."
+                          )
+                        : i18n.t("No user visit details available.")}
+                  </div>
+                </DataTableCell>
+              </DataTableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <DataTableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <DataTableCell key={cell.id}>
+                      {typeof cell.column.columnDef.cell === "function"
+                        ? cell.column.columnDef.cell(cell.getContext())
+                        : cell.getValue() !== null &&
+                            cell.getValue() !== undefined
+                          ? String(cell.getValue())
+                          : ""}
+                    </DataTableCell>
+                  ))}
+                </DataTableRow>
+              ))
+            )}
+          </DataTableBody>
+        </DataTable>
+
+        {/* Pagination */}
+        {table.getFilteredRowModel().rows.length > 0 && (
+          <div className="mt-4 mb-8 px-2">
+            <Pagination
+              page={table.getState().pagination.pageIndex + 1}
+              pageSize={table.getState().pagination.pageSize}
+              pageCount={table.getPageCount()}
+              total={table.getFilteredRowModel().rows.length}
+              onPageChange={(newPage) => {
+                table.setPageIndex(newPage - 1);
+              }}
+              onPageSizeChange={(newPageSize) => {
+                table.setPageSize(newPageSize);
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

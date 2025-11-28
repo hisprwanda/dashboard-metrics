@@ -2,46 +2,76 @@
 
 import { useMemo, useState } from "react";
 
-import { Badge, Tooltip } from "@mantine/core";
+import {
+  DataTable as DHIS2DataTable,
+  DataTableHead,
+  DataTableBody,
+  DataTableRow,
+  DataTableCell,
+  DataTableColumnHeader,
+  Tag,
+  CircularLoader,
+  Pagination,
+} from "@dhis2/ui";
 import { differenceInDays, format } from "date-fns";
-import type { MRT_ColumnDef } from "mantine-react-table";
-import { MantineReactTable, useMantineReactTable } from "mantine-react-table";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  type ColumnDef,
+  type SortingState,
+  type PaginationState,
+} from "@tanstack/react-table";
 
+import i18n from "../../../locales";
 import type { UserEngagementData } from "../types/user-engagement";
 
 import { FilterSection } from "./filter-section";
 import { SummaryCards } from "./summary-cards";
 
 // Map DHIS2 user data to our table format
-const mapUserToTableData = (user: any): UserEngagementData => {
-  // Ensure user is not null/undefined
-  if (!user) {
+const mapUserToTableData = (user: unknown): UserEngagementData => {
+  // Type guard to ensure user is an object
+  if (!user || typeof user !== "object") {
     throw new Error("User data cannot be null or undefined");
   }
 
+  const userObj = user as Record<string, unknown>;
+
   // Extract last login date (if any)
-  const lastLoginTimestamp = user.userCredentials?.lastLogin;
-  const lastLoginDate = lastLoginTimestamp ? new Date(lastLoginTimestamp) : null;
+  const userCredentials = userObj.userCredentials as
+    | Record<string, unknown>
+    | undefined;
+  const lastLoginTimestamp = userCredentials?.lastLogin;
+  const lastLoginDate = lastLoginTimestamp
+    ? new Date(lastLoginTimestamp as string)
+    : null;
 
   // Calculate days since last login
-  const daysSinceLastLogin = lastLoginDate ? differenceInDays(new Date(), lastLoginDate) : null;
+  const daysSinceLastLogin = lastLoginDate
+    ? differenceInDays(new Date(), lastLoginDate)
+    : null;
 
   // Extract role information
-  const roles = user.userCredentials?.userRoles || [];
+  const roles =
+    (userCredentials?.userRoles as Array<{ displayName: string }>) || [];
   const role = roles.length > 0 ? roles[0].displayName : "Unknown";
 
   // Retrieve login metrics from the processed data
-  const loginPastMonth = user.loginPastMonth || 0;
-  const loginTrend = user.loginTrend || [0, 0, 0];
-  const accessRecency = user.accessRecency || "never";
+  const loginPastMonth = (userObj.loginPastMonth as number) || 0;
+  const loginTrend = (userObj.loginTrend as number[]) || [0, 0, 0];
+  const accessRecency = (userObj.accessRecency as string) || "never";
 
   // Create email if not available
-  const email = user.email || `${user.userCredentials?.username}@example.org`;
+  const username = userCredentials?.username as string | undefined;
+  const email = (userObj.email as string) || `${username}@example.org`;
 
   return {
-    id: user.id,
-    username: user.userCredentials?.username || "Unknown",
-    fullName: user.displayName || "Unknown",
+    id: userObj.id as string,
+    username: username || "Unknown",
+    fullName: (userObj.displayName as string) || "Unknown",
     email,
     role,
     loginPastMonth,
@@ -49,8 +79,12 @@ const mapUserToTableData = (user: any): UserEngagementData => {
     lastLogin: lastLoginDate,
     daysSinceLastLogin,
     accessRecency,
-    userGroups: Array.isArray(user.userGroups) ? user.userGroups : [],
-    organisationUnits: Array.isArray(user.organisationUnits) ? user.organisationUnits : [],
+    userGroups: Array.isArray(userObj.userGroups)
+      ? (userObj.userGroups as Array<{ displayName: string }>)
+      : [],
+    organisationUnits: Array.isArray(userObj.organisationUnits)
+      ? (userObj.organisationUnits as Array<{ displayName: string }>)
+      : [],
   };
 };
 
@@ -75,12 +109,12 @@ function LoginTrendDisplay({ trend }: { trend: number[] }) {
         };
 
         return (
-          <Tooltip key={index} label={tooltipLabel}>
-            <div
-              className={`w-5 ${getColorClass(value)} rounded-sm`}
-              style={{ height: `${height}%`, minHeight: "4px" }}
-            />
-          </Tooltip>
+          <div
+            key={index}
+            title={tooltipLabel}
+            className={`w-5 ${getColorClass(value)} rounded-sm`}
+            style={{ height: `${height}%`, minHeight: "4px" }}
+          />
         );
       })}
     </div>
@@ -91,22 +125,29 @@ function LoginTrendDisplay({ trend }: { trend: number[] }) {
 function AccessRecencyBadge({ recency }: { recency: string }) {
   switch (recency) {
     case "lastWeek":
-      return <Badge color="green">Last 7 days</Badge>;
+      return <Tag positive>{i18n.t("Last 7 days")}</Tag>;
     case "lastMonth":
-      return <Badge color="blue">Last 30 days</Badge>;
+      return <Tag neutral>{i18n.t("Last 30 days")}</Tag>;
     case "overMonth":
-      return <Badge color="orange">Over 30 days</Badge>;
+      return <Tag warning>{i18n.t("Over 30 days")}</Tag>;
     case "never":
-      return <Badge color="red">Never</Badge>;
+      return <Tag negative>{i18n.t("Never")}</Tag>;
     default:
-      return <Badge color="gray">Unknown</Badge>;
+      return <Tag>{i18n.t("Unknown")}</Tag>;
   }
 }
 
 export default function DataTable() {
   // State to hold the filtered user data
-  const [userData, setUserData] = useState<any[]>([]);
+  const [userData, setUserData] = useState<unknown[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "loginPastMonth", desc: true },
+  ]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   // Transform API data into table format
   const tableData = useMemo<UserEngagementData[]>(
@@ -115,7 +156,7 @@ export default function DataTable() {
   );
 
   // Handler for user data updates from filter component
-  const handleUserDataChange = (newUserData: any[]) => {
+  const handleUserDataChange = (newUserData: unknown[]) => {
     setUserData(newUserData);
   };
 
@@ -125,53 +166,58 @@ export default function DataTable() {
   };
 
   // Define columns for the table
-  const columns = useMemo<MRT_ColumnDef<UserEngagementData>[]>(
+  const columns = useMemo<ColumnDef<UserEngagementData>[]>(
     () => [
       {
         accessorKey: "username",
-        header: "Username",
+        id: "username",
+        header: i18n.t("Username"),
         size: 120,
       },
       {
         accessorKey: "fullName",
-        header: "Full Name",
+        id: "fullName",
+        header: i18n.t("Full Name"),
         size: 150,
       },
       {
         accessorKey: "role",
-        header: "Role",
+        id: "role",
+        header: i18n.t("Role"),
         size: 130,
       },
       {
         accessorFn: (row) => row.lastLogin,
         id: "lastLogin",
-        header: "Last Login",
-        filterVariant: "date-range",
-        sortingFn: "datetime",
-        Cell: ({ cell }) => {
-          const value = cell.getValue<Date | null>();
-          return value ? format(value, "yyyy-MM-dd") : "Never";
+        header: i18n.t("Last Login"),
+        cell: ({ getValue }) => {
+          const value = getValue<Date | null>();
+          return value ? format(value, "yyyy-MM-dd") : i18n.t("Never");
         },
         size: 120,
       },
       {
         accessorKey: "loginPastMonth",
-        header: "Login Frequency (Past Month)",
-        Cell: ({ cell }) => {
-          const value = cell.getValue<number>();
+        id: "loginPastMonth",
+        header: i18n.t("Login Frequency (Past Month)"),
+        cell: ({ getValue }) => {
+          const value = getValue<number>();
           return value > 0 ? (
-            <Badge color={value > 15 ? "green" : value > 5 ? "blue" : "gray"}>{value} logins</Badge>
+            <Tag positive={value > 15} neutral={value > 5 && value <= 15}>
+              {value} {i18n.t("logins")}
+            </Tag>
           ) : (
-            <Badge color="red">0 logins</Badge>
+            <Tag negative>0 {i18n.t("logins")}</Tag>
           );
         },
         size: 160,
       },
       {
         accessorKey: "loginTrend",
-        header: "Login Trend (3 Months)",
-        Cell: ({ cell }) => {
-          const value = cell.getValue<number[]>();
+        id: "loginTrend",
+        header: i18n.t("Login Trend (3 Months)"),
+        cell: ({ getValue }) => {
+          const value = getValue<number[]>();
           return <LoginTrendDisplay trend={value} />;
         },
         enableSorting: false,
@@ -179,30 +225,26 @@ export default function DataTable() {
       },
       {
         accessorKey: "accessRecency",
-        header: "Access Recency",
-        Cell: ({ cell }) => {
-          const value = cell.getValue<string>();
+        id: "accessRecency",
+        header: i18n.t("Access Recency"),
+        cell: ({ getValue }) => {
+          const value = getValue<string>();
           return <AccessRecencyBadge recency={value} />;
         },
-        filterVariant: "select",
-        filterSelectOptions: [
-          { text: "Last 7 days", value: "lastWeek" },
-          { text: "Last 30 days", value: "lastMonth" },
-          { text: "Over 30 days", value: "overMonth" },
-          { text: "Never", value: "never" },
-        ],
         size: 140,
       },
       {
-        accessorFn: (row) => row.organisationUnits?.map((ou) => ou.displayName).join(", ") || "N/A",
+        accessorFn: (row) =>
+          row.organisationUnits?.map((ou) => ou.displayName).join(", ") ||
+          i18n.t("N/A"),
         id: "organisationUnits",
-        header: "Organisation Units",
-        Cell: ({ cell }) => {
-          const value = cell.getValue<string>();
+        header: i18n.t("Organisation Units"),
+        cell: ({ getValue }) => {
+          const value = getValue<string>();
           return (
-            <Tooltip label={value} multiline>
-              <div className="truncate max-w-[200px]">{value}</div>
-            </Tooltip>
+            <div className="truncate max-w-[200px]" title={value}>
+              {value}
+            </div>
           );
         },
         size: 200,
@@ -211,30 +253,19 @@ export default function DataTable() {
     []
   );
 
-  const table = useMantineReactTable({
-    columns,
+  const table = useReactTable({
     data: tableData,
-    enableFullScreenToggle: false,
-    enableDensityToggle: false,
-    initialState: {
-      sorting: [{ id: "loginPastMonth", desc: true }],
-      density: "xs",
-    },
-    mantineTableContainerProps: {
-      sx: {
-        minHeight: "300px",
-      },
-    },
+    columns,
     state: {
-      isLoading,
+      sorting,
+      pagination,
     },
-    renderEmptyRowsFallback: () => (
-      <div className="p-4 text-center">
-        {userData.length === 0
-          ? "Select a user group to view user engagement data"
-          : "No matching records found"}
-      </div>
-    ),
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   return (
@@ -250,7 +281,89 @@ export default function DataTable() {
 
       {/* Table */}
       <div className="bg-white shadow-sm">
-        <MantineReactTable table={table} />
+        {isLoading ? (
+          <div className="flex justify-center items-center p-8">
+            <CircularLoader />
+          </div>
+        ) : (
+          <DHIS2DataTable>
+            <DataTableHead>
+              <DataTableRow>
+                {table.getHeaderGroups()[0]?.headers.map((header) => (
+                  <DataTableColumnHeader
+                    key={header.id}
+                    onSortIconClick={() => {
+                      if (header.column.getCanSort()) {
+                        header.column.toggleSorting();
+                      }
+                    }}
+                    sortDirection={
+                      header.column.getIsSorted()
+                        ? header.column.getIsSorted() === "asc"
+                          ? "asc"
+                          : "desc"
+                        : "default"
+                    }
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : typeof header.column.columnDef.header === "string"
+                        ? header.column.columnDef.header
+                        : ""}
+                  </DataTableColumnHeader>
+                ))}
+              </DataTableRow>
+            </DataTableHead>
+            <DataTableBody>
+              {table.getRowModel().rows.length === 0 ? (
+                <DataTableRow>
+                  <DataTableCell colSpan={columns.length}>
+                    <div className="p-4 text-center">
+                      {userData.length === 0
+                        ? i18n.t(
+                            "Select a user group to view user engagement data"
+                          )
+                        : i18n.t("No matching records found")}
+                    </div>
+                  </DataTableCell>
+                </DataTableRow>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <DataTableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <DataTableCell key={cell.id}>
+                        {typeof cell.column.columnDef.cell === "function"
+                          ? cell.column.columnDef.cell(cell.getContext())
+                          : cell.getValue() !== null &&
+                              cell.getValue() !== undefined
+                            ? String(cell.getValue())
+                            : ""}
+                      </DataTableCell>
+                    ))}
+                  </DataTableRow>
+                ))
+              )}
+            </DataTableBody>
+          </DHIS2DataTable>
+        )}
+
+        {/* Pagination */}
+        {table.getFilteredRowModel().rows.length > 0 && !isLoading && (
+          <div className="mt-4 mb-8">
+            <Pagination
+              page={table.getState().pagination.pageIndex + 1}
+              pageSize={table.getState().pagination.pageSize}
+              pageCount={table.getPageCount()}
+              total={table.getFilteredRowModel().rows.length}
+              onPageChange={(newPage) => {
+                table.setPageIndex(newPage - 1);
+              }}
+              onPageSizeChange={(newPageSize) => {
+                table.setPageSize(newPageSize);
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

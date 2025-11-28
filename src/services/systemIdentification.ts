@@ -17,7 +17,7 @@ export interface DataStoreItem {
   uid: string;
   isSqlViewCreated: boolean;
   isSqlViewExecuted: boolean;
-  [key: string]: any;
+  [key: string]: string | boolean | number | undefined;
 }
 
 interface DHIS2Error {
@@ -41,7 +41,8 @@ const sqlParams: SqlViewParams = {
 // SQL view for organization units by level
 const orgUnitByLevelSqlParams: SqlViewParams = {
   name: "Get Organization Units By Level",
-  description: "Returns organization units at a specific level that can be dynamically specified",
+  description:
+    "Returns organization units at a specific level that can be dynamically specified",
   type: "QUERY",
   cacheStrategy: "CACHE_1_MINUTE",
   sqlQuery:
@@ -67,7 +68,13 @@ const checkSqlViewQuery = {
 const createSqlViewMutation = {
   resource: "sqlViews",
   type: "create",
-  data: ({ name, description, type, cacheStrategy, sqlQuery }: SqlViewParams) => ({
+  data: ({
+    name,
+    description,
+    type,
+    cacheStrategy,
+    sqlQuery,
+  }: SqlViewParams) => ({
     name,
     description,
     type,
@@ -85,6 +92,9 @@ const createSqlViewsMutation = {
 const dataStoreMutation = {
   resource: "dataStore/dashboardMetrics/appID",
   type: "create",
+  params: {
+    encrypt: "true",
+  },
   data: (data: DataStoreItem) => ({
     ...data,
   }),
@@ -116,7 +126,10 @@ export const useSqlViewService = () => {
     });
   };
 
-  const useSqlViewQuery = (viewUid: string, params: Record<string, any> = {}) => {
+  const useSqlViewQuery = (
+    viewUid: string,
+    params: Record<string, unknown> = {}
+  ) => {
     const memoizedQuery = useMemo(
       () => ({
         sqlViewData: {
@@ -145,11 +158,17 @@ export const useSqlViewService = () => {
 const deleteDataStoreMutation = {
   resource: "dataStore/dashboardMetrics/appID",
   type: "delete",
+  params: {
+    encrypt: "true",
+  },
 };
 
 const orgUnitDataStoreMutation = {
   resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
   type: "create",
+  params: {
+    encrypt: "true",
+  },
   data: (data: DataStoreItem) => ({
     ...data,
   }),
@@ -158,6 +177,9 @@ const orgUnitDataStoreMutation = {
 const deleteOrgUnitDataStoreMutation = {
   resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
   type: "delete",
+  params: {
+    encrypt: "true",
+  },
 };
 
 export const useDataStoreService = () => {
@@ -165,6 +187,9 @@ export const useDataStoreService = () => {
     const query = {
       datastore: {
         resource: "dataStore/dashboardMetrics/appID",
+        params: {
+          encrypt: "true",
+        },
       },
     };
     return useDataQuery(query);
@@ -174,57 +199,66 @@ export const useDataStoreService = () => {
     const query = {
       datastore: {
         resource: "dataStore/dashboardMetrics/OrgSqlQueryId",
+        params: {
+          encrypt: "true",
+        },
       },
     };
     return useDataQuery(query);
   };
 
-  const [saveDataStoreItemMutation, { loading: mutateLoading, error: mutateError }] =
-    useDataMutation(dataStoreMutation);
+  const [
+    saveDataStoreItemMutation,
+    { loading: mutateLoading, error: mutateError },
+  ] = useDataMutation(dataStoreMutation);
   const [
     saveOrgUnitDataStoreItemMutation,
     { loading: orgUnitMutateLoading, error: orgUnitMutateError },
   ] = useDataMutation(orgUnitDataStoreMutation);
 
-  const [deleteDataStoreItemMutation, { loading: deleteLoading, error: deleteError }] =
-    useDataMutation(deleteDataStoreMutation);
+  const [
+    deleteDataStoreItemMutation,
+    { loading: deleteLoading, error: deleteError },
+  ] = useDataMutation(deleteDataStoreMutation);
   const [
     deleteOrgUnitDataStoreItemMutation,
     { loading: deleteOrgUnitLoading, error: deleteOrgUnitError },
   ] = useDataMutation(deleteOrgUnitDataStoreMutation);
 
-  const deleteDataStoreItem = async (): Promise<any> => {
+  const deleteDataStoreItem = async (): Promise<unknown> => {
     try {
       return await deleteDataStoreItemMutation({});
     } catch (error) {
-      console.error("Error deleting from datastore:", error);
       throw error;
     }
   };
 
-  const deleteOrgUnitDataStoreItem = async (): Promise<any> => {
+  const deleteOrgUnitDataStoreItem = async (): Promise<unknown> => {
     try {
       return await deleteOrgUnitDataStoreItemMutation({});
     } catch (error) {
-      console.error("Error deleting org unit from datastore:", error);
       throw error;
     }
   };
 
-  const saveDataStoreItem = async (key: string, data: DataStoreItem): Promise<any> => {
+  const saveDataStoreItem = async (
+    key: string,
+    data: DataStoreItem
+  ): Promise<unknown> => {
     try {
       return await saveDataStoreItemMutation(data);
     } catch (error) {
-      console.error("Error saving to datastore:", error);
       throw error;
     }
   };
 
-  const saveOrgUnitDataStoreItem = async (key: string, data: DataStoreItem): Promise<any> => {
+  const saveOrgUnitDataStoreItem = async (
+    key: string,
+    data: DataStoreItem
+  ): Promise<unknown> => {
     try {
       return await saveOrgUnitDataStoreItemMutation(data);
     } catch (error) {
-      console.error("Error saving org unit to datastore:", error);
       throw error;
     }
   };
@@ -246,7 +280,9 @@ export const useDataStoreService = () => {
 export const useInitializeSystem = () => {
   const [initialized, setInitialized] = useState(false);
   const [sqlViewUid, setSqlViewUid] = useState<string | null>(null);
-  const [orgUnitSqlViewUid, setOrgUnitSqlViewUid] = useState<string | null>(null);
+  const [orgUnitSqlViewUid, setOrgUnitSqlViewUid] = useState<string | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [initializationAttempted, setInitializationAttempted] = useState(false);
@@ -260,10 +296,12 @@ export const useInitializeSystem = () => {
     deleteOrgUnitDataStoreItem,
   } = useDataStoreService();
 
-  const { createSqlView, executeSqlViews, useCheckSqlViewExistsQuery } = useSqlViewService();
+  const { createSqlView, executeSqlViews, useCheckSqlViewExistsQuery } =
+    useSqlViewService();
 
   const { loading: dsLoading, data: dsData } = useDataStoreItem();
-  const { loading: orgUnitDsLoading, data: orgUnitDsData } = useOrgUnitDataStoreItem();
+  const { loading: orgUnitDsLoading, data: orgUnitDsData } =
+    useOrgUnitDataStoreItem();
 
   const {
     data: sqlViewData,
@@ -293,7 +331,12 @@ export const useInitializeSystem = () => {
     }
 
     const init = async () => {
-      if (dsLoading || checkSqlViewLoading || orgUnitDsLoading || checkOrgUnitSqlViewLoading) {
+      if (
+        dsLoading ||
+        checkSqlViewLoading ||
+        orgUnitDsLoading ||
+        checkOrgUnitSqlViewLoading
+      ) {
         return;
       }
 
@@ -325,7 +368,6 @@ export const useInitializeSystem = () => {
         setOrgUnitSqlViewUid(orgUnitViewUid);
         setInitialized(true);
       } catch (err) {
-        console.error("Initialization error:", err);
         setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
         setLoading(false);
@@ -334,11 +376,11 @@ export const useInitializeSystem = () => {
 
     // Helper function to initialize a SQL view
     const initializeSqlView = async (
-      dataStoreData: any,
+      dataStoreData: { uid?: string; [key: string]: unknown } | undefined,
       params: SqlViewParams,
-      checkFunction: Function,
-      saveFunction: Function,
-      deleteFunction: Function,
+      checkFunction: () => Promise<unknown>,
+      saveFunction: (key: string, data: DataStoreItem) => Promise<unknown>,
+      deleteFunction: () => Promise<unknown>,
       key: string
     ): Promise<string | null> => {
       // Step 1: Check if view exists in datastore
@@ -346,7 +388,10 @@ export const useInitializeSystem = () => {
         const existingViewResponse = await checkFunction();
         const existingSqlViews = existingViewResponse?.sqlViews?.sqlViews;
 
-        if (existingSqlViews?.length > 0 && existingSqlViews[0].name === params.name) {
+        if (
+          existingSqlViews?.length > 0 &&
+          existingSqlViews[0].name === params.name
+        ) {
           // SQL view exists and matches our name, use it
           return dataStoreData.uid;
         }
@@ -370,10 +415,12 @@ export const useInitializeSystem = () => {
         } catch (err) {
           // Handle 409 conflict (view already exists)
           const dhisError = err as DHIS2Error;
-          if (dhisError?.response?.httpStatusCode === 409 && dhisError?.response?.response?.uid) {
+          if (
+            dhisError?.response?.httpStatusCode === 409 &&
+            dhisError?.response?.response?.uid
+          ) {
             uid = dhisError.response.response.uid;
           } else {
-            console.error(`Error creating SQL view for ${params.name}:`, err);
             throw err;
           }
         }
@@ -387,7 +434,7 @@ export const useInitializeSystem = () => {
       try {
         await executeSqlViews({});
       } catch (err) {
-        console.error("Error creating SQL views:", err);
+        // Silently handle error, SQL views may already be created
       }
 
       // Step 5: Save to datastore

@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import { useDataQuery } from "@dhis2/app-runtime";
-import { Button, CircularLoader, InputField, NoticeBox, OrganisationUnitTree } from "@dhis2/ui";
+import {
+  Button,
+  CircularLoader,
+  InputField,
+  NoticeBox,
+  OrganisationUnitTree,
+} from "@dhis2/ui";
 
 import { useOrgUnitSelection } from "../../hooks/useOrgUnitSelection";
+import i18n from "../../locales";
 
 import OrganizationUnitGroups from "./OrganizationUnitGroups";
 import OrganizationUnitLevels from "./OrganizationUnitLevels";
@@ -27,8 +34,10 @@ function OrganisationUnitMultiSelect({
 }: OrganisationUnitMultiSelectProps) {
   // Use the preloaded data
   const orgUnits = preloadedData?.orgUnits?.organisationUnits || [];
-  const orgUnitLevels = preloadedData?.orgUnitLevels?.organisationUnitLevels || [];
-  const orgUnitGroups = preloadedData?.orgUnitGroups?.organisationUnitGroups || [];
+  const orgUnitLevels =
+    preloadedData?.orgUnitLevels?.organisationUnitLevels || [];
+  const orgUnitGroups =
+    preloadedData?.orgUnitGroups?.organisationUnitGroups || [];
   const currentUserOrgUnit = preloadedData?.currentUser?.organisationUnits?.[0];
 
   const {
@@ -41,11 +50,23 @@ function OrganisationUnitMultiSelect({
   } = useOrgUnitSelection(orgUnits);
 
   // Get names of selected org units
-  const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>([]);
+  const [selectedOrgUnitNames, setSelectedOrgUnitNames] = useState<string[]>(
+    []
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [searchResultUnits, setSearchResultUnits] = useState<any[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<number[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  // Track which org units were added by levels and groups for removal
+  const [orgUnitsByLevelMap, setOrgUnitsByLevelMap] = useState<
+    Record<number, string[]>
+  >({});
+  const [orgUnitsByGroupMap, setOrgUnitsByGroupMap] = useState<
+    Record<string, string[]>
+  >({});
+  // Refs to track which level/group we're currently fetching
+  const pendingLevelRef = useRef<number | null>(null);
+  const pendingGroupRef = useRef<string | null>(null);
 
   // Query for searching org units - this is the DHIS2 way to search
   const searchQuery = {
@@ -124,21 +145,89 @@ function OrganisationUnitMultiSelect({
   }, [searchData, isSearching]);
 
   // Handle level selection changes
-  const handleLevelsChange = (levels: number[]) => {
-    setSelectedLevels(levels);
+  const handleLevelsChange = async (newLevels: number[]) => {
+    const previousLevels = selectedLevels;
+    setSelectedLevels(newLevels);
 
-    // For each selected level, fetch the org units
-    levels.forEach((level) => {
+    // Find levels that were removed
+    const removedLevels = previousLevels.filter(
+      (level) => !newLevels.includes(level)
+    );
+
+    // Find levels that were added
+    const addedLevels = newLevels.filter(
+      (level) => !previousLevels.includes(level)
+    );
+
+    // Remove org units for deselected levels
+    if (removedLevels.length > 0) {
+      const pathsToRemove: string[] = [];
+      removedLevels.forEach((level) => {
+        const paths = orgUnitsByLevelMap[level] || [];
+        pathsToRemove.push(...paths);
+      });
+
+      if (pathsToRemove.length > 0) {
+        setSelectedOrgUnits((prevSelected) =>
+          prevSelected.filter((path) => !pathsToRemove.includes(path))
+        );
+
+        // Clean up the map
+        setOrgUnitsByLevelMap((prev) => {
+          const newMap = { ...prev };
+          removedLevels.forEach((level) => delete newMap[level]);
+          return newMap;
+        });
+      }
+    }
+
+    // Fetch org units for newly added levels
+    addedLevels.forEach((level) => {
+      pendingLevelRef.current = level;
       getOrgUnitsByLevel({ level });
     });
   };
 
   // Handle group selection changes
-  const handleGroupsChange = (groups: string[]) => {
-    setSelectedGroups(groups);
+  const handleGroupsChange = async (newGroups: string[]) => {
+    const previousGroups = selectedGroups;
+    setSelectedGroups(newGroups);
 
-    // For each selected group, fetch the org units
-    groups.forEach((groupId) => {
+    // Find groups that were removed
+    const removedGroups = previousGroups.filter(
+      (group) => !newGroups.includes(group)
+    );
+
+    // Find groups that were added
+    const addedGroups = newGroups.filter(
+      (group) => !previousGroups.includes(group)
+    );
+
+    // Remove org units for deselected groups
+    if (removedGroups.length > 0) {
+      const pathsToRemove: string[] = [];
+      removedGroups.forEach((group) => {
+        const paths = orgUnitsByGroupMap[group] || [];
+        pathsToRemove.push(...paths);
+      });
+
+      if (pathsToRemove.length > 0) {
+        setSelectedOrgUnits((prevSelected) =>
+          prevSelected.filter((path) => !pathsToRemove.includes(path))
+        );
+
+        // Clean up the map
+        setOrgUnitsByGroupMap((prev) => {
+          const newMap = { ...prev };
+          removedGroups.forEach((group) => delete newMap[group]);
+          return newMap;
+        });
+      }
+    }
+
+    // Fetch org units for newly added groups
+    addedGroups.forEach((groupId) => {
+      pendingGroupRef.current = groupId;
       getOrgUnitsByGroup({ groupId });
     });
   };
@@ -148,6 +237,20 @@ function OrganisationUnitMultiSelect({
     if (levelData) {
       const levelResults = levelData.orgUnitsByLevel.organisationUnits || [];
       const paths = levelResults.map((unit: any) => unit.path);
+
+      // Use the pending level ref or get level from first result
+      const level =
+        pendingLevelRef.current ??
+        (levelResults.length > 0 ? levelResults[0].level : null);
+
+      if (level !== null) {
+        // Store the mapping of level to paths
+        setOrgUnitsByLevelMap((prev) => ({
+          ...prev,
+          [level]: paths,
+        }));
+        pendingLevelRef.current = null;
+      }
 
       // Add to existing selection instead of replacing
       setSelectedOrgUnits((prevSelected) => {
@@ -163,6 +266,18 @@ function OrganisationUnitMultiSelect({
     if (groupData) {
       const groupResults = groupData.orgUnitsByGroup.organisationUnits || [];
       const paths = groupResults.map((unit: any) => unit.path);
+
+      // Use the pending group ref to know which group this data is for
+      const groupId = pendingGroupRef.current;
+
+      if (groupId !== null) {
+        // Store the mapping of group to paths
+        setOrgUnitsByGroupMap((prev) => ({
+          ...prev,
+          [groupId]: paths,
+        }));
+        pendingGroupRef.current = null;
+      }
 
       // Add to existing selection instead of replacing
       setSelectedOrgUnits((prevSelected) => {
@@ -217,20 +332,26 @@ function OrganisationUnitMultiSelect({
     setSelectedLevels([]);
     setSelectedGroups([]);
 
-    // Log for debugging
+    // Clear the level/group to org units mappings
+    setOrgUnitsByLevelMap({});
+    setOrgUnitsByGroupMap({});
   };
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <CircularLoader />
-        <p className="ml-2">Loading organization units...</p>
+        <p className="ml-2">{i18n.t("Loading organization units...")}</p>
       </div>
     );
   }
 
   if (loadError) {
-    return <p className="text-red-500 p-4">Error: {loadError.message}</p>;
+    return (
+      <p className="text-red-500 p-4">
+        {i18n.t("Error")}: {loadError.message}
+      </p>
+    );
   }
 
   return (
@@ -239,26 +360,33 @@ function OrganisationUnitMultiSelect({
       <div className="mb-4">
         <InputField
           className="w-full text-sm font-medium mb-2"
-          label="Search Organization Unit (type at least 3 characters)"
+          label={i18n.t(
+            "Search Organization Unit (type at least 3 characters)"
+          )}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.value || "")}
-          placeholder="Type to search..."
+          placeholder={i18n.t("Type to search...")}
           loading={searchLoading}
           error={searchError?.message}
         />
         {searchTerm.length > 0 && searchTerm.length < 3 && (
           <p className="text-sm text-orange-500 mt-1">
-            Please type at least 3 characters to search
+            {i18n.t("Please type at least 3 characters to search")}
           </p>
         )}
         {isSearching && searchResultUnits.length === 0 && !searchLoading && (
-          <NoticeBox title="No results found" warning className="mt-2">
-            No organization units match your search criteria
+          <NoticeBox
+            title={i18n.t("No results found")}
+            warning
+            className="mt-2"
+          >
+            {i18n.t("No organization units match your search criteria")}
           </NoticeBox>
         )}
         {isSearching && searchResultUnits.length > 0 && !searchLoading && (
           <p className="text-sm text-green-600 mt-1">
-            Found {searchResultUnits.length} matching organization unit(s)
+            {i18n.t("Found")} {searchResultUnits.length}{" "}
+            {i18n.t("matching organization unit(s)")}
           </p>
         )}
       </div>
@@ -268,14 +396,18 @@ function OrganisationUnitMultiSelect({
         {/* Show search results tree when searching */}
         {isSearching && searchResultUnits.length > 0 && (
           <div>
-            <p className="text-sm font-medium mb-2">Search Results:</p>
+            <p className="text-sm font-medium mb-2">
+              {i18n.t("Search Results")}:
+            </p>
             <OrganisationUnitTree
               roots={searchResultUnits.map((unit) => unit.id)}
               selected={selectedOrgUnits}
               onChange={({ path }) => handleOrgUnitClick(path)}
               singleSelection={false}
               renderNodeLabel={({ node }) => (
-                <span className="text-green-600 font-medium">{node.displayName}</span>
+                <span className="text-green-600 font-medium">
+                  {node.displayName}
+                </span>
               )}
               initiallyExpanded={searchResultUnits.map((unit) => unit.path)}
               disableSelection={false}
@@ -284,18 +416,21 @@ function OrganisationUnitMultiSelect({
         )}
 
         {/* Show regular tree when not searching */}
-        {(!isSearching || searchResultUnits.length === 0) && currentUserOrgUnit && (
-          <OrganisationUnitTree
-            roots={[currentUserOrgUnit.id]}
-            selected={selectedOrgUnits}
-            onChange={({ path }) => handleOrgUnitClick(path)}
-            singleSelection={false}
-            renderNodeLabel={({ node }) => (
-              <span className="text-blue-600 font-medium">{node.displayName}</span>
-            )}
-            disableSelection={false}
-          />
-        )}
+        {(!isSearching || searchResultUnits.length === 0) &&
+          currentUserOrgUnit && (
+            <OrganisationUnitTree
+              roots={[currentUserOrgUnit.id]}
+              selected={selectedOrgUnits}
+              onChange={({ path }) => handleOrgUnitClick(path)}
+              singleSelection={false}
+              renderNodeLabel={({ node }) => (
+                <span className="text-blue-600 font-medium">
+                  {node.displayName}
+                </span>
+              )}
+              disableSelection={false}
+            />
+          )}
 
         {/* Loading indicator */}
         {(searchLoading || levelLoading || groupLoading) && (
@@ -303,10 +438,10 @@ function OrganisationUnitMultiSelect({
             <CircularLoader small />
             <p className="ml-2 text-sm text-gray-500">
               {searchLoading
-                ? "Searching..."
+                ? i18n.t("Searching...")
                 : levelLoading
-                  ? "Loading units by level..."
-                  : "Loading units by group..."}
+                  ? i18n.t("Loading units by level...")
+                  : i18n.t("Loading units by group...")}
             </p>
           </div>
         )}
@@ -315,10 +450,15 @@ function OrganisationUnitMultiSelect({
       {/* Selected org units display */}
       {selectedOrgUnitNames.length > 0 && (
         <div className="mb-4 p-2 bg-blue-50 rounded-md">
-          <p className="font-medium mb-1">Selected units: ({selectedOrgUnitNames.length})</p>
+          <p className="font-medium mb-1">
+            {i18n.t("Selected units")}: ({selectedOrgUnitNames.length})
+          </p>
           <div className="flex flex-wrap gap-1 max-h-[100px] overflow-auto">
             {selectedOrgUnitNames.map((name, index) => (
-              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs">
+              <span
+                key={index}
+                className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs"
+              >
                 {name}
               </span>
             ))}
@@ -328,7 +468,9 @@ function OrganisationUnitMultiSelect({
 
       {/* Select field for organization unit level */}
       <div className="mb-5">
-        <p className="text-sm font-medium mb-2">Select Organization Unit Levels:</p>
+        <p className="text-sm font-medium mb-2">
+          {i18n.t("Select Organization Unit Levels")}:
+        </p>
         <OrganizationUnitLevels
           selectedLevels={selectedLevels}
           onLevelsChange={handleLevelsChange}
@@ -340,7 +482,9 @@ function OrganisationUnitMultiSelect({
 
       {/* Select field for organization unit groups */}
       <div className="mb-5">
-        <p className="text-sm font-medium mb-2">Select Organization Unit Groups:</p>
+        <p className="text-sm font-medium mb-2">
+          {i18n.t("Select Organization Unit Groups")}:
+        </p>
         <OrganizationUnitGroups
           selectedGroups={selectedGroups}
           onGroupsChange={handleGroupsChange}
@@ -357,7 +501,7 @@ function OrganisationUnitMultiSelect({
           onClick={handleDeselectAllClick}
           disabled={selectedOrgUnits.length === 0}
         >
-          Deselect All
+          {i18n.t("Deselect All")}
         </Button>
 
         <Button
@@ -365,8 +509,8 @@ function OrganisationUnitMultiSelect({
           onClick={handleSubmitClick}
         >
           {selectedOrgUnits.length > 0
-            ? `Submit Selected Org Units (${selectedOrgUnits.length})`
-            : "Submit Empty Selection"}
+            ? `${i18n.t("Submit Selected Org Units")} (${selectedOrgUnits.length})`
+            : i18n.t("Submit Empty Selection")}
         </Button>
       </div>
     </div>

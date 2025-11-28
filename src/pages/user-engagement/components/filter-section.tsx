@@ -5,6 +5,7 @@ import { format, subDays, subMonths } from "date-fns";
 import { CircularLoader, MultiSelectField, MultiSelectOption } from "@dhis2/ui";
 
 import { useFilteredUsers, useUserGroups } from "../../../hooks/users";
+import i18n from "../../../locales";
 
 // Interface for filter props
 interface FilterSectionProps {
@@ -51,9 +52,14 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   );
 
   // Memoized handler for user group selection
-  const handleUserGroupsChange = useCallback(({ selected }: { selected: string[] }) => {
-    setSelectedUserGroups(selected);
-  }, []);
+  const handleUserGroupsChange = useCallback(
+    ({ selected }: { selected: string[] }) => {
+      // Reset the data hash when selection changes to force data update
+      prevDataRef.current = "";
+      setSelectedUserGroups(selected);
+    },
+    []
+  );
 
   // Process user data to calculate engagement metrics
   const processUserEngagementData = useCallback(
@@ -62,8 +68,12 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
       return users.map((user) => {
         const lastLoginTimestamp = user.userCredentials?.lastLogin;
-        const lastLoginDate = lastLoginTimestamp ? new Date(lastLoginTimestamp) : null;
-        const loginPastMonth = lastLoginDate ? Math.floor(Math.random() * 30) + 1 : 0;
+        const lastLoginDate = lastLoginTimestamp
+          ? new Date(lastLoginTimestamp)
+          : null;
+        const loginPastMonth = lastLoginDate
+          ? Math.floor(Math.random() * 30) + 1
+          : 0;
 
         const loginTrend = [
           loginPastMonth,
@@ -71,7 +81,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           lastLoginDate ? Math.floor(Math.random() * 20) + 1 : 0,
         ];
 
-        let accessRecency: "lastWeek" | "lastMonth" | "overMonth" | "never" = "never";
+        let accessRecency: "lastWeek" | "lastMonth" | "overMonth" | "never" =
+          "never";
 
         if (lastLoginDate) {
           const lastLoginDateStr = format(lastLoginDate, "yyyy-MM-dd");
@@ -99,7 +110,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   useEffect(() => {
     if (!isMountedRef.current) return;
 
-    const isLoading = selectedUserGroups.length > 0 && filteredUsersQuery.loading;
+    const isLoading =
+      selectedUserGroups.length > 0 && filteredUsersQuery.loading;
     if (isLoading !== prevLoadingRef.current) {
       prevLoadingRef.current = isLoading;
       onLoadingChange(isLoading);
@@ -111,7 +123,11 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     if (!isMountedRef.current) return;
 
     // Only process and update when we have new data and user groups are selected
-    if (!filteredUsersQuery.loading && filteredUsersQuery.data && selectedUserGroups.length > 0) {
+    if (
+      !filteredUsersQuery.loading &&
+      filteredUsersQuery.data &&
+      selectedUserGroups.length > 0
+    ) {
       const { users } = filteredUsersQuery.data.users;
 
       // Create a hash of the current data to compare with previous update
@@ -145,19 +161,23 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         {/* User Groups Selector */}
         <div>
           <MultiSelectField
-            label="User Groups"
+            label={i18n.t("User Groups")}
             onChange={handleUserGroupsChange}
             selected={selectedUserGroups}
             loading={userGroupsQuery.loading}
             filterable
             clearable
-            placeholder="Select user groups"
-            noMatchText="No user groups found"
+            placeholder={i18n.t("Select user groups")}
+            noMatchText={i18n.t("No user groups found")}
             className="mb-4"
             dataTest="user-groups-selector"
           >
             {userGroups.map((group: any) => (
-              <MultiSelectOption key={group.id} label={group.displayName} value={group.id} />
+              <MultiSelectOption
+                key={group.id}
+                label={group.displayName}
+                value={group.id}
+              />
             ))}
           </MultiSelectField>
         </div>
@@ -167,20 +187,24 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       <div className="flex items-center">
         {hasError && (
           <div className="text-red-500">
-            An error occurred while fetching user data. Please try again.
+            {i18n.t(
+              "An error occurred while fetching user data. Please try again."
+            )}
           </div>
         )}
 
         {selectedUserGroups.length > 0 && filteredUsersQuery.loading && (
           <div className="flex items-center">
             <CircularLoader small />
-            <span className="ml-2">Fetching user data...</span>
+            <span className="ml-2">{i18n.t("Fetching user data...")}</span>
           </div>
         )}
       </div>
 
       {selectedUserGroups.length === 0 && (
-        <div className="p-4 text-center">Select a user group to view user engagement data</div>
+        <div className="p-4 text-center">
+          {i18n.t("Select a user group to view user engagement data")}
+        </div>
       )}
     </div>
   );

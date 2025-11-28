@@ -12,8 +12,11 @@ interface SystemContextProps {
 
 const SystemContext = createContext<SystemContextProps | undefined>(undefined);
 
-export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { sqlViewUid, orgUnitSqlViewUid, initialized, loading, error } = useInitializeSystem();
+export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const { sqlViewUid, orgUnitSqlViewUid, initialized, loading, error } =
+    useInitializeSystem();
 
   if (loading) {
     return (
@@ -37,7 +40,9 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }
 
   return (
-    <SystemContext.Provider value={{ sqlViewUid, orgUnitSqlViewUid, initialized }}>
+    <SystemContext.Provider
+      value={{ sqlViewUid, orgUnitSqlViewUid, initialized }}
+    >
       {children}
     </SystemContext.Provider>
   );
