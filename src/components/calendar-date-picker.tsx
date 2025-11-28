@@ -17,14 +17,15 @@ import {
 import { toDate, formatInTimeZone } from "date-fns-tz";
 import { DateRange, DayPicker } from "react-day-picker";
 
+import { Button, ButtonStrip } from "@dhis2/ui";
 import {
-  Button,
-  ButtonStrip,
-  Modal,
-  ModalActions,
-  ModalContent,
-  ModalTitle,
-} from "@dhis2/ui";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 
 import { cn } from "../lib/utils";
 import i18n from "../locales";
@@ -591,10 +592,12 @@ export const CalendarDatePicker = React.forwardRef<
           </span>
         </button>
 
-        {isModalOpen && (
-          <Modal large onClose={handleClose}>
-            <ModalTitle>{i18n.t("Select Date Range")}</ModalTitle>
-            <ModalContent>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{i18n.t("Select Date Range")}</DialogTitle>
+            </DialogHeader>
+            <div className="mt-4">
               <div className="flex gap-4">
                 {numberOfMonths === 2 && (
                   <div className="hidden md:flex flex-col gap-1 pr-4 border-r border-gray-200">
@@ -636,12 +639,12 @@ export const CalendarDatePicker = React.forwardRef<
                   </div>
                 </div>
               </div>
-            </ModalContent>
-            <ModalActions>
+            </div>
+            <div className="mt-4 flex justify-end">
               <Button onClick={handleClose}>{i18n.t("Close")}</Button>
-            </ModalActions>
-          </Modal>
-        )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </>
     );
   }

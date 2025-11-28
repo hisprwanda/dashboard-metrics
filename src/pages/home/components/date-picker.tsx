@@ -82,6 +82,10 @@ export default function DatePicker({
   // Convert the display value to the format expected by CalendarDatePicker
   const dateRange = convertToDateRange(displayValue);
 
+  // Calculate minYear as 50 years ago from today
+  const currentYear = new Date().getFullYear();
+  const minYear = currentYear - 50;
+
   return (
     <CalendarDatePicker
       date={dateRange}
@@ -89,6 +93,7 @@ export default function DatePicker({
       numberOfMonths={2}
       closeOnSelect={false}
       className="w-auto"
+      minYear={minYear}
     />
   );
 }

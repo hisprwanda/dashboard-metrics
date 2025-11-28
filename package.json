@@ -29,6 +29,7 @@
     "@dhis2/ui": "10.9.1",
     "@emotion/react": "^11.14.0",
     "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-dialog": "^1.1.15",
     "@tailwindcss/vite": "^4.1.16",
     "@tanstack/react-query": "^5.89.0",
     "@tanstack/react-table": "^8.21.3",

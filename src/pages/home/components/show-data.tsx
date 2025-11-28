@@ -5,13 +5,15 @@
 import { useEffect, useRef, useState } from "react";
 import { FaEye } from "react-icons/fa6";
 
+import { Button } from "@dhis2/ui";
 import {
-  Button,
-  Modal,
-  ModalActions,
-  ModalContent,
-  ModalTitle,
-} from "@dhis2/ui";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../../components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 
 import type { DashboardConverted } from "@/types/dashboardsType";
@@ -82,9 +84,9 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
       >
         <FaEye className="text-xl" />
       </button>
-      {open && (
-        <Modal large onClose={() => handleDialogOpenChange(false)}>
-          <ModalTitle>
+      <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[90vw] w-[90vw] max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
             <div className="flex justify-between items-center py-2">
               <div className="w-[300px] flex items-start justify-between gap-20">
                 <DatePicker
@@ -112,17 +114,17 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
                 </h3>
               </div>
             </div>
-          </ModalTitle>
-          <ModalContent>
+          </DialogHeader>
+          <div className="mt-4">
             <DashboardReport key={reportKey.current} />
-          </ModalContent>
-          <ModalActions>
+          </div>
+          <div className="mt-4 flex justify-end">
             <Button onClick={() => handleDialogOpenChange(false)} secondary>
               {i18n.t("Close")}
             </Button>
-          </ModalActions>
-        </Modal>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

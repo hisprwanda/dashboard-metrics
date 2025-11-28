@@ -4,14 +4,15 @@
 
 import { useEffect, useState } from "react";
 
+import { Button, CircularLoader } from "@dhis2/ui";
 import {
-  Button,
-  CircularLoader,
-  Modal,
-  ModalActions,
-  ModalContent,
-  ModalTitle,
-} from "@dhis2/ui";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../../components/ui/dialog";
 
 import OrganisationUnitMultiSelect from "../../../components/OrganisationUnitTree/OrganisationUnitSelector";
 import { useDashboard } from "../../../context/DashboardContext";
@@ -78,10 +79,12 @@ export default function OrgUnitPicker({
         )}
       </button>
 
-      {open && (
-        <Modal onClose={() => setOpen(false)}>
-          <ModalTitle>{i18n.t("Select Organisation Units")}</ModalTitle>
-          <ModalContent>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-visible">
+          <DialogHeader>
+            <DialogTitle>{i18n.t("Select Organisation Units")}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 max-h-[calc(90vh-120px)] overflow-y-auto">
             {/* Pass the preloaded data to the component */}
             <OrganisationUnitMultiSelect
               selectedOrgUnits={selectedOrgUnits}
@@ -90,14 +93,14 @@ export default function OrgUnitPicker({
               isLoading={loading}
               loadError={error}
             />
-          </ModalContent>
-          <ModalActions>
+          </div>
+          <div className="mt-4 flex justify-end">
             <Button onClick={() => setOpen(false)} secondary>
               {i18n.t("Cancel")}
             </Button>
-          </ModalActions>
-        </Modal>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
