@@ -10,12 +10,15 @@ import {
   DataTableColumnHeader,
   DataTableHead,
   DataTableRow,
+  Pagination,
 } from "@dhis2/ui";
 import {
   type ColumnDef,
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
+  type PaginationState,
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
@@ -32,6 +35,10 @@ export default function DataTableComponent() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "activeUsers", desc: true },
   ]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
   const { state } = useDashboard();
 
   // Define columns for the table
@@ -101,11 +108,14 @@ export default function DataTableComponent() {
     columns,
     state: {
       sorting,
+      pagination,
     },
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   return (
@@ -184,6 +194,24 @@ export default function DataTableComponent() {
               )}
             </DataTableBody>
           </DHIS2DataTable>
+        )}
+
+        {/* Pagination */}
+        {table.getFilteredRowModel().rows.length > 0 && !isLoading && (
+          <div className="mt-4 mb-8">
+            <Pagination
+              page={table.getState().pagination.pageIndex + 1}
+              pageSize={table.getState().pagination.pageSize}
+              pageCount={table.getPageCount()}
+              total={table.getFilteredRowModel().rows.length}
+              onPageChange={(newPage) => {
+                table.setPageIndex(newPage - 1);
+              }}
+              onPageSizeChange={(newPageSize) => {
+                table.setPageSize(newPageSize);
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

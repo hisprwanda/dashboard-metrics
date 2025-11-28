@@ -186,7 +186,6 @@ export default function DashboardReport() {
   // Effect to manually trigger users refetch when usernames change
   useEffect(() => {
     if (uniqueUsernames.length > 0) {
-      // Explicitly refetch with the current hook configuration
       refetchUsers();
     }
   }, [uniqueUsernames, refetchUsers]);
@@ -194,14 +193,16 @@ export default function DashboardReport() {
   // Link user details once user data is loaded
   useEffect(() => {
     // Only process if we have user data and visit details
-    // We need to recalculate when org units change, so we can't use the topUsersUpdated flag
-    const typedUserData = userData as unknown as UserResponse | undefined;
+    // The DHIS2 query returns { users: { users: [...] } }
+    const usersArray = (userData as any)?.users?.users;
+
     if (
       !userLoading &&
-      typedUserData?.users?.users &&
+      usersArray &&
+      usersArray.length > 0 &&
       visitDetails.length > 0
     ) {
-      const { users } = typedUserData.users;
+      const users = usersArray;
 
       // If org units are selected, filter visit details to only include users in those org units
       let filteredVisitDetails = visitDetails;

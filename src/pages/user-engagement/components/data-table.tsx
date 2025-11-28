@@ -11,6 +11,7 @@ import {
   DataTableColumnHeader,
   Tag,
   CircularLoader,
+  Pagination,
 } from "@dhis2/ui";
 import { differenceInDays, format } from "date-fns";
 import {
@@ -18,8 +19,10 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   type ColumnDef,
   type SortingState,
+  type PaginationState,
 } from "@tanstack/react-table";
 
 import i18n from "../../../locales";
@@ -141,6 +144,10 @@ export default function DataTable() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "loginPastMonth", desc: true },
   ]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   // Transform API data into table format
   const tableData = useMemo<UserEngagementData[]>(
@@ -251,11 +258,14 @@ export default function DataTable() {
     columns,
     state: {
       sorting,
+      pagination,
     },
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   return (
@@ -335,6 +345,24 @@ export default function DataTable() {
               )}
             </DataTableBody>
           </DHIS2DataTable>
+        )}
+
+        {/* Pagination */}
+        {table.getFilteredRowModel().rows.length > 0 && !isLoading && (
+          <div className="mt-4 mb-8">
+            <Pagination
+              page={table.getState().pagination.pageIndex + 1}
+              pageSize={table.getState().pagination.pageSize}
+              pageCount={table.getPageCount()}
+              total={table.getFilteredRowModel().rows.length}
+              onPageChange={(newPage) => {
+                table.setPageIndex(newPage - 1);
+              }}
+              onPageSizeChange={(newPageSize) => {
+                table.setPageSize(newPageSize);
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

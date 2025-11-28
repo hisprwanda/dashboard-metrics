@@ -10,14 +10,17 @@ import {
   DataTableCell,
   DataTableColumnHeader,
   CircularLoader,
+  Pagination,
 } from "@dhis2/ui";
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   type ColumnDef,
   type SortingState,
+  type PaginationState,
 } from "@tanstack/react-table";
 
 import { useDashboardsInfo } from "../../../hooks/dashboards";
@@ -35,6 +38,10 @@ export default function DataTable() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "created", desc: false },
   ]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   const dashboards = data?.dashboards?.dashboards;
 
@@ -119,11 +126,14 @@ export default function DataTable() {
     columns,
     state: {
       sorting,
+      pagination,
     },
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   if (loading) {
@@ -191,6 +201,24 @@ export default function DataTable() {
           )}
         </DataTableBody>
       </DHIS2DataTable>
+
+      {/* Pagination */}
+      {table.getFilteredRowModel().rows.length > 0 && (
+        <div className="mt-4 mb-8">
+          <Pagination
+            page={table.getState().pagination.pageIndex + 1}
+            pageSize={table.getState().pagination.pageSize}
+            pageCount={table.getPageCount()}
+            total={table.getFilteredRowModel().rows.length}
+            onPageChange={(newPage) => {
+              table.setPageIndex(newPage - 1);
+            }}
+            onPageSizeChange={(newPageSize) => {
+              table.setPageSize(newPageSize);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   Button,
   ButtonStrip,
   CircularLoader,
+  Pagination,
 } from "@dhis2/ui";
 import {
   useReactTable,
@@ -23,6 +24,7 @@ import {
   type ColumnDef,
   type SortingState,
   type ColumnFiltersState,
+  type PaginationState,
 } from "@tanstack/react-table";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -67,6 +69,10 @@ export default function DashboardUserDetails({
   ]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   // Ensure we have a safe default for linkedUsers when data is loading
   const safeLinkedUsers = loading ? [] : linkedUsers;
@@ -161,10 +167,12 @@ export default function DashboardUserDetails({
       sorting,
       columnFilters,
       globalFilter,
+      pagination,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -544,14 +552,21 @@ export default function DashboardUserDetails({
           </DataTableBody>
         </DataTable>
 
-        {/* Pagination Info */}
-        {table.getRowModel().rows.length > 0 && (
-          <div className="flex justify-between items-center mt-4 px-2 text-sm text-gray-600">
-            <div>
-              {i18n.t("Showing")} {table.getRowModel().rows.length}{" "}
-              {i18n.t("of")} {table.getFilteredRowModel().rows.length}{" "}
-              {i18n.t("results")}
-            </div>
+        {/* Pagination */}
+        {table.getFilteredRowModel().rows.length > 0 && (
+          <div className="mt-4 mb-8 px-2">
+            <Pagination
+              page={table.getState().pagination.pageIndex + 1}
+              pageSize={table.getState().pagination.pageSize}
+              pageCount={table.getPageCount()}
+              total={table.getFilteredRowModel().rows.length}
+              onPageChange={(newPage) => {
+                table.setPageIndex(newPage - 1);
+              }}
+              onPageSizeChange={(newPageSize) => {
+                table.setPageSize(newPageSize);
+              }}
+            />
           </div>
         )}
       </div>

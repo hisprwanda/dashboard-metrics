@@ -5,17 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2025-11-27T13:44:47.327Z\n"
-"PO-Revision-Date: 2025-11-27T13:44:47.328Z\n"
-
-msgid "Pick a date"
-msgstr "Pick a date"
-
-msgid "Select Date Range"
-msgstr "Select Date Range"
-
-msgid "Close"
-msgstr "Close"
+"POT-Creation-Date: 2025-11-28T07:42:12.341Z\n"
+"PO-Revision-Date: 2025-11-28T07:42:12.341Z\n"
 
 msgid "Dashboard Usage"
 msgstr "Dashboard Usage"
@@ -282,6 +273,9 @@ msgstr "org unit"
 
 msgid "selected"
 msgstr "selected"
+
+msgid "Close"
+msgstr "Close"
 
 msgid "Active"
 msgstr "Active"
