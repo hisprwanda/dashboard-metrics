@@ -26,7 +26,11 @@ const DASHBOARDS_QUERY = {
 
 export const useDashboardsInfo = (): UseDashboardsInfoReturn => {
   const { loading, error, data } = useDataQuery(DASHBOARDS_QUERY);
-  return { loading, error, data: data as unknown as { dashboards: Dashboards } | undefined };
+  return {
+    loading,
+    error,
+    data: data as unknown as { dashboards: Dashboards } | undefined,
+  };
 };
 
 export interface Params {
@@ -63,12 +67,17 @@ export const useSqlViewDataReport = ({
 
   // Memoize filters to prevent recreation on every render
   const filters = useMemo(() => {
-    const filterArray = [`timestamp:ge:${startDate}`, `timestamp:le:${endDate}`];
+    const filterArray = [
+      `timestamp:ge:${startDate}`,
+      `timestamp:le:${endDate}`,
+    ];
 
     // Add dashboard filter if criteria is provided (extract dashboard ID from criteria)
     if (criteria) {
       // The criteria comes in format "favoriteuid%<dashboard-id>"
-      const dashboardId = criteria.replace("favoriteuid%", "").replace(/^%3A/, "");
+      const dashboardId = criteria
+        .replace("favoriteuid%", "")
+        .replace(/^%3A/, "");
       if (dashboardId) {
         filterArray.push(`favoriteuid:eq:${dashboardId}`);
       }
@@ -78,7 +87,10 @@ export const useSqlViewDataReport = ({
   }, [startDate, endDate, orgUnitPaths, criteria]);
 
   // Memoize the query to prevent recreation on every render
-  const query = useMemo(() => buildSqlViewQuery(sqlViewUid, filters), [sqlViewUid, filters]);
+  const query = useMemo(
+    () => buildSqlViewQuery(sqlViewUid, filters),
+    [sqlViewUid, filters]
+  );
 
   const { loading, error, data, refetch } = useDataQuery(query, {
     lazy: true,

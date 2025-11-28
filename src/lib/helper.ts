@@ -26,13 +26,21 @@ export const filterOrgUnits = (
 };
 
 // Function to filter organization units
-export const filterSingleOrgUnits = (orgUnits: OrgUnit[], searchTerm: string): string[] => {
+export const filterSingleOrgUnits = (
+  orgUnits: OrgUnit[],
+  searchTerm: string
+): string[] => {
   if (!searchTerm) return [];
 
   return orgUnits
     .map((unit) => {
-      const matchesSearch = unit.displayName.toLowerCase().includes(searchTerm.toLowerCase());
-      const filteredChildren = filterSingleOrgUnits(unit.children || [], searchTerm);
+      const matchesSearch = unit.displayName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const filteredChildren = filterSingleOrgUnits(
+        unit.children || [],
+        searchTerm
+      );
 
       if (matchesSearch || filteredChildren.length > 0) {
         return [unit.path, ...filteredChildren];

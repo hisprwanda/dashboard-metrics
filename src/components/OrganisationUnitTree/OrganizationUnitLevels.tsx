@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
-import { CircularLoader } from "@dhis2/ui";
+import { CircularLoader, MultiSelectField, MultiSelectOption } from "@dhis2/ui";
 
 import i18n from "../../locales";
-import { MultiSelect } from "../ui/multi-select";
 
 interface OrganizationUnitLevelsProps {
   selectedLevels: number[];
@@ -24,8 +23,13 @@ const OrganizationUnitLevels: React.FC<OrganizationUnitLevelsProps> = ({
   isLoading = false,
   error = null,
 }) => {
-  const handleChange = (selected: string[]) => {
-    const selectedLevelsAsNumbers = selected.map(Number);
+  const [selected, setSelected] = useState<string[]>(
+    selectedLevels.map(String)
+  );
+
+  const handleChange = ({ selected: newSelected }: { selected: string[] }) => {
+    setSelected(newSelected);
+    const selectedLevelsAsNumbers = newSelected.map(Number);
     onLevelsChange(selectedLevelsAsNumbers);
   };
 
@@ -42,18 +46,20 @@ const OrganizationUnitLevels: React.FC<OrganizationUnitLevelsProps> = ({
   }
 
   return (
-    <MultiSelect
-      options={orgUnitLevels.map((level: any) => ({
-        value: String(level.level),
-        label: level.displayName,
-      }))}
-      onValueChange={handleChange}
-      defaultValue={selectedLevels.map(String)}
-      placeholder={i18n.t("Select levels")}
-      variant="inverted"
-      maxCount={3}
+    <MultiSelectField
+      selected={selected}
+      onChange={handleChange}
+      label={i18n.t("Select levels")}
       disabled={disabled}
-    />
+    >
+      {orgUnitLevels.map((level: any) => (
+        <MultiSelectOption
+          key={String(level.level)}
+          value={String(level.level)}
+          label={level.displayName}
+        />
+      ))}
+    </MultiSelectField>
   );
 };
 

@@ -4,9 +4,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FaEye } from "react-icons/fa6";
-import { RiCloseLargeFill } from "react-icons/ri";
 
-import * as AlertDialog from "@radix-ui/react-alert-dialog";
+import { Button } from "@dhis2/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../../components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 
 import type { DashboardConverted } from "@/types/dashboardsType";
@@ -31,7 +38,9 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
   const MAX_DATE = new Date();
   const reportKey = useRef<string>(`${Date.now()}`);
 
-  const handleValueChange = (newValue: { startDate: Date | null; endDate: Date | null } | null) => {
+  const handleValueChange = (
+    newValue: { startDate: Date | null; endDate: Date | null } | null
+  ) => {
     if (newValue && (newValue.startDate || newValue.endDate)) {
       dispatch({ type: "SET_DATE_RANGE", payload: newValue });
       reportKey.current = `${Date.now()}`;
@@ -68,50 +77,54 @@ export default function ShowData({ row, data }: DataSourceRowProps) {
   }, [row, dispatch, open]);
 
   return (
-    <AlertDialog.Root open={open} onOpenChange={handleDialogOpenChange}>
-      <AlertDialog.Trigger asChild>
-        <button className="w-10 rounded-sm bg-transparent p-1 text-stext hover:text-slate-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-          <FaEye className="text-xl" />
-        </button>
-      </AlertDialog.Trigger>
-      <AlertDialog.Portal>
-        <AlertDialog.Overlay className="bg-blackA6 data-[state=open]:animate-overlayShow fixed inset-0" />
-        <AlertDialog.Content className="fixed top-[50%] left-[50%] max-h-[95vh] w-[90vw] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-white p-[25px] shadow-[0px_10px_38px_-10px_rgba(0,0,0,0.35),0px_10px_20px_-15px_rgba(0,0,0,0.2)] focus:outline-hidden">
-          <AlertDialog.Title className="text-mauve12 -mt-4 font-medium">
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="w-10 rounded-sm bg-transparent p-1 text-stext hover:text-slate-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <FaEye className="text-xl" />
+      </button>
+      <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[90vw] w-[90vw] max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
             <div className="flex justify-between items-center py-2">
-              <div className="w-[300px] flex items-start justify-between gap-20 ">
-                <DatePicker value={state.value} onChange={handleValueChange} maxDate={MAX_DATE} />
+              <div className="w-[300px] flex items-start justify-between gap-20">
+                <DatePicker
+                  value={state.value}
+                  onChange={handleValueChange}
+                  maxDate={MAX_DATE}
+                />
               </div>
               <div>
                 <OrgUnitPicker onOrgUnitsChange={handleOrgUnitsChange} />
               </div>
               <div className="flex flex-col items-start">
                 <h3 className="text-sm font-medium text-gray-700">
-                  {formatDate(state.value?.startDate)} - {formatDate(state.value?.endDate)}
+                  {formatDate(state.value?.startDate)} -{" "}
+                  {formatDate(state.value?.endDate)}
                   {state.orgUnitNames.length > 0 && (
                     <span className="ml-2 text-xs text-blue-600">
                       ({state.orgUnitNames.length}{" "}
-                      {state.orgUnitNames.length !== 1 ? i18n.t("org units") : i18n.t("org unit")}{" "}
+                      {state.orgUnitNames.length !== 1
+                        ? i18n.t("org units")
+                        : i18n.t("org unit")}{" "}
                       {i18n.t("selected")})
                     </span>
                   )}
                 </h3>
               </div>
-              <AlertDialog.Cancel asChild>
-                <button
-                  type="button"
-                  className="cursor-pointer text-gray-400 bg-transparent hover:bg-gray-200"
-                  onClick={() => handleDialogOpenChange(false)}
-                  data-modal-toggle="default-modal"
-                >
-                  <RiCloseLargeFill />
-                </button>
-              </AlertDialog.Cancel>
             </div>
-          </AlertDialog.Title>
-          <DashboardReport key={reportKey.current} />
-        </AlertDialog.Content>
-      </AlertDialog.Portal>
-    </AlertDialog.Root>
+          </DialogHeader>
+          <div className="mt-4">
+            <DashboardReport key={reportKey.current} />
+          </div>
+          <div className="mt-4 flex justify-end">
+            <Button onClick={() => handleDialogOpenChange(false)} secondary>
+              {i18n.t("Close")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

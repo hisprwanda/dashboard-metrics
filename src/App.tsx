@@ -5,7 +5,7 @@ import { HashRouter as Router, Route, Routes } from "react-router-dom";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import "./index.css";
+import "./globals.css";
 
 import MainLayout from "./components/layout/MainLayout";
 import { AppProviders } from "./context/AppProviders";
@@ -31,9 +31,15 @@ const App: React.FC = () => (
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
-            <Route path="district-engagement" element={<DistrictEngagementPage />} />
+            <Route
+              path="district-engagement"
+              element={<DistrictEngagementPage />}
+            />
             <Route path="user-engagement" element={<UserEngagementPage />} />
-            <Route path="inactivity-tracking" element={<InactivityTrackingPage />} />
+            <Route
+              path="inactivity-tracking"
+              element={<InactivityTrackingPage />}
+            />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

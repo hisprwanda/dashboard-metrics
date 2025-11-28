@@ -73,27 +73,6 @@ export const useFilteredUsers = (
   const orgUnitIdsKey = orgUnitIds.join(",");
   const userGroupsKey = userGroups.join(",");
 
-  // Build dynamic filter array
-  const filters = useMemo(() => {
-    const f: string[] = [];
-    if (usernames.length > 0) {
-      f.push(`userCredentials.username:in:[${usernames.join(",")}]`);
-    }
-    if (orgUnitPaths.length > 0) {
-      f.push(`organisationUnits.path:in:[${orgUnitPaths.join(",")}]`);
-    }
-    if (orgUnitIds.length > 0) {
-      f.push(`organisationUnits.id:in:[${orgUnitIds.join(",")}]`);
-    }
-    if (userGroups.length > 0) {
-      f.push(`userGroups.id:in:[${userGroups.join(",")}]`);
-    }
-    if (disabled) {
-      f.push("userCredentials.disabled:eq:true");
-    }
-    return f;
-  }, [usernamesKey, orgUnitPathsKey, orgUnitIdsKey, userGroupsKey, disabled]);
-
   // Only run the query if we have meaningful filters
   const shouldSkip =
     usernames.length === 0 &&
@@ -102,22 +81,41 @@ export const useFilteredUsers = (
     userGroups.length === 0 &&
     disabled === undefined;
 
-  // Use a dynamic query with variables
-  const query = {
-    users: {
-      resource: "users",
-      params: ({ filter }: { filter: string[] }) => ({
-        paging: false,
-        fields:
-          "id,firstName,surname,username,name,displayName,phoneNumber,jobTitle,userCredentials[username,lastLogin,disabled,userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]",
-        ...(filter.length > 0 ? { filter } : {}),
-      }),
-    },
-  };
+  // Build the query with current filter values
+  const query = useMemo(() => {
+    const filters: string[] = [];
+
+    if (usernames.length > 0) {
+      filters.push(`userCredentials.username:in:[${usernames.join(",")}]`);
+    }
+    if (orgUnitPaths.length > 0) {
+      filters.push(`organisationUnits.path:in:[${orgUnitPaths.join(",")}]`);
+    }
+    if (orgUnitIds.length > 0) {
+      filters.push(`organisationUnits.id:in:[${orgUnitIds.join(",")}]`);
+    }
+    if (userGroups.length > 0) {
+      filters.push(`userGroups.id:in:[${userGroups.join(",")}]`);
+    }
+    if (disabled) {
+      filters.push("userCredentials.disabled:eq:true");
+    }
+
+    return {
+      users: {
+        resource: "users",
+        params: {
+          paging: false,
+          fields:
+            "id,firstName,surname,username,name,displayName,phoneNumber,jobTitle,userCredentials[username,lastLogin,disabled,userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]",
+          ...(filters.length > 0 ? { filter: filters } : {}),
+        },
+      },
+    };
+  }, [usernamesKey, orgUnitPathsKey, orgUnitIdsKey, userGroupsKey, disabled]);
 
   const result = useDataQuery(query, {
-    lazy: true,
-    variables: { filter: filters },
+    lazy: shouldSkip,
   });
 
   // Track previous key to detect changes
@@ -128,9 +126,9 @@ export const useFilteredUsers = (
   useEffect(() => {
     if (!shouldSkip && currentKey !== prevKeyRef.current) {
       prevKeyRef.current = currentKey;
-      result.refetch({ filter: filters });
+      result.refetch();
     }
-  }, [currentKey, shouldSkip, filters]);
+  }, [currentKey, shouldSkip, result.refetch]);
 
   return result;
 };
@@ -214,7 +212,13 @@ export const useUsersByLoginStatus = (
 ) => {
   // Memoize the query to prevent recreation on every render
   const query = useMemo(
-    () => buildLoginStatusQuery(lastLoginStatus, lastLoginDate, inactiveSince, disabled),
+    () =>
+      buildLoginStatusQuery(
+        lastLoginStatus,
+        lastLoginDate,
+        inactiveSince,
+        disabled
+      ),
     [lastLoginStatus, lastLoginDate, inactiveSince, disabled]
   );
 

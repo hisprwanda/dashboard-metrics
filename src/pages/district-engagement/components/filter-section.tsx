@@ -1,7 +1,11 @@
 // src/pages/district-engagement/components/filter-section.tsx
 import React, { useEffect, useState } from "react";
 
-import { CircularLoader, SingleSelectField, SingleSelectOption } from "@dhis2/ui";
+import {
+  CircularLoader,
+  SingleSelectField,
+  SingleSelectOption,
+} from "@dhis2/ui";
 
 import { useDashboard } from "../../../context/DashboardContext";
 import { useSystem } from "../../../context/SystemContext";
@@ -48,7 +52,13 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   const orgUnitLevelsQuery = useOrganisationUnitLevels();
 
   // Filter users by the selected organization unit IDs - only when we have IDs
-  const usersQuery = useFilteredUsers([], [], orgUnitIds, [], orgUnitIds.length === 0);
+  const usersQuery = useFilteredUsers(
+    [],
+    [],
+    orgUnitIds,
+    [],
+    orgUnitIds.length === 0
+  );
 
   interface OrganisationUnitLevel {
     id: string;
@@ -57,7 +67,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   }
 
   const orgUnitLevels: OrganisationUnitLevel[] =
-    orgUnitLevelsQuery.data?.organisationUnitLevels?.organisationUnitLevels || [];
+    orgUnitLevelsQuery.data?.organisationUnitLevels?.organisationUnitLevels ||
+    [];
 
   // Process data when both org units and users are loaded
   useEffect(() => {
@@ -71,7 +82,9 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       setProcessingData(true);
       try {
         // Type guard for user data
-        const isValidUserData = (data: unknown): data is { users: { users: unknown[] } } => {
+        const isValidUserData = (
+          data: unknown
+        ): data is { users: { users: unknown[] } } => {
           return (
             typeof data === "object" &&
             data !== null &&
@@ -119,7 +132,11 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   ]);
 
   // Handle organization unit level change
-  const handleOrgUnitLevelChange = async ({ selected }: { selected: string }) => {
+  const handleOrgUnitLevelChange = async ({
+    selected,
+  }: {
+    selected: string;
+  }) => {
     // Update the context state with the selected level
     dispatch({ type: "SET_ORG_UNIT_LEVEL", payload: selected });
 
@@ -154,7 +171,10 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
     // Fetch organization units by level
     try {
-      const orgUnitsResult = await fetchOrganisationUnitsByLevel(selected, orgUnitSqlViewUid);
+      const orgUnitsResult = await fetchOrganisationUnitsByLevel(
+        selected,
+        orgUnitSqlViewUid
+      );
 
       if (orgUnitsResult?.sqlViewData?.listGrid?.rows) {
         // Store the rows data directly
@@ -170,11 +190,18 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
         // First, try to detect indices using header information
         headers.forEach((header, index) => {
-          const columnName = header.name?.toLowerCase() || header.column?.toLowerCase() || "";
+          const columnName =
+            header.name?.toLowerCase() || header.column?.toLowerCase() || "";
 
-          if (columnName.includes("uid") && !columnName.includes("organisationunitid")) {
+          if (
+            columnName.includes("uid") &&
+            !columnName.includes("organisationunitid")
+          ) {
             uidIndex = index;
-          } else if (columnName.includes("name") && !columnName.includes("organisationunitid")) {
+          } else if (
+            columnName.includes("name") &&
+            !columnName.includes("organisationunitid")
+          ) {
             nameIndex = index;
           } else if (columnName.includes("path")) {
             pathIndex = index;
@@ -196,12 +223,20 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             const value = String(rows[0][i] || "");
 
             // DHIS2 UID pattern: 11 characters, alphanumeric, starts with letter
-            if (uidIndex === -1 && value.length === 11 && /^[a-zA-Z][a-zA-Z0-9]{10}$/.test(value)) {
+            if (
+              uidIndex === -1 &&
+              value.length === 11 &&
+              /^[a-zA-Z][a-zA-Z0-9]{10}$/.test(value)
+            ) {
               uidIndex = i;
             }
 
             // Path pattern: starts and ends with "/"
-            if (pathIndex === -1 && value.startsWith("/") && value.split("/").length > 3) {
+            if (
+              pathIndex === -1 &&
+              value.startsWith("/") &&
+              value.split("/").length > 3
+            ) {
               pathIndex = i;
             }
 
@@ -220,7 +255,9 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
         // Validate that we found all required indices
         if (uidIndex === -1 || nameIndex === -1 || pathIndex === -1) {
-          throw new Error("Could not auto-detect column structure from SQL view response");
+          throw new Error(
+            "Could not auto-detect column structure from SQL view response"
+          );
         }
 
         // Extract and process organization units with proper structure
@@ -252,7 +289,9 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
   return (
     <div className="bg-white p-4 shadow-sm mb-4 rounded">
-      <h2 className="text-lg font-semibold mb-3">{i18n.t("District Engagement Filters")}</h2>
+      <h2 className="text-lg font-semibold mb-3">
+        {i18n.t("District Engagement Filters")}
+      </h2>
       <div className="grid grid-cols-1 gap-6 mb-2">
         <SingleSelectField
           label={i18n.t("Organization Unit Level")}
@@ -290,7 +329,10 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       {(orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error) && (
         <div className="text-red-500 mt-2 text-sm">
           {i18n.t("Error")}:{" "}
-          {(orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error)?.message}
+          {
+            (orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error)
+              ?.message
+          }
         </div>
       )}
 
