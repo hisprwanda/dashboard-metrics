@@ -1,7 +1,7 @@
 // Custom hook for fetching and processing dashboard analytics data
 // Used across District Engagement, User Engagement, and Inactivity Tracking tabs
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useDataQuery } from "@dhis2/app-runtime";
 
 import type { SqlViewResponse } from "@/types/dashboard-data";
@@ -61,7 +61,7 @@ export const useDashboardAnalytics = ({
         },
       },
     };
-  }, [sqlViewUid, filters, dashboardIds.length]);
+  }, [sqlViewUid, filters, dashboardIds]);
 
   // Only make the query if enabled and we have required parameters
   const shouldSkip = !enabled || !sqlViewUid || dashboardIds.length === 0;
@@ -69,6 +69,13 @@ export const useDashboardAnalytics = ({
   const result = useDataQuery(query || {}, {
     lazy: shouldSkip,
   });
+
+  // Trigger refetch when dashboardIds change and we should fetch
+  useEffect(() => {
+    if (!shouldSkip && result.refetch) {
+      void result.refetch();
+    }
+  }, [dashboardIds.join(","), shouldSkip]);
 
   // Process raw SQL view data into structured access logs
   const accessLogs = useMemo<DashboardAccessLog[]>(() => {

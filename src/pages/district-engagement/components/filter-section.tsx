@@ -97,6 +97,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       usersQuery.data &&
       !usersQuery.loading &&
       !usersQuery.error &&
+      !analyticsLoading &&
       !hasProcessedData
     ) {
       setProcessingData(true);
@@ -154,6 +155,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     onDataProcessed,
     onLoadingChange,
     dashboardAnalytics,
+    analyticsLoading,
     selectedDashboards.length,
   ]);
 
