@@ -94,6 +94,12 @@ export default function DataTableComponent() {
         header: i18n.t("Dashboard Views"),
         size: 150,
       },
+      {
+        accessorKey: "dashboardAccessRate",
+        id: "dashboardAccessRate",
+        header: i18n.t("Dashboard Access Rate"),
+        size: 150,
+      },
     ],
     []
   );
@@ -164,7 +170,7 @@ export default function DataTableComponent() {
             <DataTableBody>
               {table.getRowModel().rows.length === 0 ? (
                 <DataTableRow>
-                  <DataTableCell colSpan={columns.length}>
+                  <DataTableCell colSpan={String(columns.length)}>
                     <div className="p-4 text-center">
                       {!state.selectedOrgUnitLevel
                         ? i18n.t(

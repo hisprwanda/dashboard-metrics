@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2025-11-28T08:11:42.442Z\n"
-"PO-Revision-Date: 2025-11-28T08:11:42.442Z\n"
+"POT-Creation-Date: 2026-01-02T10:39:17.404Z\n"
+"PO-Revision-Date: 2026-01-02T10:39:17.404Z\n"
 
 msgid "Dashboard Usage"
 msgstr "Dashboard Usage"
@@ -92,8 +92,26 @@ msgstr "Submit Empty Selection"
 msgid "Select organization unit groups"
 msgstr "Select organization unit groups"
 
+msgid "1 group selected"
+msgstr "1 group selected"
+
+msgid "groups selected"
+msgstr "groups selected"
+
+msgid "No groups available"
+msgstr "No groups available"
+
 msgid "Select levels"
 msgstr "Select levels"
+
+msgid "1 level selected"
+msgstr "1 level selected"
+
+msgid "levels selected"
+msgstr "levels selected"
+
+msgid "No levels available"
+msgstr "No levels available"
 
 msgid "Search Organization Unit"
 msgstr "Search Organization Unit"
@@ -134,6 +152,9 @@ msgstr "No"
 msgid "Dashboard Views"
 msgstr "Dashboard Views"
 
+msgid "Dashboard Access Rate"
+msgstr "Dashboard Access Rate"
+
 msgid "Please select an organization unit level to view district data"
 msgstr "Please select an organization unit level to view district data"
 
@@ -152,11 +173,20 @@ msgstr "Select organization unit level"
 msgid "Level"
 msgstr "Level"
 
+msgid "Dashboards (Optional)"
+msgstr "Dashboards (Optional)"
+
+msgid "All dashboards or select specific ones"
+msgstr "All dashboards or select specific ones"
+
 msgid "Loading organization unit levels..."
 msgstr "Loading organization unit levels..."
 
 msgid "Processing district data..."
 msgstr "Processing district data..."
+
+msgid "Loading dashboard analytics..."
+msgstr "Loading dashboard analytics..."
 
 msgid "Loading user data..."
 msgstr "Loading user data..."
@@ -310,8 +340,11 @@ msgstr "Status"
 msgid "Dashboards"
 msgstr "Dashboards"
 
-msgid "Users found"
-msgstr "Users found"
+msgid "Last Dashboard Access"
+msgstr "Last Dashboard Access"
+
+msgid "Dashboard Accesses"
+msgstr "Dashboard Accesses"
 
 msgid "Select a user group to view user data"
 msgstr "Select a user group to view user data"
@@ -331,11 +364,20 @@ msgstr "Inactive (30+ Days)"
 msgid "Users who haven't logged in for the past 30 days"
 msgstr "Users who haven't logged in for the past 30 days"
 
+msgid "Never Accessed Dashboards"
+msgstr "Never Accessed Dashboards"
+
+msgid "Users who never accessed selected dashboards"
+msgstr "Users who never accessed selected dashboards"
+
 msgid "Select user groups"
 msgstr "Select user groups"
 
 msgid "No user groups found"
 msgstr "No user groups found"
+
+msgid "No dashboards found"
+msgstr "No dashboards found"
 
 msgid "Login Status"
 msgstr "Login Status"
@@ -405,3 +447,15 @@ msgstr "Most Active User"
 
 msgid "Least Active User"
 msgstr "Least Active User"
+
+msgctxt "Application title"
+msgid "__MANIFEST_APP_TITLE"
+msgstr "Dashboard Usage Metrics"
+
+msgctxt "Application description"
+msgid "__MANIFEST_APP_DESCRIPTION"
+msgstr ""
+"The Dashboard Usage Metrics app provides analytics and tracking "
+"capabilities for dashboard usage within a DHIS2 instance. This tool helps "
+"organizations monitor and analyze how users interact with their dashboards, "
+"enabling better understanding of dashboard utilization patterns."

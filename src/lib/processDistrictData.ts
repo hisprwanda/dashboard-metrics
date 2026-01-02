@@ -17,8 +17,17 @@ export interface UserData {
   name: string;
   organisationUnits?: Array<{ id: string; name: string }>;
   userCredentials?: {
+    username?: string;
     lastLogin?: string;
   };
+}
+
+/**
+ * Interface for dashboard analytics data
+ */
+export interface DashboardAnalytics {
+  userAccessCounts: Record<string, number>;
+  userLastAccess: Record<string, string>;
 }
 
 /**
@@ -32,17 +41,20 @@ export interface DistrictEngagement {
   accessPercentage: string;
   isConsistentlyActive: boolean;
   dashboardViews: number;
+  dashboardAccessRate: string;
 }
 
 /**
  * Process organization unit and user data into district engagement metrics
  * @param orgUnitData Processed organization unit data with { uid, name, path } structure or raw arrays
  * @param userData User data filtered by organization units
+ * @param dashboardAnalytics Optional dashboard analytics data with user access counts
  * @returns Array of district engagement metrics
  */
 export function processDistrictData(
   orgUnitData: (ProcessedOrgUnit | unknown[])[],
-  userData: UserData[]
+  userData: UserData[],
+  dashboardAnalytics?: DashboardAnalytics
 ): DistrictEngagement[] {
   if (!orgUnitData?.length || !userData?.length) {
     return [];
@@ -122,9 +134,24 @@ export function processDistrictData(
     // Determine if consistently active (more than 50% active users)
     const isConsistentlyActive = accessPercentage >= 50;
 
-    // For this example, we're using a placeholder for dashboard views
-    // In a real implementation, you would calculate this from actual dashboard analytics data
-    const dashboardViews = Math.max(1, activeUsers.length * 3); // Just a placeholder calculation
+    // Calculate dashboard views and access rate from analytics data
+    let dashboardViews = 0;
+    let usersWithDashboardAccess = 0;
+
+    if (dashboardAnalytics) {
+      orgUnitUsers.forEach((user) => {
+        const username = user.userCredentials?.username;
+        if (username && dashboardAnalytics.userAccessCounts[username]) {
+          dashboardViews += dashboardAnalytics.userAccessCounts[username];
+          usersWithDashboardAccess++;
+        }
+      });
+    }
+
+    const dashboardAccessRate =
+      orgUnitUsers.length > 0
+        ? `${Math.round((usersWithDashboardAccess / orgUnitUsers.length) * 100)}%`
+        : "0%";
 
     const result = {
       OrgUnitName: orgUnitName,
@@ -134,6 +161,7 @@ export function processDistrictData(
       accessPercentage: `${accessPercentage}%`,
       isConsistentlyActive,
       dashboardViews,
+      dashboardAccessRate,
     };
 
     return result;

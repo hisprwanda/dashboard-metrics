@@ -13,6 +13,8 @@ export interface UserEngagementData {
   accessRecency: "lastWeek" | "lastMonth" | "overMonth" | "never";
   userGroups: { id: string; displayName: string }[];
   organisationUnits: { id: string; displayName: string }[];
+  lastDashboardAccess?: Date | null;
+  totalDashboardAccesses?: number;
 }
 
 export interface LoginFrequencyChartData {

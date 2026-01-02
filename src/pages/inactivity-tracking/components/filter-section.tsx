@@ -5,10 +5,13 @@ import { subDays } from "date-fns";
 import { CircularLoader, MultiSelectField, MultiSelectOption } from "@dhis2/ui";
 
 import { useFilteredUsers, useUserGroups } from "../../../hooks/users";
+import { useDashboardsInfo } from "../../../hooks/dashboards";
+import { useDashboardAnalytics } from "../../../hooks/useDashboardAnalytics";
+import { useSystem } from "../../../context/SystemContext";
 import i18n from "../../../locales";
 
 // Interface for user login status options
-type LoginStatusValue = "inactive" | "active";
+type LoginStatusValue = "inactive" | "active" | "dashboard_inactive";
 
 interface UserLoginStatusOption {
   id: string;
@@ -64,7 +67,7 @@ const isFilteredUserArray = (value: unknown): value is FilteredUser[] =>
   Array.isArray(value) && value.every(isFilteredUser);
 
 const isLoginStatusValue = (value: string): value is LoginStatusValue =>
-  value === "inactive" || value === "active";
+  value === "inactive" || value === "active" || value === "dashboard_inactive";
 
 // Static empty arrays to prevent re-creation on every render
 const EMPTY_USERNAME_FILTER: string[] = [];
@@ -75,8 +78,11 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   onUserDataChange,
   onLoadingChange,
 }) => {
-  // State for selected user groups
+  const { sqlViewUid } = useSystem();
+
+  // State for selected user groups and dashboards
   const [selectedUserGroups, setSelectedUserGroups] = useState<string[]>([]);
+  const [selectedDashboards, setSelectedDashboards] = useState<string[]>([]);
 
   // State for selected login status
   const [selectedLoginStatus, setSelectedLoginStatus] = useState<
@@ -90,6 +96,21 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   const userGroupsQuery = useUserGroups();
   const userGroupsData = userGroupsQuery.data?.userGroups?.userGroups;
   const userGroups = isUserGroupArray(userGroupsData) ? userGroupsData : [];
+
+  // Fetch dashboards list
+  const { data: dashboardsData } = useDashboardsInfo();
+  const dashboards = dashboardsData?.dashboards?.dashboards || [];
+
+  // Fetch dashboard analytics when dashboards are selected
+  const {
+    analytics: dashboardAnalytics,
+    loading: analyticsLoading,
+    error: analyticsError,
+  } = useDashboardAnalytics({
+    dashboardIds: selectedDashboards,
+    sqlViewUid: sqlViewUid || "",
+    enabled: selectedDashboards.length > 0,
+  });
 
   // Login status options
   const loginStatusOptions: UserLoginStatusOption[] = [
@@ -105,6 +126,12 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       value: "active",
       description: i18n.t("Users who haven't logged in for the past 30 days"),
     },
+    {
+      id: "never_accessed_dashboard",
+      label: i18n.t("Never Accessed Dashboards"),
+      value: "dashboard_inactive",
+      description: i18n.t("Users who never accessed selected dashboards"),
+    },
   ];
 
   // Only fetch users when user groups are selected - using static arrays
@@ -118,9 +145,15 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   // Update loading state based on query status
   useEffect(() => {
     const isLoading =
-      selectedUserGroups.length > 0 && filteredUsersQuery.loading;
+      (selectedUserGroups.length > 0 && filteredUsersQuery.loading) ||
+      analyticsLoading;
     onLoadingChange(isLoading);
-  }, [selectedUserGroups, filteredUsersQuery.loading, onLoadingChange]);
+  }, [
+    selectedUserGroups,
+    filteredUsersQuery.loading,
+    analyticsLoading,
+    onLoadingChange,
+  ]);
 
   // Handle fetching users when user groups change
   const applyLoginStatusFilter = useCallback(
@@ -166,9 +199,33 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           });
       }
 
+      // Filter users who never accessed selected dashboards
+      if (
+        selectedLoginStatus.includes("dashboard_inactive") &&
+        selectedDashboards.length > 0 &&
+        dashboardAnalytics
+      ) {
+        users
+          .filter((user) => {
+            const username =
+              user.userCredentials?.username ||
+              user.displayName ||
+              user.firstName + " " + user.surname;
+            return !dashboardAnalytics.userAccessCounts[username];
+          })
+          .forEach((user) => {
+            filteredUserMap.set(user.id, user);
+          });
+      }
+
       onUserDataChange(Array.from(filteredUserMap.values()));
     },
-    [onUserDataChange, selectedLoginStatus]
+    [
+      onUserDataChange,
+      selectedLoginStatus,
+      selectedDashboards.length,
+      dashboardAnalytics,
+    ]
   );
 
   useEffect(() => {
@@ -218,6 +275,18 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     []
   );
 
+  // Handle dashboard selection change
+  const handleDashboardsChange = useCallback(
+    ({ selected }: { selected: string[] }) => {
+      setSelectedDashboards(selected);
+      // Reapply filters when dashboards change
+      if (fetchedUsers.length > 0) {
+        applyLoginStatusFilter(fetchedUsers);
+      }
+    },
+    [fetchedUsers, applyLoginStatusFilter]
+  );
+
   // Handle login status selection change
   const handleLoginStatusChange = useCallback(
     ({ selected }: { selected: string[] }) => {
@@ -228,11 +297,13 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   );
 
   // Handle any errors
-  const hasError = filteredUsersQuery.error && selectedUserGroups.length > 0;
+  const hasError =
+    (filteredUsersQuery.error && selectedUserGroups.length > 0) ||
+    (analyticsError && selectedDashboards.length > 0);
 
   return (
     <div>
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* User Groups Selector */}
         <div>
           <MultiSelectField
@@ -252,6 +323,29 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
                 key={group.id}
                 label={group.displayName}
                 value={group.id}
+              />
+            ))}
+          </MultiSelectField>
+        </div>
+
+        {/* Dashboards Selector */}
+        <div>
+          <MultiSelectField
+            label={i18n.t("Dashboards (Optional)")}
+            onChange={handleDashboardsChange}
+            selected={selectedDashboards}
+            filterable
+            clearable
+            placeholder={i18n.t("All dashboards or select specific ones")}
+            noMatchText={i18n.t("No dashboards found")}
+            className="mb-4"
+            dataTest="dashboard-selector"
+          >
+            {dashboards.map((dashboard) => (
+              <MultiSelectOption
+                key={dashboard.id}
+                label={dashboard.displayName}
+                value={dashboard.id}
               />
             ))}
           </MultiSelectField>
@@ -289,10 +383,15 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           </div>
         )}
 
-        {selectedUserGroups.length > 0 && filteredUsersQuery.loading && (
+        {((selectedUserGroups.length > 0 && filteredUsersQuery.loading) ||
+          analyticsLoading) && (
           <div className="flex items-center">
             <CircularLoader small />
-            <span className="ml-2">{i18n.t("Fetching user data...")}</span>
+            <span className="ml-2">
+              {analyticsLoading
+                ? i18n.t("Loading dashboard analytics...")
+                : i18n.t("Fetching user data...")}
+            </span>
           </div>
         )}
       </div>

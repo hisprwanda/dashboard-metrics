@@ -5,6 +5,8 @@ import {
   CircularLoader,
   SingleSelectField,
   SingleSelectOption,
+  MultiSelectField,
+  MultiSelectOption,
 } from "@dhis2/ui";
 
 import { useDashboard } from "../../../context/DashboardContext";
@@ -14,6 +16,8 @@ import {
   useOrganisationUnitsByLevel,
 } from "../../../hooks/organisationUnits";
 import { useFilteredUsers } from "../../../hooks/users";
+import { useDashboardsInfo } from "../../../hooks/dashboards";
+import { useDashboardAnalytics } from "../../../hooks/useDashboardAnalytics";
 import i18n from "../../../locales";
 import type { DistrictEngagement } from "../../../lib/processDistrictData";
 import { processDistrictData } from "../../../lib/processDistrictData";
@@ -28,7 +32,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   onDataProcessed,
 }): React.JSX.Element => {
   const { state, dispatch } = useDashboard();
-  const { orgUnitSqlViewUid, initialized } = useSystem();
+  const { orgUnitSqlViewUid, sqlViewUid, initialized } = useSystem();
 
   const {
     loading: orgUnitsLoading,
@@ -47,9 +51,25 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     }>
   >([]);
   const [hasProcessedData, setHasProcessedData] = useState(false);
+  const [selectedDashboards, setSelectedDashboards] = useState<string[]>([]);
 
   // Fetch organization unit levels - the only data fetched on initial load
   const orgUnitLevelsQuery = useOrganisationUnitLevels();
+
+  // Fetch dashboards list
+  const { data: dashboardsData } = useDashboardsInfo();
+  const dashboards = dashboardsData?.dashboards?.dashboards || [];
+
+  // Fetch dashboard analytics when dashboards are selected
+  const {
+    analytics: dashboardAnalytics,
+    loading: analyticsLoading,
+    error: analyticsError,
+  } = useDashboardAnalytics({
+    dashboardIds: selectedDashboards,
+    sqlViewUid: sqlViewUid || "",
+    enabled: selectedDashboards.length > 0,
+  });
 
   // Filter users by the selected organization unit IDs - only when we have IDs
   const usersQuery = useFilteredUsers(
@@ -103,8 +123,12 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         // Extract user data with proper typing
         const userData = usersQuery.data.users.users;
 
-        // Process the data using our processed org units
-        const processedData = processDistrictData(processedOrgUnits, userData);
+        // Process the data using our processed org units and dashboard analytics
+        const processedData = processDistrictData(
+          processedOrgUnits,
+          userData,
+          selectedDashboards.length > 0 ? dashboardAnalytics : undefined
+        );
 
         // Pass the processed data up to the parent component
         if (onDataProcessed) {
@@ -129,7 +153,15 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     hasProcessedData,
     onDataProcessed,
     onLoadingChange,
+    dashboardAnalytics,
+    selectedDashboards.length,
   ]);
+
+  // Handle dashboard selection change
+  const handleDashboardsChange = ({ selected }: { selected: string[] }) => {
+    setSelectedDashboards(selected);
+    setHasProcessedData(false); // Trigger reprocessing
+  };
 
   // Handle organization unit level change
   const handleOrgUnitLevelChange = async ({
@@ -292,28 +324,53 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       <h2 className="text-lg font-semibold mb-3">
         {i18n.t("District Engagement Filters")}
       </h2>
-      <div className="grid grid-cols-1 gap-6 mb-2">
-        <SingleSelectField
-          label={i18n.t("Organization Unit Level")}
-          onChange={handleOrgUnitLevelChange}
-          selected={state.selectedOrgUnitLevel}
-          loading={orgUnitLevelsQuery.loading}
-          clearable
-          placeholder={i18n.t("Select organization unit level")}
-          dataTest="org-unit-level-selector"
-        >
-          {orgUnitLevels.map((level: OrganisationUnitLevel) => (
-            <SingleSelectOption
-              key={level.id}
-              label={`${level.displayName} (${i18n.t("Level")} ${level.level})`}
-              value={level.level.toString()}
-            />
-          ))}
-        </SingleSelectField>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+        <div>
+          <SingleSelectField
+            label={i18n.t("Organization Unit Level")}
+            onChange={handleOrgUnitLevelChange}
+            selected={state.selectedOrgUnitLevel}
+            loading={orgUnitLevelsQuery.loading}
+            clearable
+            placeholder={i18n.t("Select organization unit level")}
+            dataTest="org-unit-level-selector"
+          >
+            {orgUnitLevels.map((level: OrganisationUnitLevel) => (
+              <SingleSelectOption
+                key={level.id}
+                label={`${level.displayName} (${i18n.t("Level")} ${level.level})`}
+                value={level.level.toString()}
+              />
+            ))}
+          </SingleSelectField>
+        </div>
+
+        <div>
+          <MultiSelectField
+            label={i18n.t("Dashboards (Optional)")}
+            onChange={handleDashboardsChange}
+            selected={selectedDashboards}
+            filterable
+            clearable
+            placeholder={i18n.t("All dashboards or select specific ones")}
+            dataTest="dashboard-selector"
+          >
+            {dashboards.map((dashboard) => (
+              <MultiSelectOption
+                key={dashboard.id}
+                label={dashboard.displayName}
+                value={dashboard.id}
+              />
+            ))}
+          </MultiSelectField>
+        </div>
       </div>
 
       {/* Loading and error states */}
-      {(orgUnitLevelsQuery.loading || processingData || usersQuery.loading) && (
+      {(orgUnitLevelsQuery.loading ||
+        processingData ||
+        usersQuery.loading ||
+        analyticsLoading) && (
         <div className="flex items-center mt-2">
           <CircularLoader small />
           <span className="ml-2 text-sm">
@@ -321,17 +378,26 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
               ? i18n.t("Loading organization unit levels...")
               : processingData
                 ? i18n.t("Processing district data...")
-                : i18n.t("Loading user data...")}
+                : analyticsLoading
+                  ? i18n.t("Loading dashboard analytics...")
+                  : i18n.t("Loading user data...")}
           </span>
         </div>
       )}
 
-      {(orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error) && (
+      {(orgUnitLevelsQuery.error ||
+        orgUnitsError ||
+        usersQuery.error ||
+        analyticsError) && (
         <div className="text-red-500 mt-2 text-sm">
           {i18n.t("Error")}:{" "}
           {
-            (orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error)
-              ?.message
+            (
+              orgUnitLevelsQuery.error ||
+              orgUnitsError ||
+              usersQuery.error ||
+              analyticsError
+            )?.message
           }
         </div>
       )}
