@@ -5,32 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2026-01-02T10:47:28.978Z\n"
-"PO-Revision-Date: 2026-01-02T10:47:28.978Z\n"
-
-msgid "Dashboard Usage"
-msgstr "Dashboard Usage"
-
-msgid "Metrics on dashboard usage patterns"
-msgstr "Metrics on dashboard usage patterns"
-
-msgid "District Engagement"
-msgstr "District Engagement"
-
-msgid "Monitor engagement across districts"
-msgstr "Monitor engagement across districts"
-
-msgid "User Engagement"
-msgstr "User Engagement"
-
-msgid "Track user activity and engagement metrics"
-msgstr "Track user activity and engagement metrics"
-
-msgid "Inactivity Tracking"
-msgstr "Inactivity Tracking"
-
-msgid "Identify and analyze user inactivity"
-msgstr "Identify and analyze user inactivity"
+"POT-Creation-Date: 2026-01-05T11:28:41.963Z\n"
+"PO-Revision-Date: 2026-01-05T11:28:41.964Z\n"
 
 msgid "Loading organization units..."
 msgstr "Loading organization units..."
@@ -124,6 +100,39 @@ msgstr "Selected Organization Unit ID"
 
 msgid "Selected Organization Unit Name"
 msgstr "Selected Organization Unit Name"
+
+msgid "Dashboard Usage"
+msgstr "Dashboard Usage"
+
+msgid "Metrics on dashboard usage patterns"
+msgstr "Metrics on dashboard usage patterns"
+
+msgid "District Engagement"
+msgstr "District Engagement"
+
+msgid "Monitor engagement across districts"
+msgstr "Monitor engagement across districts"
+
+msgid "User Engagement"
+msgstr "User Engagement"
+
+msgid "Track user activity and engagement metrics"
+msgstr "Track user activity and engagement metrics"
+
+msgid "Inactivity Tracking"
+msgstr "Inactivity Tracking"
+
+msgid "Identify and analyze user inactivity"
+msgstr "Identify and analyze user inactivity"
+
+msgid "Page not found"
+msgstr "Page not found"
+
+msgid "Sorry, we couldn't find the page you're looking for."
+msgstr "Sorry, we couldn't find the page you're looking for."
+
+msgid "Back to home"
+msgstr "Back to home"
 
 msgid "Org Unit Name"
 msgstr "Org Unit Name"
@@ -391,15 +400,6 @@ msgstr "An error occurred while fetching user data. Please try again."
 msgid "Fetching user data..."
 msgstr "Fetching user data..."
 
-msgid "Page not found"
-msgstr "Page not found"
-
-msgid "Sorry, we couldn't find the page you're looking for."
-msgstr "Sorry, we couldn't find the page you're looking for."
-
-msgid "Back to home"
-msgstr "Back to home"
-
 msgid "Last 7 days"
 msgstr "Last 7 days"
 
@@ -447,3 +447,15 @@ msgstr "Most Active User"
 
 msgid "Least Active User"
 msgstr "Least Active User"
+
+msgctxt "Application title"
+msgid "__MANIFEST_APP_TITLE"
+msgstr "Dashboard Usage Metrics"
+
+msgctxt "Application description"
+msgid "__MANIFEST_APP_DESCRIPTION"
+msgstr ""
+"The Dashboard Usage Metrics app provides analytics and tracking "
+"capabilities for dashboard usage within a DHIS2 instance. This tool helps "
+"organizations monitor and analyze how users interact with their dashboards, "
+"enabling better understanding of dashboard utilization patterns."
