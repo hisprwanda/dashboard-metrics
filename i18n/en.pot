@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2026-01-05T11:28:41.963Z\n"
-"PO-Revision-Date: 2026-01-05T11:28:41.964Z\n"
+"POT-Creation-Date: 2026-01-06T14:52:00.935Z\n"
+"PO-Revision-Date: 2026-01-06T14:52:00.936Z\n"
 
 msgid "Loading organization units..."
 msgstr "Loading organization units..."
@@ -140,8 +140,11 @@ msgstr "Org Unit Name"
 msgid "Total Users"
 msgstr "Total Users"
 
-msgid "Active Users"
-msgstr "Active Users"
+msgid "Active Users (30d)"
+msgstr "Active Users (30d)"
+
+msgid "Never Logged In"
+msgstr "Never Logged In"
 
 msgid "Last Activity"
 msgstr "Last Activity"
@@ -179,26 +182,20 @@ msgstr "Organization Unit Level"
 msgid "Select organization unit level"
 msgstr "Select organization unit level"
 
-msgid "Level"
-msgstr "Level"
-
 msgid "Dashboards (Optional)"
 msgstr "Dashboards (Optional)"
 
 msgid "All dashboards or select specific ones"
 msgstr "All dashboards or select specific ones"
 
-msgid "Loading organization unit levels..."
-msgstr "Loading organization unit levels..."
-
-msgid "Processing district data..."
-msgstr "Processing district data..."
+msgid "Loading users..."
+msgstr "Loading users..."
 
 msgid "Loading dashboard analytics..."
 msgstr "Loading dashboard analytics..."
 
-msgid "Loading user data..."
-msgstr "Loading user data..."
+msgid "Processing..."
+msgstr "Processing..."
 
 msgid ""
 "Select an organization unit level to view engagement metrics for all "
@@ -360,9 +357,6 @@ msgstr "Select a user group to view user data"
 
 msgid "No matching records found"
 msgstr "No matching records found"
-
-msgid "Never Logged In"
-msgstr "Never Logged In"
 
 msgid "Users who have never logged in"
 msgstr "Users who have never logged in"
