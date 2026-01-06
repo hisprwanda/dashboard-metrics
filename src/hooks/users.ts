@@ -239,6 +239,78 @@ export interface DistrictUser {
   organisationUnits?: Array<{ id: string; name: string }>;
 }
 
+// User type for user engagement
+export interface EngagementUser {
+  id: string;
+  displayName?: string;
+  userCredentials?: {
+    username?: string;
+    lastLogin?: string | null;
+    userRoles?: Array<{ id: string; displayName: string }>;
+  };
+  userGroups?: Array<{ id: string; displayName: string }>;
+  organisationUnits?: Array<{ id: string; displayName: string }>;
+}
+
+/**
+ * Hook to fetch users by user groups (imperative style)
+ * Uses useDataEngine for manual fetching to avoid dynamic query issues
+ */
+export const useUsersByUserGroups = () => {
+  const engine = useDataEngine();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | undefined>(undefined);
+  const [data, setData] = useState<EngagementUser[]>([]);
+
+  const fetchUsersByUserGroups = useCallback(
+    async (userGroupIds: string[]): Promise<EngagementUser[]> => {
+      if (userGroupIds.length === 0) {
+        setData([]);
+        return [];
+      }
+
+      setLoading(true);
+      setError(undefined);
+
+      try {
+        const query = {
+          users: {
+            resource: "users",
+            params: {
+              paging: false,
+              fields:
+                "id,displayName,userCredentials[username,lastLogin,userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]",
+              filter: `userGroups.id:in:[${userGroupIds.join(",")}]`,
+            },
+          },
+        };
+
+        const result = await engine.query(query);
+        const users =
+          (result?.users as { users: EngagementUser[] })?.users || [];
+
+        setData(users);
+        return users;
+      } catch (err) {
+        const errorObj = err instanceof Error ? err : new Error(String(err));
+        setError(errorObj);
+        return [];
+      } finally {
+        setLoading(false);
+      }
+    },
+    [engine]
+  );
+
+  const clear = useCallback(() => {
+    setData([]);
+    setError(undefined);
+  }, []);
+
+  return { loading, error, data, fetchUsersByUserGroups, clear };
+};
+
 /**
  * Hook to fetch users by organisation unit IDs
  * Uses useDataEngine for manual fetching to avoid dynamic query issues
