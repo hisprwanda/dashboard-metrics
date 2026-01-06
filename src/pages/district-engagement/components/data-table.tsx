@@ -59,8 +59,14 @@ export default function DataTableComponent() {
       {
         accessorKey: "activeUsers",
         id: "activeUsers",
-        header: i18n.t("Active Users"),
-        size: 120,
+        header: i18n.t("Active Users (30d)"),
+        size: 140,
+      },
+      {
+        accessorKey: "neverLoggedIn",
+        id: "neverLoggedIn",
+        header: i18n.t("Never Logged In"),
+        size: 130,
       },
       {
         accessorKey: "lastActivity",

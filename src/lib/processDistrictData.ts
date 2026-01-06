@@ -1,26 +1,8 @@
 // src/lib/processDistrictData.ts
+import { subDays } from "date-fns";
 
-/**
- * Interface for processed organization unit data
- */
-export interface ProcessedOrgUnit {
-  uid: string;
-  name: string;
-  path: string;
-}
-
-/**
- * Interface for user data from DHIS2 API
- */
-export interface UserData {
-  id: string;
-  name: string;
-  organisationUnits?: Array<{ id: string; name: string }>;
-  userCredentials?: {
-    username?: string;
-    lastLogin?: string;
-  };
-}
+import type { OrganisationUnit } from "../hooks/organisationUnits";
+import type { DistrictUser } from "../hooks/users";
 
 /**
  * Interface for dashboard analytics data
@@ -34,22 +16,158 @@ export interface DashboardAnalytics {
  * Interface representing district engagement metrics
  */
 export interface DistrictEngagement {
+  uid: string;
   OrgUnitName: string;
   totalUsers: number;
   activeUsers: number;
+  neverLoggedIn: number;
   lastActivity: string;
   accessPercentage: string;
   isConsistentlyActive: boolean;
   dashboardViews: number;
+  dashboardViewers: number;
   dashboardAccessRate: string;
+  usernames: string[];
 }
 
 /**
- * Process organization unit and user data into district engagement metrics
- * @param orgUnitData Processed organization unit data with { uid, name, path } structure or raw arrays
- * @param userData User data filtered by organization units
- * @param dashboardAnalytics Optional dashboard analytics data with user access counts
+ * Aggregate users by organisation unit
+ * @param users Array of users with their org unit assignments
+ * @param orgUnitsAtLevel Array of org units at the selected level
  * @returns Array of district engagement metrics
+ */
+export function aggregateByOrgUnit(
+  users: DistrictUser[],
+  orgUnitsAtLevel: OrganisationUnit[]
+): DistrictEngagement[] {
+  const levelOrgUnitIds = new Set(orgUnitsAtLevel.map((ou) => ou.id));
+  const orgUnitMap = new Map<string, DistrictEngagement>();
+  const thirtyDaysAgo = subDays(new Date(), 30);
+
+  // Initialize all org units at level (even those with 0 users)
+  orgUnitsAtLevel.forEach((ou) => {
+    orgUnitMap.set(ou.id, {
+      uid: ou.id,
+      OrgUnitName: ou.displayName || ou.name,
+      totalUsers: 0,
+      activeUsers: 0,
+      neverLoggedIn: 0,
+      lastActivity: "No activity",
+      accessPercentage: "0%",
+      isConsistentlyActive: false,
+      dashboardViews: 0,
+      dashboardViewers: 0,
+      dashboardAccessRate: "0%",
+      usernames: [],
+    });
+  });
+
+  // Track last activity date per org unit
+  const lastActivityDates = new Map<string, Date>();
+
+  users.forEach((user) => {
+    const lastLoginStr = user.userCredentials?.lastLogin;
+    const lastLogin = lastLoginStr ? new Date(lastLoginStr) : null;
+    const username = user.userCredentials?.username || user.username || "";
+
+    user.organisationUnits
+      ?.filter((ou) => levelOrgUnitIds.has(ou.id))
+      .forEach((ou) => {
+        const existing = orgUnitMap.get(ou.id);
+        if (!existing) return;
+
+        existing.totalUsers++;
+        if (username) {
+          existing.usernames.push(username);
+        }
+
+        if (!lastLogin) {
+          existing.neverLoggedIn++;
+        } else {
+          if (lastLogin >= thirtyDaysAgo) {
+            existing.activeUsers++;
+          }
+
+          const currentLastActivity = lastActivityDates.get(ou.id);
+          if (!currentLastActivity || lastLogin > currentLastActivity) {
+            lastActivityDates.set(ou.id, lastLogin);
+          }
+        }
+      });
+  });
+
+  // Calculate percentages and format last activity
+  orgUnitMap.forEach((metrics, ouId) => {
+    const lastActivityDate = lastActivityDates.get(ouId);
+    if (lastActivityDate) {
+      metrics.lastActivity = lastActivityDate.toLocaleDateString();
+    }
+
+    if (metrics.totalUsers > 0) {
+      const percentage = Math.round(
+        (metrics.activeUsers / metrics.totalUsers) * 100
+      );
+      metrics.accessPercentage = `${percentage}%`;
+      metrics.isConsistentlyActive = percentage >= 50;
+    }
+  });
+
+  return Array.from(orgUnitMap.values());
+}
+
+/**
+ * Enrich district data with dashboard analytics
+ * @param districts Array of district engagement metrics
+ * @param analytics Dashboard analytics data
+ * @returns Enriched district engagement metrics
+ */
+export function enrichWithDashboardData(
+  districts: DistrictEngagement[],
+  analytics: DashboardAnalytics | undefined
+): DistrictEngagement[] {
+  if (!analytics) return districts;
+
+  return districts.map((d) => {
+    const viewers = d.usernames.filter(
+      (u) => analytics.userAccessCounts[u] > 0
+    );
+    const dashboardViews = viewers.reduce(
+      (sum, u) => sum + (analytics.userAccessCounts[u] || 0),
+      0
+    );
+
+    return {
+      ...d,
+      dashboardViewers: viewers.length,
+      dashboardViews,
+      dashboardAccessRate:
+        d.totalUsers > 0
+          ? `${Math.round((viewers.length / d.totalUsers) * 100)}%`
+          : "0%",
+    };
+  });
+}
+
+// Legacy exports for backward compatibility
+export interface ProcessedOrgUnit {
+  uid: string;
+  name: string;
+  path: string;
+}
+
+export interface UserData {
+  id: string;
+  name: string;
+  organisationUnits?: Array<{ id: string; name: string }>;
+  userCredentials?: {
+    username?: string;
+    lastLogin?: string;
+  };
+}
+
+/**
+ * Legacy function - Process organization unit and user data into district engagement metrics
+ * @deprecated Use aggregateByOrgUnit and enrichWithDashboardData instead
  */
 export function processDistrictData(
   orgUnitData: (ProcessedOrgUnit | unknown[])[],
@@ -61,7 +179,6 @@ export function processDistrictData(
   }
 
   return orgUnitData.map((orgUnit) => {
-    // Type guard to check if orgUnit is a ProcessedOrgUnit
     const isProcessedOrgUnit = (
       unit: ProcessedOrgUnit | unknown[]
     ): unit is ProcessedOrgUnit => {
@@ -74,39 +191,26 @@ export function processDistrictData(
       );
     };
 
-    // Handle both processed objects { uid, name, path } and raw arrays
     let orgUnitUid: string;
     let orgUnitName: string;
-    let orgUnitPath: string;
 
     if (isProcessedOrgUnit(orgUnit)) {
-      // New format: processed objects
       orgUnitUid = orgUnit.uid;
       orgUnitName = orgUnit.name;
-      orgUnitPath = orgUnit.path;
     } else {
-      // Legacy format: raw arrays [name, uid, ?, ?, path, level]
       const unitArray = orgUnit as unknown[];
       orgUnitUid = String(unitArray[1] || "");
       orgUnitName = String(unitArray[0] || "");
-      orgUnitPath = String(unitArray[4] || "");
     }
 
-    // Find users belonging to this organization unit by checking if the org unit UID is in user's organisation units
-    // This correctly handles users assigned to multiple organization units
     const orgUnitUsers = userData.filter((user) => {
-      const hasOrgUnit = user.organisationUnits?.some(
-        (ou) => ou.id === orgUnitUid
-      );
-      return hasOrgUnit;
+      return user.organisationUnits?.some((ou) => ou.id === orgUnitUid);
     });
 
-    // Count active users (those with lastLogin)
     const activeUsers = orgUnitUsers.filter(
       (user) => user.userCredentials?.lastLogin
     );
 
-    // Find the most recent login date
     const lastActivityDate =
       activeUsers.length > 0
         ? new Date(
@@ -114,56 +218,56 @@ export function processDistrictData(
               ...activeUsers
                 .filter((user) => user.userCredentials?.lastLogin)
                 .map((user) =>
-                  new Date(user.userCredentials.lastLogin!).getTime()
+                  new Date(user.userCredentials!.lastLogin!).getTime()
                 )
             )
           )
         : null;
 
-    // Format date as string or return placeholder
     const lastActivity = lastActivityDate
       ? lastActivityDate.toLocaleDateString()
       : "No activity";
 
-    // Calculate access percentage
     const accessPercentage =
       orgUnitUsers.length > 0
         ? Math.round((activeUsers.length / orgUnitUsers.length) * 100)
         : 0;
 
-    // Determine if consistently active (more than 50% active users)
     const isConsistentlyActive = accessPercentage >= 50;
 
-    // Calculate dashboard views and access rate from analytics data
     let dashboardViews = 0;
     let usersWithDashboardAccess = 0;
+    const usernames: string[] = [];
 
-    if (dashboardAnalytics) {
-      orgUnitUsers.forEach((user) => {
-        const username = user.userCredentials?.username;
-        if (username && dashboardAnalytics.userAccessCounts[username]) {
+    orgUnitUsers.forEach((user) => {
+      const username = user.userCredentials?.username;
+      if (username) {
+        usernames.push(username);
+        if (dashboardAnalytics?.userAccessCounts[username]) {
           dashboardViews += dashboardAnalytics.userAccessCounts[username];
           usersWithDashboardAccess++;
         }
-      });
-    }
+      }
+    });
 
     const dashboardAccessRate =
       orgUnitUsers.length > 0
         ? `${Math.round((usersWithDashboardAccess / orgUnitUsers.length) * 100)}%`
         : "0%";
 
-    const result = {
+    return {
+      uid: orgUnitUid,
       OrgUnitName: orgUnitName,
       totalUsers: orgUnitUsers.length,
       activeUsers: activeUsers.length,
+      neverLoggedIn: orgUnitUsers.length - activeUsers.length,
       lastActivity,
       accessPercentage: `${accessPercentage}%`,
       isConsistentlyActive,
       dashboardViews,
+      dashboardViewers: usersWithDashboardAccess,
       dashboardAccessRate,
+      usernames,
     };
-
-    return result;
   });
 }

@@ -1,12 +1,8 @@
 // Custom hook for fetching and processing dashboard analytics data
 // Used across District Engagement, User Engagement, and Inactivity Tracking tabs
 
-import { useMemo, useEffect } from "react";
-import { useDataQuery } from "@dhis2/app-runtime";
-
-import type { SqlViewResponse } from "@/types/dashboard-data";
-
-import { formatDateToYYYYMMDD } from "../lib/utils";
+import { useCallback, useMemo, useState } from "react";
+import { useDataEngine } from "@dhis2/app-runtime";
 
 export interface DashboardAccessLog {
   timestamp: string;
@@ -22,85 +18,120 @@ export interface DashboardAnalytics {
 }
 
 export interface DashboardAnalyticsParams {
-  dashboardIds: string[];
   sqlViewUid: string;
-  enabled?: boolean;
 }
 
-export const useDashboardAnalytics = ({
-  dashboardIds,
-  sqlViewUid,
-  enabled = true,
-}: DashboardAnalyticsParams) => {
-  // Build filters array for SQL view query
-  const filters = useMemo(() => {
-    const filterArray: string[] = [];
-
-    // Add dashboard filters - one for each selected dashboard
-    if (dashboardIds.length > 0) {
-      dashboardIds.forEach((dashboardId) => {
-        filterArray.push(`favoriteuid:eq:${dashboardId}`);
-      });
-    }
-
-    return filterArray;
-  }, [dashboardIds]);
-
-  // Build the query
-  const query = useMemo(() => {
-    if (!sqlViewUid || dashboardIds.length === 0) {
-      return null;
-    }
-
-    return {
-      sqlViewData: {
-        resource: `sqlViews/${sqlViewUid}/data`,
-        params: {
-          paging: "false",
-          filter: filters,
-        },
-      },
+interface SqlViewResult {
+  sqlViewData?: {
+    listGrid?: {
+      rows?: unknown[][];
     };
-  }, [sqlViewUid, filters, dashboardIds]);
+  };
+}
 
-  // Only make the query if enabled and we have required parameters
-  const shouldSkip = !enabled || !sqlViewUid || dashboardIds.length === 0;
+/**
+ * Hook to fetch and process dashboard analytics data
+ * Uses useDataEngine for manual fetching to avoid dynamic query issues
+ */
+export const useDashboardAnalytics = ({
+  sqlViewUid,
+}: DashboardAnalyticsParams) => {
+  const engine = useDataEngine();
 
-  const result = useDataQuery(query || {}, {
-    lazy: shouldSkip,
-  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | undefined>(undefined);
+  const [accessLogs, setAccessLogs] = useState<DashboardAccessLog[]>([]);
 
-  // Trigger refetch when dashboardIds change and we should fetch
-  useEffect(() => {
-    if (!shouldSkip && result.refetch) {
-      void result.refetch();
-    }
-  }, [dashboardIds.join(","), shouldSkip]);
+  const fetchDashboardAnalytics = useCallback(
+    async (dashboardIds: string[]): Promise<DashboardAnalytics> => {
+      const emptyAnalytics: DashboardAnalytics = {
+        totalAccesses: 0,
+        uniqueUsers: 0,
+        userAccessCounts: {},
+        userLastAccess: {},
+      };
 
-  // Process raw SQL view data into structured access logs
-  const accessLogs = useMemo<DashboardAccessLog[]>(() => {
-    if (!result.data || shouldSkip) return [];
+      if (!sqlViewUid || dashboardIds.length === 0) {
+        setAccessLogs([]);
+        return emptyAnalytics;
+      }
 
-    const rows = result.data.sqlViewData?.listGrid?.rows || [];
+      setLoading(true);
+      setError(undefined);
 
-    return rows.map((row) => ({
-      timestamp: String(row[0] || ""),
-      username: String(row[1] || ""),
-      dashboardId: String(row[2] || ""),
-    }));
-  }, [result.data, shouldSkip]);
+      try {
+        // Build filters for each dashboard
+        const filters = dashboardIds.map((id) => `favoriteuid:eq:${id}`);
 
-  // Calculate analytics aggregations
+        const query = {
+          sqlViewData: {
+            resource: `sqlViews/${sqlViewUid}/data`,
+            params: {
+              paging: "false",
+              filter: filters,
+            },
+          },
+        };
+
+        const result = (await engine.query(query)) as SqlViewResult;
+        const rows = result?.sqlViewData?.listGrid?.rows || [];
+
+        // Process raw SQL view data into structured access logs
+        const logs: DashboardAccessLog[] = rows.map((row) => ({
+          timestamp: String(row[0] || ""),
+          username: String(row[1] || ""),
+          dashboardId: String(row[2] || ""),
+        }));
+
+        setAccessLogs(logs);
+
+        // Calculate analytics aggregations
+        const userAccessCounts: Record<string, number> = {};
+        const userLastAccess: Record<string, string> = {};
+
+        logs.forEach((log) => {
+          // Count accesses per user
+          userAccessCounts[log.username] =
+            (userAccessCounts[log.username] || 0) + 1;
+
+          // Track last access per user
+          const currentLast = userLastAccess[log.username];
+          if (!currentLast || log.timestamp > currentLast) {
+            userLastAccess[log.username] = log.timestamp;
+          }
+        });
+
+        return {
+          totalAccesses: logs.length,
+          uniqueUsers: Object.keys(userAccessCounts).length,
+          userAccessCounts,
+          userLastAccess,
+        };
+      } catch (err) {
+        const errorObj = err instanceof Error ? err : new Error(String(err));
+        setError(errorObj);
+        return emptyAnalytics;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [engine, sqlViewUid]
+  );
+
+  const clear = useCallback(() => {
+    setAccessLogs([]);
+    setError(undefined);
+  }, []);
+
+  // Compute analytics from current access logs
   const analytics = useMemo<DashboardAnalytics>(() => {
     const userAccessCounts: Record<string, number> = {};
     const userLastAccess: Record<string, string> = {};
 
     accessLogs.forEach((log) => {
-      // Count accesses per user
       userAccessCounts[log.username] =
         (userAccessCounts[log.username] || 0) + 1;
 
-      // Track last access per user
       const currentLast = userLastAccess[log.username];
       if (!currentLast || log.timestamp > currentLast) {
         userLastAccess[log.username] = log.timestamp;
@@ -116,12 +147,12 @@ export const useDashboardAnalytics = ({
   }, [accessLogs]);
 
   return {
-    loading: result.loading,
-    error: result.error,
-    refetch: result.refetch,
+    loading,
+    error,
     accessLogs,
     analytics,
-    isReady: !shouldSkip,
+    fetchDashboardAnalytics,
+    clear,
   };
 };
 
