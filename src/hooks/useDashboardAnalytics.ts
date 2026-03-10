@@ -67,7 +67,7 @@ export const useDashboardAnalytics = ({
           sqlViewData: {
             resource: `sqlViews/${sqlViewUid}/data`,
             params: {
-              paging: "false",
+              paging: false,
               filter: filters,
             },
           },

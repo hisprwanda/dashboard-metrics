@@ -24,6 +24,7 @@ export default function TabInfoModal({ title, content }: TabInfoModalProps) {
         icon={<IconInfo24 />}
         onClick={() => setIsOpen(true)}
         dataTest="tab-info-button"
+        aria-label="Show information"
       />
 
       {isOpen && (

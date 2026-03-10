@@ -54,6 +54,8 @@ export interface FilteredUser {
   userCredentials?: UserCredentials | null;
   userGroups?: UserGroup[];
   organisationUnits?: Array<{ id: string; displayName: string }>;
+  dashboardAccessCount?: number;
+  lastDashboardAccess?: string | null;
 }
 
 const isUserGroupArray = (value: unknown): value is UserGroup[] =>
@@ -142,14 +144,22 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     onLoadingChange(isLoading);
   }, [isLoading, onLoadingChange]);
 
-  // Convert EngagementUser to FilteredUser
-  const mapToFilteredUser = (user: EngagementUser): FilteredUser => ({
-    id: user.id,
-    displayName: user.displayName,
-    userCredentials: user.userCredentials,
-    userGroups: user.userGroups,
-    organisationUnits: user.organisationUnits,
-  });
+  // Convert EngagementUser to FilteredUser, enriched with analytics if available
+  const mapToFilteredUser = (
+    user: EngagementUser,
+    analytics: DashboardAnalytics | null = null
+  ): FilteredUser => {
+    const username = user.userCredentials?.username || "";
+    return {
+      id: user.id,
+      displayName: user.displayName,
+      userCredentials: user.userCredentials,
+      userGroups: user.userGroups,
+      organisationUnits: user.organisationUnits,
+      dashboardAccessCount: analytics?.userAccessCounts[username] ?? 0,
+      lastDashboardAccess: analytics?.userLastAccess[username] ?? null,
+    };
+  };
 
   // Apply login status filter to users
   const applyFilters = useCallback(
@@ -164,9 +174,9 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         return;
       }
 
-      // If no login status filter, return all users
+      // If no login status filter, return all users enriched with analytics
       if (loginStatus.length === 0) {
-        onUserDataChange(usersData.map(mapToFilteredUser));
+        onUserDataChange(usersData.map((u) => mapToFilteredUser(u, analytics)));
         return;
       }
 
@@ -178,7 +188,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         usersData
           .filter((user) => !user.userCredentials?.lastLogin)
           .forEach((user) => {
-            filteredUserMap.set(user.id, mapToFilteredUser(user));
+            filteredUserMap.set(user.id, mapToFilteredUser(user, analytics));
           });
       }
 
@@ -196,7 +206,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             );
           })
           .forEach((user) => {
-            filteredUserMap.set(user.id, mapToFilteredUser(user));
+            filteredUserMap.set(user.id, mapToFilteredUser(user, analytics));
           });
       }
 
@@ -214,7 +224,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             return !analytics.userAccessCounts[username];
           })
           .forEach((user) => {
-            filteredUserMap.set(user.id, mapToFilteredUser(user));
+            filteredUserMap.set(user.id, mapToFilteredUser(user, analytics));
           });
       }
 
@@ -393,7 +403,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           </div>
         )}
 
-        {isLoading && (
+          {isLoading && (
           <div className="flex items-center">
             <CircularLoader small />
             <span className="ml-2">
@@ -403,6 +413,15 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             </span>
           </div>
         )}
+
+        {selectedLoginStatus.includes("dashboard_inactive") &&
+          selectedDashboards.length === 0 && (
+            <div className="text-amber-600">
+              {i18n.t(
+                "Select at least one dashboard to filter by dashboard access"
+              )}
+            </div>
+          )}
       </div>
 
       {selectedUserGroups.length === 0 && (

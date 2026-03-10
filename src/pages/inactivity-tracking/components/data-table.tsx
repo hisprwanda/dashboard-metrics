@@ -71,14 +71,17 @@ const mapUserToTableData = (user: FilteredUser): InactivityData => {
   const roles = user.userCredentials?.userRoles || [];
   const role = roles.length > 0 ? roles[0].displayName : i18n.t("Unknown");
 
-  // Get assigned dashboards count (this would need to be implemented with real data)
-  // For now using a placeholder value based on user groups count
+  // Get assigned dashboards count (approximated from user groups)
   const assignedDashboards = user.userGroups?.length || 0;
 
-  // Dashboard access fields (would be populated by filter section when dashboards are selected)
-  const lastDashboardAccess = null; // Placeholder
-  const dashboardAccessCount = 0; // Placeholder
-  const daysSinceDashboardAccess = null; // Placeholder
+  // Dashboard access fields populated from analytics when dashboards are selected
+  const lastDashboardAccess = user.lastDashboardAccess
+    ? new Date(user.lastDashboardAccess)
+    : null;
+  const dashboardAccessCount = user.dashboardAccessCount ?? 0;
+  const daysSinceDashboardAccess = lastDashboardAccess
+    ? differenceInDays(new Date(), lastDashboardAccess)
+    : null;
 
   return {
     id: user.id,
