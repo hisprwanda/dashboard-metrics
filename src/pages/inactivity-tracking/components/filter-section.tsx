@@ -403,7 +403,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           </div>
         )}
 
-          {isLoading && (
+        {isLoading && (
           <div className="flex items-center">
             <CircularLoader small />
             <span className="ml-2">
