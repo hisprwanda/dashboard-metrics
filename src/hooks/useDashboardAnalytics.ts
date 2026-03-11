@@ -43,7 +43,12 @@ export const useDashboardAnalytics = ({
   const [accessLogs, setAccessLogs] = useState<DashboardAccessLog[]>([]);
 
   const fetchDashboardAnalytics = useCallback(
-    async (dashboardIds: string[]): Promise<DashboardAnalytics> => {
+    async (
+      dashboardIds: string[]
+    ): Promise<{
+      analytics: DashboardAnalytics;
+      logs: DashboardAccessLog[];
+    }> => {
       const emptyAnalytics: DashboardAnalytics = {
         totalAccesses: 0,
         uniqueUsers: 0,
@@ -53,35 +58,48 @@ export const useDashboardAnalytics = ({
 
       if (!sqlViewUid || dashboardIds.length === 0) {
         setAccessLogs([]);
-        return emptyAnalytics;
+        return { analytics: emptyAnalytics, logs: [] };
       }
 
       setLoading(true);
       setError(undefined);
 
       try {
-        // Build filters for each dashboard
-        const filters = dashboardIds.map((id) => `favoriteuid:eq:${id}`);
+        // Query each dashboard ID separately in parallel to avoid AND logic
+        // DHIS2 SQL view filter params on the same column are ANDed,
+        // so we must issue one query per dashboard and merge results
+        const results = await Promise.all(
+          dashboardIds.map(
+            (id) =>
+              engine.query({
+                sqlViewData: {
+                  resource: `sqlViews/${sqlViewUid}/data`,
+                  params: {
+                    paging: false,
+                    filter: [`favoriteuid:eq:${id}`],
+                  },
+                },
+              }) as Promise<SqlViewResult>
+          )
+        );
 
-        const query = {
-          sqlViewData: {
-            resource: `sqlViews/${sqlViewUid}/data`,
-            params: {
-              paging: false,
-              filter: filters,
-            },
-          },
-        };
+        // Merge and deduplicate rows from all results
+        const seenKeys = new Set<string>();
+        const logs: DashboardAccessLog[] = [];
 
-        const result = (await engine.query(query)) as SqlViewResult;
-        const rows = result?.sqlViewData?.listGrid?.rows || [];
-
-        // Process raw SQL view data into structured access logs
-        const logs: DashboardAccessLog[] = rows.map((row) => ({
-          timestamp: String(row[0] || ""),
-          username: String(row[1] || ""),
-          dashboardId: String(row[2] || ""),
-        }));
+        for (const result of results) {
+          const rows = result?.sqlViewData?.listGrid?.rows || [];
+          for (const row of rows) {
+            const timestamp = String(row[0] || "");
+            const username = String(row[1] || "");
+            const dashboardId = String(row[2] || "");
+            const key = `${timestamp}|${username}|${dashboardId}`;
+            if (!seenKeys.has(key)) {
+              seenKeys.add(key);
+              logs.push({ timestamp, username, dashboardId });
+            }
+          }
+        }
 
         setAccessLogs(logs);
 
@@ -90,27 +108,27 @@ export const useDashboardAnalytics = ({
         const userLastAccess: Record<string, string> = {};
 
         logs.forEach((log) => {
-          // Count accesses per user
           userAccessCounts[log.username] =
             (userAccessCounts[log.username] || 0) + 1;
 
-          // Track last access per user
           const currentLast = userLastAccess[log.username];
           if (!currentLast || log.timestamp > currentLast) {
             userLastAccess[log.username] = log.timestamp;
           }
         });
 
-        return {
+        const analytics: DashboardAnalytics = {
           totalAccesses: logs.length,
           uniqueUsers: Object.keys(userAccessCounts).length,
           userAccessCounts,
           userLastAccess,
         };
+
+        return { analytics, logs };
       } catch (err) {
         const errorObj = err instanceof Error ? err : new Error(String(err));
         setError(errorObj);
-        return emptyAnalytics;
+        return { analytics: emptyAnalytics, logs: [] };
       } finally {
         setLoading(false);
       }

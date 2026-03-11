@@ -251,7 +251,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
       // If dashboards are already selected, fetch analytics
       if (selectedDashboards.length > 0) {
-        const analytics = await fetchDashboardAnalytics(selectedDashboards);
+        const { analytics } = await fetchDashboardAnalytics(selectedDashboards);
         setCurrentAnalytics(analytics);
         applyFilters(
           userData,
@@ -285,7 +285,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
       if (selected.length > 0) {
         // Fetch analytics for selected dashboards
-        const analytics = await fetchDashboardAnalytics(selected);
+        const { analytics } = await fetchDashboardAnalytics(selected);
         setCurrentAnalytics(analytics);
         applyFilters(users, analytics, selectedLoginStatus, selected);
       } else {

@@ -394,6 +394,9 @@ msgstr "An error occurred while fetching user data. Please try again."
 msgid "Fetching user data..."
 msgstr "Fetching user data..."
 
+msgid "Select at least one dashboard to filter by dashboard access"
+msgstr "Select at least one dashboard to filter by dashboard access"
+
 msgid "Last 7 days"
 msgstr "Last 7 days"
 

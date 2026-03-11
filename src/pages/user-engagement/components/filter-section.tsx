@@ -79,7 +79,6 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   const {
     loading: analyticsLoading,
     error: analyticsError,
-    accessLogs,
     fetchDashboardAnalytics,
   } = useDashboardAnalytics({
     sqlViewUid: sqlViewUid || "",
@@ -221,13 +220,14 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
       // If dashboards already selected, fetch analytics and filter by dashboard access
       if (selectedDashboards.length > 0) {
-        const analytics = await fetchDashboardAnalytics(selectedDashboards);
+        const { analytics, logs } =
+          await fetchDashboardAnalytics(selectedDashboards);
         setCurrentAnalytics(analytics);
-        setCurrentAccessLogs(accessLogs);
+        setCurrentAccessLogs(logs);
         const processedUsers = processUserEngagementData(
           userData,
           analytics,
-          accessLogs,
+          logs,
           selectedDashboards
         );
         onUserDataChange(processedUsers);
@@ -246,7 +246,6 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       fetchUsersByUserGroups,
       selectedDashboards,
       fetchDashboardAnalytics,
-      accessLogs,
       processUserEngagementData,
       onUserDataChange,
     ]
@@ -264,15 +263,15 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
       if (selected.length > 0) {
         // Fetch analytics for selected dashboards
-        const analytics = await fetchDashboardAnalytics(selected);
+        const { analytics, logs } = await fetchDashboardAnalytics(selected);
         setCurrentAnalytics(analytics);
-        setCurrentAccessLogs(accessLogs);
+        setCurrentAccessLogs(logs);
 
         // Re-process users - only show those who accessed selected dashboards
         const processedUsers = processUserEngagementData(
           users,
           analytics,
-          accessLogs,
+          logs,
           selected
         );
         onUserDataChange(processedUsers);
@@ -287,7 +286,6 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     [
       users,
       fetchDashboardAnalytics,
-      accessLogs,
       processUserEngagementData,
       onUserDataChange,
     ]
