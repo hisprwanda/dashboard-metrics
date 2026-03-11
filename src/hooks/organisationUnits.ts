@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { useDataQuery, useDataEngine } from "@dhis2/app-runtime";
 
 // Define proper types for the hook responses
-interface OrganisationUnitLevel {
+export interface OrganisationUnitLevel {
   id: string;
   name: string;
   displayName: string;
@@ -14,6 +14,14 @@ interface OrganisationUnitLevelsResponse {
   organisationUnitLevels: {
     organisationUnitLevels: OrganisationUnitLevel[];
   };
+}
+
+export interface OrganisationUnit {
+  id: string;
+  name: string;
+  displayName?: string;
+  path?: string;
+  level?: number;
 }
 
 interface SqlViewResponse {
@@ -44,7 +52,64 @@ export const useOrganisationUnitLevels = () => {
 };
 
 /**
- * Hook to fetch organisation units by level using SQL view
+ * Hook to fetch organisation units by level using standard API
+ * Uses useDataEngine for manual fetching to avoid dynamic query issues
+ */
+export const useOrgUnitsByLevel = () => {
+  const engine = useDataEngine();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [data, setData] = useState<OrganisationUnit[]>([]);
+
+  const fetchOrgUnitsByLevel = useCallback(
+    async (levelNumber: number): Promise<OrganisationUnit[]> => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const query = {
+          organisationUnits: {
+            resource: "organisationUnits",
+            params: {
+              paging: false,
+              level: levelNumber,
+              fields: "id,name,displayName",
+            },
+          },
+        };
+
+        const result = await engine.query(query);
+        const orgUnits =
+          (
+            result?.organisationUnits as {
+              organisationUnits: OrganisationUnit[];
+            }
+          )?.organisationUnits || [];
+
+        setData(orgUnits);
+        return orgUnits;
+      } catch (err) {
+        const errorObj = err instanceof Error ? err : new Error(String(err));
+        setError(errorObj);
+        return [];
+      } finally {
+        setLoading(false);
+      }
+    },
+    [engine]
+  );
+
+  const clear = useCallback(() => {
+    setData([]);
+    setError(null);
+  }, []);
+
+  return { loading, error, data, fetchOrgUnitsByLevel, clear };
+};
+
+/**
+ * Hook to fetch organisation units by level using SQL view (legacy)
  * @returns Object with loading state, error, data, and fetch function
  */
 export const useOrganisationUnitsByLevel = () => {

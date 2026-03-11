@@ -1,7 +1,7 @@
 // file location: src/hooks/users.ts
 
-import { useEffect, useMemo, useRef } from "react";
-import { useDataQuery, useDataMutation } from "@dhis2/app-runtime";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDataQuery, useDataEngine } from "@dhis2/app-runtime";
 
 // Static query builder function to avoid recreation
 const buildUsersQuery = (
@@ -225,4 +225,146 @@ export const useUsersByLoginStatus = (
   const result = useDataQuery(query);
 
   return result;
+};
+
+// User type for district engagement
+export interface DistrictUser {
+  id: string;
+  username?: string;
+  displayName?: string;
+  userCredentials?: {
+    username?: string;
+    lastLogin?: string | null;
+  };
+  organisationUnits?: Array<{ id: string; name: string }>;
+}
+
+// User type for user engagement
+export interface EngagementUser {
+  id: string;
+  displayName?: string;
+  userCredentials?: {
+    username?: string;
+    lastLogin?: string | null;
+    userRoles?: Array<{ id: string; displayName: string }>;
+  };
+  userGroups?: Array<{ id: string; displayName: string }>;
+  organisationUnits?: Array<{ id: string; displayName: string }>;
+}
+
+/**
+ * Hook to fetch users by user groups (imperative style)
+ * Uses useDataEngine for manual fetching to avoid dynamic query issues
+ */
+export const useUsersByUserGroups = () => {
+  const engine = useDataEngine();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | undefined>(undefined);
+  const [data, setData] = useState<EngagementUser[]>([]);
+
+  const fetchUsersByUserGroups = useCallback(
+    async (userGroupIds: string[]): Promise<EngagementUser[]> => {
+      if (userGroupIds.length === 0) {
+        setData([]);
+        return [];
+      }
+
+      setLoading(true);
+      setError(undefined);
+
+      try {
+        const query = {
+          users: {
+            resource: "users",
+            params: {
+              paging: false,
+              fields:
+                "id,displayName,userCredentials[username,lastLogin,userRoles[id,displayName]],userGroups[id,displayName],organisationUnits[id,displayName]",
+              filter: `userGroups.id:in:[${userGroupIds.join(",")}]`,
+            },
+          },
+        };
+
+        const result = await engine.query(query);
+        const users =
+          (result?.users as { users: EngagementUser[] })?.users || [];
+
+        setData(users);
+        return users;
+      } catch (err) {
+        const errorObj = err instanceof Error ? err : new Error(String(err));
+        setError(errorObj);
+        return [];
+      } finally {
+        setLoading(false);
+      }
+    },
+    [engine]
+  );
+
+  const clear = useCallback(() => {
+    setData([]);
+    setError(undefined);
+  }, []);
+
+  return { loading, error, data, fetchUsersByUserGroups, clear };
+};
+
+/**
+ * Hook to fetch users by organisation unit IDs
+ * Uses useDataEngine for manual fetching to avoid dynamic query issues
+ */
+export const useUsersByOrgUnitIds = () => {
+  const engine = useDataEngine();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | undefined>(undefined);
+  const [data, setData] = useState<DistrictUser[]>([]);
+
+  const fetchUsersByOrgUnitIds = useCallback(
+    async (orgUnitIds: string[]): Promise<DistrictUser[]> => {
+      if (orgUnitIds.length === 0) {
+        setData([]);
+        return [];
+      }
+
+      setLoading(true);
+      setError(undefined);
+
+      try {
+        const query = {
+          users: {
+            resource: "users",
+            params: {
+              paging: false,
+              fields:
+                "id,username,displayName,userCredentials[username,lastLogin],organisationUnits[id,name]",
+              filter: `organisationUnits.id:in:[${orgUnitIds.join(",")}]`,
+            },
+          },
+        };
+
+        const result = await engine.query(query);
+        const users = (result?.users as { users: DistrictUser[] })?.users || [];
+
+        setData(users);
+        return users;
+      } catch (err) {
+        const errorObj = err instanceof Error ? err : new Error(String(err));
+        setError(errorObj);
+        return [];
+      } finally {
+        setLoading(false);
+      }
+    },
+    [engine]
+  );
+
+  const clear = useCallback(() => {
+    setData([]);
+    setError(undefined);
+  }, []);
+
+  return { loading, error, data, fetchUsersByOrgUnitIds, clear };
 };

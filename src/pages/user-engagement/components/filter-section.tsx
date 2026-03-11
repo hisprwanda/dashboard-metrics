@@ -1,15 +1,35 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { format, subDays, subMonths } from "date-fns";
+import { differenceInMonths, format, subDays, subMonths } from "date-fns";
 
 import { CircularLoader, MultiSelectField, MultiSelectOption } from "@dhis2/ui";
 
-import { useFilteredUsers, useUserGroups } from "../../../hooks/users";
+import {
+  useUserGroups,
+  useUsersByUserGroups,
+  type EngagementUser,
+} from "../../../hooks/users";
+import { useDashboardsInfo } from "../../../hooks/dashboards";
+import {
+  useDashboardAnalytics,
+  type DashboardAnalytics,
+  type DashboardAccessLog,
+} from "../../../hooks/useDashboardAnalytics";
+import { useSystem } from "../../../context/SystemContext";
 import i18n from "../../../locales";
+
+// Processed user engagement data
+interface ProcessedUserEngagementData extends EngagementUser {
+  loginPastMonth: number;
+  loginTrend: number[];
+  accessRecency: "lastWeek" | "lastMonth" | "overMonth" | "never";
+  lastDashboardAccess?: Date | null;
+  totalDashboardAccesses?: number;
+}
 
 // Interface for filter props
 interface FilterSectionProps {
-  onUserDataChange: (userData: any[]) => void;
+  onUserDataChange: (userData: ProcessedUserEngagementData[]) => void;
   onLoadingChange: (isLoading: boolean) => void;
 }
 
@@ -17,74 +37,143 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   onUserDataChange,
   onLoadingChange,
 }) => {
-  // State for selected user groups
-  const [selectedUserGroups, setSelectedUserGroups] = useState<string[]>([]);
+  const { sqlViewUid } = useSystem();
 
-  // Refs to prevent infinite loops
-  const prevLoadingRef = useRef<boolean>(false);
-  const isMountedRef = useRef<boolean>(true);
-  const prevDataRef = useRef<string>(""); // Track processed data to avoid unnecessary updates
+  // State for selected user groups and dashboards
+  const [selectedUserGroups, setSelectedUserGroups] = useState<string[]>([]);
+  const [selectedDashboards, setSelectedDashboards] = useState<string[]>([]);
+  const [users, setUsers] = useState<EngagementUser[]>([]);
+  const [currentAnalytics, setCurrentAnalytics] =
+    useState<DashboardAnalytics | null>(null);
+  const [currentAccessLogs, setCurrentAccessLogs] = useState<
+    DashboardAccessLog[]
+  >([]);
 
   // Static date calculations
-  const now = new Date();
-  const oneMonthAgo = format(subMonths(now, 1), "yyyy-MM-dd");
-  const oneWeekAgo = format(subDays(now, 7), "yyyy-MM-dd");
+  const now = useMemo(() => new Date(), []);
+  const oneMonthAgo = useMemo(
+    () => format(subMonths(now, 1), "yyyy-MM-dd"),
+    [now]
+  );
+  const oneWeekAgo = useMemo(
+    () => format(subDays(now, 7), "yyyy-MM-dd"),
+    [now]
+  );
 
   // Fetch user groups
   const userGroupsQuery = useUserGroups();
   const userGroups = userGroupsQuery.data?.userGroups?.userGroups || [];
 
-  // Only fetch users when user groups are selected
-  const filteredUsersQuery = useFilteredUsers(
-    [], // No username filter
-    [], // No org unit filter
-    [], // No org unit IDs filter
-    selectedUserGroups, // Selected user groups
-    false // Not including disabled users
-  );
+  // Fetch dashboards list
+  const { data: dashboardsData } = useDashboardsInfo();
+  const dashboards = dashboardsData?.dashboards?.dashboards || [];
 
-  // Cleanup on unmount
-  useEffect(
-    () => () => {
-      isMountedRef.current = false;
-    },
-    []
-  );
+  // Hook for fetching users by user groups (imperative)
+  const {
+    loading: usersLoading,
+    error: usersError,
+    fetchUsersByUserGroups,
+  } = useUsersByUserGroups();
 
-  // Memoized handler for user group selection
-  const handleUserGroupsChange = useCallback(
-    ({ selected }: { selected: string[] }) => {
-      // Reset the data hash when selection changes to force data update
-      prevDataRef.current = "";
-      setSelectedUserGroups(selected);
+  // Dashboard analytics hook (imperative)
+  const {
+    loading: analyticsLoading,
+    error: analyticsError,
+    fetchDashboardAnalytics,
+  } = useDashboardAnalytics({
+    sqlViewUid: sqlViewUid || "",
+  });
+
+  // Calculate loading state
+  const isLoading = usersLoading || analyticsLoading;
+
+  // Update parent loading state
+  useEffect(() => {
+    onLoadingChange(isLoading);
+  }, [isLoading, onLoadingChange]);
+
+  // Helper function to calculate monthly trend from access logs
+  const calculateMonthlyTrend = useCallback(
+    (username: string, logs: DashboardAccessLog[]) => {
+      if (!logs || logs.length === 0) return [0, 0, 0];
+
+      const userLogs = logs.filter((log) => log.username === username);
+      const trend = [0, 0, 0]; // [current month, 1 month ago, 2 months ago]
+
+      userLogs.forEach((log) => {
+        const logDate = new Date(log.timestamp);
+        const monthsAgo = differenceInMonths(now, logDate);
+
+        if (monthsAgo >= 0 && monthsAgo < 3) {
+          trend[monthsAgo]++;
+        }
+      });
+
+      return trend;
     },
-    []
+    [now]
   );
 
   // Process user data to calculate engagement metrics
+  // When dashboards are selected, only include users who accessed those dashboards
   const processUserEngagementData = useCallback(
-    (users: any[]) => {
-      if (!users || users.length === 0) return [];
+    (
+      usersData: EngagementUser[],
+      analytics: DashboardAnalytics | null,
+      logs: DashboardAccessLog[],
+      dashboardIds: string[]
+    ): ProcessedUserEngagementData[] => {
+      if (!usersData || usersData.length === 0) return [];
 
-      return users.map((user) => {
+      // If dashboards are selected, filter to only users who accessed them
+      let filteredUsers = usersData;
+      if (dashboardIds.length > 0 && analytics) {
+        filteredUsers = usersData.filter((user) => {
+          const username =
+            user.userCredentials?.username || user.displayName || "";
+          // Only include users who have accessed the selected dashboards
+          return analytics.userAccessCounts[username] > 0;
+        });
+      }
+
+      return filteredUsers.map((user): ProcessedUserEngagementData => {
+        const username =
+          user.userCredentials?.username || user.displayName || "";
         const lastLoginTimestamp = user.userCredentials?.lastLogin;
         const lastLoginDate = lastLoginTimestamp
           ? new Date(lastLoginTimestamp)
           : null;
-        const loginPastMonth = lastLoginDate
-          ? Math.floor(Math.random() * 30) + 1
-          : 0;
 
-        const loginTrend = [
-          loginPastMonth,
-          lastLoginDate ? Math.floor(Math.random() * 25) + 1 : 0,
-          lastLoginDate ? Math.floor(Math.random() * 20) + 1 : 0,
-        ];
+        // Use real dashboard access data if dashboards are selected and we have analytics
+        const loginPastMonth =
+          analytics && dashboardIds.length > 0
+            ? analytics.userAccessCounts[username] || 0
+            : 0;
 
+        const loginTrend =
+          dashboardIds.length > 0
+            ? calculateMonthlyTrend(username, logs)
+            : [0, 0, 0];
+
+        // Calculate access recency based on dashboard access if dashboards selected
         let accessRecency: "lastWeek" | "lastMonth" | "overMonth" | "never" =
           "never";
 
-        if (lastLoginDate) {
+        if (dashboardIds.length > 0 && analytics) {
+          const lastDashboardAccess = analytics.userLastAccess[username];
+          if (lastDashboardAccess) {
+            const accessDate = new Date(lastDashboardAccess);
+            const accessDateStr = format(accessDate, "yyyy-MM-dd");
+            if (accessDateStr >= oneWeekAgo) {
+              accessRecency = "lastWeek";
+            } else if (accessDateStr >= oneMonthAgo) {
+              accessRecency = "lastMonth";
+            } else {
+              accessRecency = "overMonth";
+            }
+          }
+        } else if (lastLoginDate) {
+          // Fall back to login-based recency if no dashboards selected
           const lastLoginDateStr = format(lastLoginDate, "yyyy-MM-dd");
           if (lastLoginDateStr >= oneWeekAgo) {
             accessRecency = "lastWeek";
@@ -100,60 +189,112 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           loginPastMonth,
           loginTrend,
           accessRecency,
+          lastDashboardAccess:
+            dashboardIds.length > 0 && analytics
+              ? analytics.userLastAccess[username]
+                ? new Date(analytics.userLastAccess[username])
+                : null
+              : null,
+          totalDashboardAccesses: loginPastMonth,
         };
       });
     },
-    [oneMonthAgo, oneWeekAgo]
+    [oneMonthAgo, oneWeekAgo, calculateMonthlyTrend]
   );
 
-  // Effect for handling loading state
-  useEffect(() => {
-    if (!isMountedRef.current) return;
+  // Handle user group selection change
+  const handleUserGroupsChange = useCallback(
+    async ({ selected }: { selected: string[] }) => {
+      setSelectedUserGroups(selected);
 
-    const isLoading =
-      selectedUserGroups.length > 0 && filteredUsersQuery.loading;
-    if (isLoading !== prevLoadingRef.current) {
-      prevLoadingRef.current = isLoading;
-      onLoadingChange(isLoading);
-    }
-  }, [selectedUserGroups, filteredUsersQuery.loading, onLoadingChange]);
+      // Clear data if no user groups selected
+      if (selected.length === 0) {
+        setUsers([]);
+        onUserDataChange([]);
+        return;
+      }
 
-  // Separate effect for handling user data updates
-  useEffect(() => {
-    if (!isMountedRef.current) return;
+      // Fetch users for selected user groups
+      const userData = await fetchUsersByUserGroups(selected);
+      setUsers(userData);
 
-    // Only process and update when we have new data and user groups are selected
-    if (
-      !filteredUsersQuery.loading &&
-      filteredUsersQuery.data &&
-      selectedUserGroups.length > 0
-    ) {
-      const { users } = filteredUsersQuery.data.users;
-
-      // Create a hash of the current data to compare with previous update
-      const dataHash = JSON.stringify(users.map((u: any) => u.id));
-
-      // Only update if data has changed
-      if (dataHash !== prevDataRef.current) {
-        prevDataRef.current = dataHash;
-        const processedUsers = processUserEngagementData(users);
+      // If dashboards already selected, fetch analytics and filter by dashboard access
+      if (selectedDashboards.length > 0) {
+        const { analytics, logs } =
+          await fetchDashboardAnalytics(selectedDashboards);
+        setCurrentAnalytics(analytics);
+        setCurrentAccessLogs(logs);
+        const processedUsers = processUserEngagementData(
+          userData,
+          analytics,
+          logs,
+          selectedDashboards
+        );
+        onUserDataChange(processedUsers);
+      } else {
+        // No dashboards selected, show all users
+        const processedUsers = processUserEngagementData(
+          userData,
+          null,
+          [],
+          []
+        );
         onUserDataChange(processedUsers);
       }
-    } else if (selectedUserGroups.length === 0 && prevDataRef.current !== "") {
-      // Clear data when no user groups are selected and we haven't already cleared
-      prevDataRef.current = "";
-      onUserDataChange([]);
-    }
-  }, [
-    selectedUserGroups,
-    filteredUsersQuery.loading,
-    filteredUsersQuery.data,
-    processUserEngagementData,
-    onUserDataChange,
-  ]);
+    },
+    [
+      fetchUsersByUserGroups,
+      selectedDashboards,
+      fetchDashboardAnalytics,
+      processUserEngagementData,
+      onUserDataChange,
+    ]
+  );
+
+  // Handle dashboard selection change
+  const handleDashboardsChange = useCallback(
+    async ({ selected }: { selected: string[] }) => {
+      setSelectedDashboards(selected);
+
+      // If no users loaded yet, just update selection
+      if (users.length === 0) {
+        return;
+      }
+
+      if (selected.length > 0) {
+        // Fetch analytics for selected dashboards
+        const { analytics, logs } = await fetchDashboardAnalytics(selected);
+        setCurrentAnalytics(analytics);
+        setCurrentAccessLogs(logs);
+
+        // Re-process users - only show those who accessed selected dashboards
+        const processedUsers = processUserEngagementData(
+          users,
+          analytics,
+          logs,
+          selected
+        );
+        onUserDataChange(processedUsers);
+      } else {
+        // No dashboards selected, clear analytics and show all users
+        setCurrentAnalytics(null);
+        setCurrentAccessLogs([]);
+        const processedUsers = processUserEngagementData(users, null, [], []);
+        onUserDataChange(processedUsers);
+      }
+    },
+    [
+      users,
+      fetchDashboardAnalytics,
+      processUserEngagementData,
+      onUserDataChange,
+    ]
+  );
 
   // Handle any errors
-  const hasError = filteredUsersQuery.error && selectedUserGroups.length > 0;
+  const hasError =
+    (usersError && selectedUserGroups.length > 0) ||
+    (analyticsError && selectedDashboards.length > 0);
 
   return (
     <div>
@@ -172,11 +313,34 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             className="mb-4"
             dataTest="user-groups-selector"
           >
-            {userGroups.map((group: any) => (
+            {userGroups.map((group) => (
               <MultiSelectOption
                 key={group.id}
                 label={group.displayName}
                 value={group.id}
+              />
+            ))}
+          </MultiSelectField>
+        </div>
+
+        {/* Dashboards Selector */}
+        <div>
+          <MultiSelectField
+            label={i18n.t("Dashboards (Optional)")}
+            onChange={handleDashboardsChange}
+            selected={selectedDashboards}
+            filterable
+            clearable
+            placeholder={i18n.t("All dashboards or select specific ones")}
+            noMatchText={i18n.t("No dashboards found")}
+            className="mb-4"
+            dataTest="dashboard-selector"
+          >
+            {dashboards.map((dashboard) => (
+              <MultiSelectOption
+                key={dashboard.id}
+                label={dashboard.displayName}
+                value={dashboard.id}
               />
             ))}
           </MultiSelectField>
@@ -193,10 +357,14 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           </div>
         )}
 
-        {selectedUserGroups.length > 0 && filteredUsersQuery.loading && (
+        {isLoading && (
           <div className="flex items-center">
             <CircularLoader small />
-            <span className="ml-2">{i18n.t("Fetching user data...")}</span>
+            <span className="ml-2">
+              {analyticsLoading
+                ? i18n.t("Loading dashboard analytics...")
+                : i18n.t("Fetching user data...")}
+            </span>
           </div>
         )}
       </div>

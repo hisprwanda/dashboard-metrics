@@ -1,7 +1,7 @@
 // Custom hook for dashboard data fetching with proper typing and filtering
 
-import { useMemo } from "react";
-import { useDataQuery } from "@dhis2/app-runtime";
+import { useCallback, useMemo, useState } from "react";
+import { useConfig } from "@dhis2/app-runtime";
 
 import type { DateValueType } from "@/types/dashboard-reportType";
 import type { SqlViewResponse } from "@/types/dashboard-data";
@@ -15,12 +15,25 @@ export interface DashboardDataParams {
   orgUnitPaths?: string[];
 }
 
+interface FetchState {
+  loading: boolean;
+  error: Error | undefined;
+  data: SqlViewResponse | null;
+}
+
 export const useDashboardData = ({
   datetime,
   dashboardId,
   sqlViewUid,
-  orgUnitPaths = [],
 }: DashboardDataParams) => {
+  const { baseUrl } = useConfig();
+
+  const [state, setState] = useState<FetchState>({
+    loading: false,
+    error: undefined,
+    data: null,
+  });
+
   // Ensure we have valid dates before making the query
   const startDate = datetime.startDate
     ? formatDateToYYYYMMDD(datetime.startDate)
@@ -29,54 +42,81 @@ export const useDashboardData = ({
     ? formatDateToYYYYMMDD(datetime.endDate)
     : formatDateToYYYYMMDD(new Date());
 
-  // Build filters array
-  const filters = useMemo(() => {
-    const filterArray = [
-      `timestamp:ge:${startDate}`,
-      `timestamp:le:${endDate}`,
-    ];
-
-    // Add dashboard filter if dashboard ID is provided
-    if (dashboardId) {
-      filterArray.push(`favoriteuid:eq:${dashboardId}`);
-    }
-
-    return filterArray;
-  }, [startDate, endDate, dashboardId]);
-
-  // Build the query
-  const query = useMemo(() => {
-    if (!sqlViewUid) {
-      return null;
-    }
-
-    return {
-      sqlViewData: {
-        resource: `sqlViews/${sqlViewUid}/data`,
-        params: {
-          paging: "false",
-          filter: filters,
-        },
-      },
-    };
-  }, [sqlViewUid, filters]);
-
   // Only make the query if we have required parameters
   const shouldSkip = !sqlViewUid || !dashboardId;
 
-  const result = useDataQuery(query || {}, {
-    lazy: shouldSkip,
-  });
+  // Build the URL manually to prevent double-encoding of '%'
+  // The '%' wildcard is needed for timestamp filtering in DHIS2 SQL Views
+  const buildUrl = useCallback(() => {
+    if (!sqlViewUid || !baseUrl) return null;
 
-  // Transform data to proper type
-  const data = useMemo(() => {
-    if (!result.data || shouldSkip) return null;
-    return result.data as unknown as SqlViewResponse;
-  }, [result.data, shouldSkip]);
+    // Manually encode the filter parts but preserve the '%' wildcard
+    // We encode ':' as '%3A' but leave '%' as-is (not as '%25')
+    const timestampGeFilter = `timestamp%3Age%3A${startDate}%`;
+    const timestampLeFilter = `timestamp%3Ale%3A${endDate}%`;
+    const favoriteFilter = dashboardId
+      ? `favoriteuid%3Aeq%3A${dashboardId}`
+      : "";
+
+    let url = `${baseUrl}/api/sqlViews/${sqlViewUid}/data?paging=false`;
+    url += `&filter=${timestampGeFilter}`;
+    url += `&filter=${timestampLeFilter}`;
+    if (favoriteFilter) {
+      url += `&filter=${favoriteFilter}`;
+    }
+
+    return url;
+  }, [baseUrl, sqlViewUid, startDate, endDate, dashboardId]);
+
+  const refetch = useCallback(async () => {
+    if (shouldSkip) return;
+
+    const url = buildUrl();
+    if (!url) return;
+
+    setState((prev) => ({ ...prev, loading: true, error: undefined }));
+
+    try {
+      const response = await fetch(url, {
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const jsonData = await response.json();
+
+      // Transform to match expected SqlViewResponse structure
+      const transformedData: SqlViewResponse = {
+        sqlViewData: {
+          listGrid: jsonData.listGrid || { headers: [], rows: [] },
+        },
+      };
+
+      setState({
+        loading: false,
+        error: undefined,
+        data: transformedData,
+      });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setState({
+        loading: false,
+        error,
+        data: null,
+      });
+    }
+  }, [shouldSkip, buildUrl]);
 
   return {
-    ...result,
-    data,
+    loading: state.loading,
+    error: state.error,
+    data: state.data,
+    refetch,
     isReady: !shouldSkip,
   };
 };

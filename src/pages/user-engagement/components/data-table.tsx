@@ -62,7 +62,15 @@ const mapUserToTableData = (user: unknown): UserEngagementData => {
   // Retrieve login metrics from the processed data
   const loginPastMonth = (userObj.loginPastMonth as number) || 0;
   const loginTrend = (userObj.loginTrend as number[]) || [0, 0, 0];
-  const accessRecency = (userObj.accessRecency as string) || "never";
+  const accessRecencyRaw = (userObj.accessRecency as string) || "never";
+  const accessRecency: "lastWeek" | "lastMonth" | "overMonth" | "never" = [
+    "lastWeek",
+    "lastMonth",
+    "overMonth",
+    "never",
+  ].includes(accessRecencyRaw)
+    ? (accessRecencyRaw as "lastWeek" | "lastMonth" | "overMonth" | "never")
+    : "never";
 
   // Create email if not available
   const username = userCredentials?.username as string | undefined;
@@ -80,10 +88,13 @@ const mapUserToTableData = (user: unknown): UserEngagementData => {
     daysSinceLastLogin,
     accessRecency,
     userGroups: Array.isArray(userObj.userGroups)
-      ? (userObj.userGroups as Array<{ displayName: string }>)
+      ? (userObj.userGroups as Array<{ id: string; displayName: string }>)
       : [],
     organisationUnits: Array.isArray(userObj.organisationUnits)
-      ? (userObj.organisationUnits as Array<{ displayName: string }>)
+      ? (userObj.organisationUnits as Array<{
+          id: string;
+          displayName: string;
+        }>)
       : [],
   };
 };
@@ -129,7 +140,7 @@ function AccessRecencyBadge({ recency }: { recency: string }) {
     case "lastMonth":
       return <Tag neutral>{i18n.t("Last 30 days")}</Tag>;
     case "overMonth":
-      return <Tag warning>{i18n.t("Over 30 days")}</Tag>;
+      return <Tag neutral>{i18n.t("Over 30 days")}</Tag>;
     case "never":
       return <Tag negative>{i18n.t("Never")}</Tag>;
     default:
@@ -317,7 +328,7 @@ export default function DataTable() {
             <DataTableBody>
               {table.getRowModel().rows.length === 0 ? (
                 <DataTableRow>
-                  <DataTableCell colSpan={columns.length}>
+                  <DataTableCell colSpan={String(columns.length)}>
                     <div className="p-4 text-center">
                       {userData.length === 0
                         ? i18n.t(

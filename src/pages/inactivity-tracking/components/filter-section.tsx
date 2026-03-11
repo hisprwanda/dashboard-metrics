@@ -4,11 +4,21 @@ import { subDays } from "date-fns";
 
 import { CircularLoader, MultiSelectField, MultiSelectOption } from "@dhis2/ui";
 
-import { useFilteredUsers, useUserGroups } from "../../../hooks/users";
+import {
+  useUserGroups,
+  useUsersByUserGroups,
+  type EngagementUser,
+} from "../../../hooks/users";
+import { useDashboardsInfo } from "../../../hooks/dashboards";
+import {
+  useDashboardAnalytics,
+  type DashboardAnalytics,
+} from "../../../hooks/useDashboardAnalytics";
+import { useSystem } from "../../../context/SystemContext";
 import i18n from "../../../locales";
 
 // Interface for user login status options
-type LoginStatusValue = "inactive" | "active";
+type LoginStatusValue = "inactive" | "active" | "dashboard_inactive";
 
 interface UserLoginStatusOption {
   id: string;
@@ -43,53 +53,66 @@ export interface FilteredUser {
   surname?: string;
   userCredentials?: UserCredentials | null;
   userGroups?: UserGroup[];
+  organisationUnits?: Array<{ id: string; displayName: string }>;
+  dashboardAccessCount?: number;
+  lastDashboardAccess?: string | null;
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
 
 const isUserGroupArray = (value: unknown): value is UserGroup[] =>
   Array.isArray(value) &&
   value.every(
     (group) =>
-      isRecord(group) &&
+      typeof group === "object" &&
+      group !== null &&
       typeof group.id === "string" &&
       typeof group.displayName === "string"
   );
 
-const isFilteredUser = (value: unknown): value is FilteredUser =>
-  isRecord(value) && typeof value.id === "string";
-
-const isFilteredUserArray = (value: unknown): value is FilteredUser[] =>
-  Array.isArray(value) && value.every(isFilteredUser);
-
 const isLoginStatusValue = (value: string): value is LoginStatusValue =>
-  value === "inactive" || value === "active";
-
-// Static empty arrays to prevent re-creation on every render
-const EMPTY_USERNAME_FILTER: string[] = [];
-const EMPTY_ORG_UNIT_FILTER: string[] = [];
-const EMPTY_ORG_UNIT_IDS: string[] = [];
+  value === "inactive" || value === "active" || value === "dashboard_inactive";
 
 export const FilterSection: React.FC<FilterSectionProps> = ({
   onUserDataChange,
   onLoadingChange,
 }) => {
-  // State for selected user groups
-  const [selectedUserGroups, setSelectedUserGroups] = useState<string[]>([]);
+  const { sqlViewUid } = useSystem();
 
-  // State for selected login status
+  // State for selections
+  const [selectedUserGroups, setSelectedUserGroups] = useState<string[]>([]);
+  const [selectedDashboards, setSelectedDashboards] = useState<string[]>([]);
   const [selectedLoginStatus, setSelectedLoginStatus] = useState<
     LoginStatusValue[]
   >([]);
 
-  // State to track fetched users
-  const [fetchedUsers, setFetchedUsers] = useState<FilteredUser[]>([]);
+  // State to track fetched data
+  const [users, setUsers] = useState<EngagementUser[]>([]);
+  const [currentAnalytics, setCurrentAnalytics] =
+    useState<DashboardAnalytics | null>(null);
 
   // Fetch user groups
   const userGroupsQuery = useUserGroups();
   const userGroupsData = userGroupsQuery.data?.userGroups?.userGroups;
   const userGroups = isUserGroupArray(userGroupsData) ? userGroupsData : [];
+
+  // Fetch dashboards list
+  const { data: dashboardsData } = useDashboardsInfo();
+  const dashboards = dashboardsData?.dashboards?.dashboards || [];
+
+  // Hook for fetching users by user groups (imperative)
+  const {
+    loading: usersLoading,
+    error: usersError,
+    fetchUsersByUserGroups,
+  } = useUsersByUserGroups();
+
+  // Dashboard analytics hook (imperative)
+  const {
+    loading: analyticsLoading,
+    error: analyticsError,
+    fetchDashboardAnalytics,
+  } = useDashboardAnalytics({
+    sqlViewUid: sqlViewUid || "",
+  });
 
   // Login status options
   const loginStatusOptions: UserLoginStatusOption[] = [
@@ -105,55 +128,76 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
       value: "active",
       description: i18n.t("Users who haven't logged in for the past 30 days"),
     },
+    {
+      id: "never_accessed_dashboard",
+      label: i18n.t("Never Accessed Dashboards"),
+      value: "dashboard_inactive",
+      description: i18n.t("Users who never accessed selected dashboards"),
+    },
   ];
 
-  // Only fetch users when user groups are selected - using static arrays
-  const filteredUsersQuery = useFilteredUsers(
-    EMPTY_USERNAME_FILTER, // Static reference, won't change on re-render
-    EMPTY_ORG_UNIT_FILTER, // Static reference, won't change on re-render
-    EMPTY_ORG_UNIT_IDS,
-    selectedUserGroups // Selected user groups
-  );
+  // Calculate loading state
+  const isLoading = usersLoading || analyticsLoading;
 
-  // Update loading state based on query status
+  // Update parent loading state
   useEffect(() => {
-    const isLoading =
-      selectedUserGroups.length > 0 && filteredUsersQuery.loading;
     onLoadingChange(isLoading);
-  }, [selectedUserGroups, filteredUsersQuery.loading, onLoadingChange]);
+  }, [isLoading, onLoadingChange]);
 
-  // Handle fetching users when user groups change
-  const applyLoginStatusFilter = useCallback(
-    (users: FilteredUser[]) => {
-      if (users.length === 0) {
+  // Convert EngagementUser to FilteredUser, enriched with analytics if available
+  const mapToFilteredUser = (
+    user: EngagementUser,
+    analytics: DashboardAnalytics | null = null
+  ): FilteredUser => {
+    const username = user.userCredentials?.username || "";
+    return {
+      id: user.id,
+      displayName: user.displayName,
+      userCredentials: user.userCredentials,
+      userGroups: user.userGroups,
+      organisationUnits: user.organisationUnits,
+      dashboardAccessCount: analytics?.userAccessCounts[username] ?? 0,
+      lastDashboardAccess: analytics?.userLastAccess[username] ?? null,
+    };
+  };
+
+  // Apply login status filter to users
+  const applyFilters = useCallback(
+    (
+      usersData: EngagementUser[],
+      analytics: DashboardAnalytics | null,
+      loginStatus: LoginStatusValue[],
+      dashboardIds: string[]
+    ) => {
+      if (usersData.length === 0) {
         onUserDataChange([]);
         return;
       }
 
-      if (selectedLoginStatus.length === 0) {
-        onUserDataChange(users);
+      // If no login status filter, return all users enriched with analytics
+      if (loginStatus.length === 0) {
+        onUserDataChange(usersData.map((u) => mapToFilteredUser(u, analytics)));
         return;
       }
 
       const thresholdDate = subDays(new Date(), 30);
       const filteredUserMap = new Map<string, FilteredUser>();
 
-      if (selectedLoginStatus.includes("inactive")) {
-        users
+      // Filter: Never logged in
+      if (loginStatus.includes("inactive")) {
+        usersData
           .filter((user) => !user.userCredentials?.lastLogin)
           .forEach((user) => {
-            filteredUserMap.set(user.id, user);
+            filteredUserMap.set(user.id, mapToFilteredUser(user, analytics));
           });
       }
 
-      if (selectedLoginStatus.includes("active")) {
-        users
+      // Filter: Inactive for 30+ days
+      if (loginStatus.includes("active")) {
+        usersData
           .filter((user) => {
-            const { lastLogin } = user.userCredentials ?? {};
-
-            if (typeof lastLogin !== "string" || lastLogin.length === 0) {
-              return false;
-            }
+            const lastLogin = user.userCredentials?.lastLogin;
+            if (!lastLogin) return false;
 
             const lastLoginDate = new Date(lastLogin);
             return (
@@ -162,60 +206,95 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             );
           })
           .forEach((user) => {
-            filteredUserMap.set(user.id, user);
+            filteredUserMap.set(user.id, mapToFilteredUser(user, analytics));
+          });
+      }
+
+      // Filter: Never accessed selected dashboards
+      if (
+        loginStatus.includes("dashboard_inactive") &&
+        dashboardIds.length > 0 &&
+        analytics
+      ) {
+        usersData
+          .filter((user) => {
+            const username =
+              user.userCredentials?.username || user.displayName || "";
+            // User has NOT accessed any of the selected dashboards
+            return !analytics.userAccessCounts[username];
+          })
+          .forEach((user) => {
+            filteredUserMap.set(user.id, mapToFilteredUser(user, analytics));
           });
       }
 
       onUserDataChange(Array.from(filteredUserMap.values()));
     },
-    [onUserDataChange, selectedLoginStatus]
+    [onUserDataChange]
   );
-
-  useEffect(() => {
-    if (selectedUserGroups.length === 0) {
-      setFetchedUsers([]);
-      onUserDataChange([]);
-      return;
-    }
-
-    const queryUsers = filteredUsersQuery.data?.users;
-    const usersFromQuery = isRecord(queryUsers) ? queryUsers.users : undefined;
-
-    if (!isFilteredUserArray(usersFromQuery)) {
-      return;
-    }
-
-    setFetchedUsers(usersFromQuery);
-
-    if (selectedLoginStatus.length > 0) {
-      applyLoginStatusFilter(usersFromQuery);
-    } else {
-      onUserDataChange(usersFromQuery);
-    }
-  }, [
-    selectedUserGroups,
-    filteredUsersQuery.data,
-    selectedLoginStatus,
-    applyLoginStatusFilter,
-    onUserDataChange,
-  ]);
-
-  // Handle login status filter changes
-  useEffect(() => {
-    // Only apply filters if we have already fetched users
-    if (fetchedUsers.length > 0) {
-      applyLoginStatusFilter(fetchedUsers);
-    }
-  }, [applyLoginStatusFilter, fetchedUsers]);
 
   // Handle user group selection change
   const handleUserGroupsChange = useCallback(
-    ({ selected }: { selected: string[] }) => {
-      // Reset fetched users when selection changes to force data update
-      setFetchedUsers([]);
+    async ({ selected }: { selected: string[] }) => {
       setSelectedUserGroups(selected);
+
+      // Clear data if no user groups selected
+      if (selected.length === 0) {
+        setUsers([]);
+        onUserDataChange([]);
+        return;
+      }
+
+      // Fetch users for selected user groups
+      const userData = await fetchUsersByUserGroups(selected);
+      setUsers(userData);
+
+      // If dashboards are already selected, fetch analytics
+      if (selectedDashboards.length > 0) {
+        const { analytics } = await fetchDashboardAnalytics(selectedDashboards);
+        setCurrentAnalytics(analytics);
+        applyFilters(
+          userData,
+          analytics,
+          selectedLoginStatus,
+          selectedDashboards
+        );
+      } else {
+        applyFilters(userData, null, selectedLoginStatus, []);
+      }
     },
-    []
+    [
+      fetchUsersByUserGroups,
+      selectedDashboards,
+      selectedLoginStatus,
+      fetchDashboardAnalytics,
+      applyFilters,
+      onUserDataChange,
+    ]
+  );
+
+  // Handle dashboard selection change
+  const handleDashboardsChange = useCallback(
+    async ({ selected }: { selected: string[] }) => {
+      setSelectedDashboards(selected);
+
+      // If no users loaded yet, just update selection
+      if (users.length === 0) {
+        return;
+      }
+
+      if (selected.length > 0) {
+        // Fetch analytics for selected dashboards
+        const { analytics } = await fetchDashboardAnalytics(selected);
+        setCurrentAnalytics(analytics);
+        applyFilters(users, analytics, selectedLoginStatus, selected);
+      } else {
+        // No dashboards selected, clear analytics
+        setCurrentAnalytics(null);
+        applyFilters(users, null, selectedLoginStatus, []);
+      }
+    },
+    [users, selectedLoginStatus, fetchDashboardAnalytics, applyFilters]
   );
 
   // Handle login status selection change
@@ -223,16 +302,28 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     ({ selected }: { selected: string[] }) => {
       const validSelections = selected.filter(isLoginStatusValue);
       setSelectedLoginStatus(validSelections);
+
+      // Re-apply filters with new login status
+      if (users.length > 0) {
+        applyFilters(
+          users,
+          currentAnalytics,
+          validSelections,
+          selectedDashboards
+        );
+      }
     },
-    []
+    [users, currentAnalytics, selectedDashboards, applyFilters]
   );
 
   // Handle any errors
-  const hasError = filteredUsersQuery.error && selectedUserGroups.length > 0;
+  const hasError =
+    (usersError && selectedUserGroups.length > 0) ||
+    (analyticsError && selectedDashboards.length > 0);
 
   return (
     <div>
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* User Groups Selector */}
         <div>
           <MultiSelectField
@@ -252,6 +343,29 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
                 key={group.id}
                 label={group.displayName}
                 value={group.id}
+              />
+            ))}
+          </MultiSelectField>
+        </div>
+
+        {/* Dashboards Selector */}
+        <div>
+          <MultiSelectField
+            label={i18n.t("Dashboards (Optional)")}
+            onChange={handleDashboardsChange}
+            selected={selectedDashboards}
+            filterable
+            clearable
+            placeholder={i18n.t("All dashboards or select specific ones")}
+            noMatchText={i18n.t("No dashboards found")}
+            className="mb-4"
+            dataTest="dashboard-selector"
+          >
+            {dashboards.map((dashboard) => (
+              <MultiSelectOption
+                key={dashboard.id}
+                label={dashboard.displayName}
+                value={dashboard.id}
               />
             ))}
           </MultiSelectField>
@@ -289,12 +403,25 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           </div>
         )}
 
-        {selectedUserGroups.length > 0 && filteredUsersQuery.loading && (
+        {isLoading && (
           <div className="flex items-center">
             <CircularLoader small />
-            <span className="ml-2">{i18n.t("Fetching user data...")}</span>
+            <span className="ml-2">
+              {analyticsLoading
+                ? i18n.t("Loading dashboard analytics...")
+                : i18n.t("Fetching user data...")}
+            </span>
           </div>
         )}
+
+        {selectedLoginStatus.includes("dashboard_inactive") &&
+          selectedDashboards.length === 0 && (
+            <div className="text-amber-600">
+              {i18n.t(
+                "Select at least one dashboard to filter by dashboard access"
+              )}
+            </div>
+          )}
       </div>
 
       {selectedUserGroups.length === 0 && (

@@ -59,8 +59,14 @@ export default function DataTableComponent() {
       {
         accessorKey: "activeUsers",
         id: "activeUsers",
-        header: i18n.t("Active Users"),
-        size: 120,
+        header: i18n.t("Active Users (30d)"),
+        size: 140,
+      },
+      {
+        accessorKey: "neverLoggedIn",
+        id: "neverLoggedIn",
+        header: i18n.t("Never Logged In"),
+        size: 130,
       },
       {
         accessorKey: "lastActivity",
@@ -92,6 +98,12 @@ export default function DataTableComponent() {
         accessorKey: "dashboardViews",
         id: "dashboardViews",
         header: i18n.t("Dashboard Views"),
+        size: 150,
+      },
+      {
+        accessorKey: "dashboardAccessRate",
+        id: "dashboardAccessRate",
+        header: i18n.t("Dashboard Access Rate"),
         size: 150,
       },
     ],
@@ -164,7 +176,7 @@ export default function DataTableComponent() {
             <DataTableBody>
               {table.getRowModel().rows.length === 0 ? (
                 <DataTableRow>
-                  <DataTableCell colSpan={columns.length}>
+                  <DataTableCell colSpan={String(columns.length)}>
                     <div className="p-4 text-center">
                       {!state.selectedOrgUnitLevel
                         ? i18n.t(

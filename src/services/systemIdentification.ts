@@ -32,8 +32,8 @@ interface DHIS2Error {
 const sqlParams: SqlViewParams = {
   name: "Statistics about user access to dashboards and visualizations",
   description: "Statistics about user access to dashboards and visualizations",
-  type: "MATERIALIZED_VIEW",
-  cacheStrategy: "CACHE_1_MINUTE",
+  type: "QUERY",
+  cacheStrategy: "NO_CACHE",
   sqlQuery:
     "SELECT timestamp, username, favoriteuid, eventtype FROM datastatisticsevent WHERE eventtype = 'DASHBOARD_VIEW';",
 };
@@ -44,7 +44,7 @@ const orgUnitByLevelSqlParams: SqlViewParams = {
   description:
     "Returns organization units at a specific level that can be dynamically specified",
   type: "QUERY",
-  cacheStrategy: "CACHE_1_MINUTE",
+  cacheStrategy: "NO_CACHE",
   sqlQuery:
     "SELECT ou.organisationunitid, ou.uid, ou.name, ou.code, ou.path, ous.level " +
     "FROM organisationunit ou " +

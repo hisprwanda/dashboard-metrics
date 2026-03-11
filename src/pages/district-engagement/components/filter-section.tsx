@@ -1,22 +1,34 @@
 // src/pages/district-engagement/components/filter-section.tsx
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   CircularLoader,
   SingleSelectField,
   SingleSelectOption,
+  MultiSelectField,
+  MultiSelectOption,
 } from "@dhis2/ui";
 
 import { useDashboard } from "../../../context/DashboardContext";
 import { useSystem } from "../../../context/SystemContext";
 import {
   useOrganisationUnitLevels,
-  useOrganisationUnitsByLevel,
+  useOrgUnitsByLevel,
+  type OrganisationUnitLevel,
+  type OrganisationUnit,
 } from "../../../hooks/organisationUnits";
-import { useFilteredUsers } from "../../../hooks/users";
+import { useUsersByOrgUnitIds, type DistrictUser } from "../../../hooks/users";
+import { useDashboardsInfo } from "../../../hooks/dashboards";
+import {
+  useDashboardAnalytics,
+  type DashboardAnalytics,
+} from "../../../hooks/useDashboardAnalytics";
 import i18n from "../../../locales";
 import type { DistrictEngagement } from "../../../lib/processDistrictData";
-import { processDistrictData } from "../../../lib/processDistrictData";
+import {
+  aggregateByOrgUnit,
+  enrichWithDashboardData,
+} from "../../../lib/processDistrictData";
 
 interface FilterSectionProps {
   onLoadingChange?: (isLoading: boolean) => void;
@@ -28,311 +40,235 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   onDataProcessed,
 }): React.JSX.Element => {
   const { state, dispatch } = useDashboard();
-  const { orgUnitSqlViewUid, initialized } = useSystem();
+  const { sqlViewUid } = useSystem();
 
+  // Local state
+  const [selectedDashboards, setSelectedDashboards] = useState<string[]>([]);
+  const [orgUnitsAtLevel, setOrgUnitsAtLevel] = useState<OrganisationUnit[]>(
+    []
+  );
+  const [users, setUsers] = useState<DistrictUser[]>([]);
+  const [currentAnalytics, setCurrentAnalytics] =
+    useState<DashboardAnalytics | null>(null);
+
+  // Step 1: Fetch organisation unit levels on mount
+  const orgUnitLevelsQuery = useOrganisationUnitLevels();
+  const orgUnitLevels: OrganisationUnitLevel[] = useMemo(() => {
+    const levels =
+      orgUnitLevelsQuery.data?.organisationUnitLevels?.organisationUnitLevels ||
+      [];
+    // Sort by level number ascending
+    return [...levels].sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+  }, [orgUnitLevelsQuery.data]);
+
+  // Step 2: Hook for fetching org units by level
   const {
     loading: orgUnitsLoading,
     error: orgUnitsError,
-    data: orgUnitsData,
-    fetchOrganisationUnitsByLevel,
-  } = useOrganisationUnitsByLevel();
+    fetchOrgUnitsByLevel,
+  } = useOrgUnitsByLevel();
 
-  const [processingData, setProcessingData] = useState(false);
-  const [orgUnitIds, setOrgUnitIds] = useState<string[]>([]);
-  const [processedOrgUnits, setProcessedOrgUnits] = useState<
-    Array<{
-      uid: string;
-      name: string;
-      path: string;
-    }>
-  >([]);
-  const [hasProcessedData, setHasProcessedData] = useState(false);
+  // Step 3: Hook for fetching users by org unit IDs
+  const {
+    loading: usersLoading,
+    error: usersError,
+    fetchUsersByOrgUnitIds,
+  } = useUsersByOrgUnitIds();
 
-  // Fetch organization unit levels - the only data fetched on initial load
-  const orgUnitLevelsQuery = useOrganisationUnitLevels();
+  // Fetch dashboards list for filter dropdown
+  const { data: dashboardsData } = useDashboardsInfo();
+  const dashboards = dashboardsData?.dashboards?.dashboards || [];
 
-  // Filter users by the selected organization unit IDs - only when we have IDs
-  const usersQuery = useFilteredUsers(
-    [],
-    [],
-    orgUnitIds,
-    [],
-    orgUnitIds.length === 0
+  // Dashboard analytics hook (imperative style)
+  const {
+    loading: analyticsLoading,
+    error: analyticsError,
+    fetchDashboardAnalytics,
+  } = useDashboardAnalytics({
+    sqlViewUid: sqlViewUid || "",
+  });
+
+  // Calculate loading state
+  const isLoading = orgUnitsLoading || usersLoading || analyticsLoading;
+
+  // Update parent loading state
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+  }, [isLoading, onLoadingChange]);
+
+  // Process data and send to parent
+  const processAndSendData = useCallback(
+    (
+      orgUnits: OrganisationUnit[],
+      userData: DistrictUser[],
+      analytics: DashboardAnalytics | null
+    ) => {
+      if (orgUnits.length === 0) {
+        onDataProcessed?.([]);
+        return;
+      }
+
+      // Aggregate users by org unit
+      const aggregatedData = aggregateByOrgUnit(userData, orgUnits);
+
+      // Enrich with dashboard data if we have analytics
+      const enrichedData =
+        analytics && analytics.totalAccesses > 0
+          ? enrichWithDashboardData(aggregatedData, analytics)
+          : aggregatedData;
+
+      onDataProcessed?.(enrichedData);
+    },
+    [onDataProcessed]
   );
 
-  interface OrganisationUnitLevel {
-    id: string;
-    displayName: string;
-    level: number;
-  }
+  // Handle level selection change
+  const handleOrgUnitLevelChange = useCallback(
+    async ({ selected }: { selected: string }) => {
+      // Find the level object to get the level number
+      const selectedLevel = orgUnitLevels.find((l) => l.id === selected);
 
-  const orgUnitLevels: OrganisationUnitLevel[] =
-    orgUnitLevelsQuery.data?.organisationUnitLevels?.organisationUnitLevels ||
-    [];
+      dispatch({ type: "SET_ORG_UNIT_LEVEL", payload: selected });
 
-  // Process data when both org units and users are loaded
-  useEffect(() => {
-    if (
-      processedOrgUnits.length > 0 &&
-      usersQuery.data &&
-      !usersQuery.loading &&
-      !usersQuery.error &&
-      !hasProcessedData
-    ) {
-      setProcessingData(true);
-      try {
-        // Type guard for user data
-        const isValidUserData = (
-          data: unknown
-        ): data is { users: { users: unknown[] } } => {
-          return (
-            typeof data === "object" &&
-            data !== null &&
-            "users" in data &&
-            typeof (data as any).users === "object" &&
-            (data as any).users !== null &&
-            "users" in (data as any).users &&
-            Array.isArray((data as any).users.users)
-          );
-        };
+      // Clear previous data
+      setOrgUnitsAtLevel([]);
+      setUsers([]);
+      setCurrentAnalytics(null);
+      onDataProcessed?.([]);
 
-        if (!isValidUserData(usersQuery.data)) {
-          throw new Error("Invalid user data format");
-        }
-
-        // Extract user data with proper typing
-        const userData = usersQuery.data.users.users;
-
-        // Process the data using our processed org units
-        const processedData = processDistrictData(processedOrgUnits, userData);
-
-        // Pass the processed data up to the parent component
-        if (onDataProcessed) {
-          onDataProcessed(processedData);
-        }
-
-        setHasProcessedData(true);
-      } catch (err) {
-        // Error processing data
-      } finally {
-        setProcessingData(false);
-        if (onLoadingChange) {
-          onLoadingChange(false);
-        }
+      if (!selectedLevel?.level) {
+        return;
       }
-    }
-  }, [
-    processedOrgUnits,
-    usersQuery.data,
-    usersQuery.loading,
-    usersQuery.error,
-    hasProcessedData,
-    onDataProcessed,
-    onLoadingChange,
-  ]);
 
-  // Handle organization unit level change
-  const handleOrgUnitLevelChange = async ({
-    selected,
-  }: {
-    selected: string;
-  }) => {
-    // Update the context state with the selected level
-    dispatch({ type: "SET_ORG_UNIT_LEVEL", payload: selected });
+      // Fetch org units at selected level
+      const orgUnits = await fetchOrgUnitsByLevel(selectedLevel.level);
+      setOrgUnitsAtLevel(orgUnits);
 
-    // Signal loading state change if callback exists
-    if (onLoadingChange) {
-      onLoadingChange(true);
-    }
-
-    setProcessingData(true);
-
-    // Clear previous data
-    setOrgUnitIds([]);
-    setProcessedOrgUnits([]);
-    setHasProcessedData(false);
-
-    // Check if system is properly initialized before attempting to fetch data
-    if (!initialized) {
-      setProcessingData(false);
-      if (onLoadingChange) {
-        onLoadingChange(false);
+      if (orgUnits.length === 0) {
+        return;
       }
-      return;
-    }
 
-    if (!orgUnitSqlViewUid) {
-      setProcessingData(false);
-      if (onLoadingChange) {
-        onLoadingChange(false);
-      }
-      return;
-    }
+      // Extract org unit IDs and fetch users
+      const orgUnitIds = orgUnits.map((ou) => ou.id);
+      const userData = await fetchUsersByOrgUnitIds(orgUnitIds);
+      setUsers(userData);
 
-    // Fetch organization units by level
-    try {
-      const orgUnitsResult = await fetchOrganisationUnitsByLevel(
-        selected,
-        orgUnitSqlViewUid
-      );
-
-      if (orgUnitsResult?.sqlViewData?.listGrid?.rows) {
-        // Store the rows data directly
-        const { rows } = orgUnitsResult.sqlViewData.listGrid;
-
-        // Auto-detect column indices using headers and data patterns for cross-environment compatibility
-        const headers = orgUnitsResult.sqlViewData.listGrid.headers;
-
-        // Initialize indices with fallback values
-        let uidIndex = -1;
-        let nameIndex = -1;
-        let pathIndex = -1;
-
-        // First, try to detect indices using header information
-        headers.forEach((header, index) => {
-          const columnName =
-            header.name?.toLowerCase() || header.column?.toLowerCase() || "";
-
-          if (
-            columnName.includes("uid") &&
-            !columnName.includes("organisationunitid")
-          ) {
-            uidIndex = index;
-          } else if (
-            columnName.includes("name") &&
-            !columnName.includes("organisationunitid")
-          ) {
-            nameIndex = index;
-          } else if (columnName.includes("path")) {
-            pathIndex = index;
-          }
-        });
-
-        // Type guard to check if a value is a valid row
-        const isValidRow = (row: unknown): row is unknown[] => {
-          return Array.isArray(row) && row.length > 0;
-        };
-
-        // If header-based detection failed, fall back to data pattern analysis
-        if (
-          (uidIndex === -1 || nameIndex === -1 || pathIndex === -1) &&
-          rows.length > 0 &&
-          isValidRow(rows[0])
-        ) {
-          for (let i = 0; i < rows[0].length; i++) {
-            const value = String(rows[0][i] || "");
-
-            // DHIS2 UID pattern: 11 characters, alphanumeric, starts with letter
-            if (
-              uidIndex === -1 &&
-              value.length === 11 &&
-              /^[a-zA-Z][a-zA-Z0-9]{10}$/.test(value)
-            ) {
-              uidIndex = i;
-            }
-
-            // Path pattern: starts and ends with "/"
-            if (
-              pathIndex === -1 &&
-              value.startsWith("/") &&
-              value.split("/").length > 3
-            ) {
-              pathIndex = i;
-            }
-
-            // Name pattern: non-numeric string that's not a UID or path
-            if (
-              nameIndex === -1 &&
-              value.length > 1 &&
-              !/^\d+$/.test(value) &&
-              !value.startsWith("/") &&
-              !(value.length === 11 && /^[a-zA-Z][a-zA-Z0-9]{10}$/.test(value))
-            ) {
-              nameIndex = i;
-            }
-          }
-        }
-
-        // Validate that we found all required indices
-        if (uidIndex === -1 || nameIndex === -1 || pathIndex === -1) {
-          throw new Error(
-            "Could not auto-detect column structure from SQL view response"
-          );
-        }
-
-        // Extract and process organization units with proper structure
-        const processedUnits = rows
-          .filter(isValidRow)
-          .map((row: unknown[]) => ({
-            uid: String(row[uidIndex] || ""),
-            name: String(row[nameIndex] || ""),
-            path: String(row[pathIndex] || ""),
-          }))
-          .filter((unit) => unit.uid && unit.name);
-
-        // Set the processed org units and IDs to trigger the user query
-        setProcessedOrgUnits(processedUnits);
-        setOrgUnitIds(processedUnits.map((unit) => unit.uid));
+      // If dashboards are already selected, fetch analytics and process with them
+      if (selectedDashboards.length > 0) {
+        const { analytics } = await fetchDashboardAnalytics(selectedDashboards);
+        setCurrentAnalytics(analytics);
+        processAndSendData(orgUnits, userData, analytics);
       } else {
-        setProcessingData(false);
-        if (onLoadingChange) {
-          onLoadingChange(false);
-        }
+        // Process without dashboard data
+        processAndSendData(orgUnits, userData, null);
       }
-    } catch (err) {
-      setProcessingData(false);
-      if (onLoadingChange) {
-        onLoadingChange(false);
+    },
+    [
+      orgUnitLevels,
+      dispatch,
+      fetchOrgUnitsByLevel,
+      fetchUsersByOrgUnitIds,
+      selectedDashboards,
+      fetchDashboardAnalytics,
+      processAndSendData,
+      onDataProcessed,
+    ]
+  );
+
+  // Handle dashboard selection change
+  const handleDashboardsChange = useCallback(
+    async ({ selected }: { selected: string[] }) => {
+      setSelectedDashboards(selected);
+
+      // Only re-process if we have org units and users loaded
+      if (orgUnitsAtLevel.length === 0 || users.length === 0) {
+        return;
       }
-    }
-  };
+
+      if (selected.length > 0) {
+        // Fetch analytics for selected dashboards and re-process
+        const { analytics } = await fetchDashboardAnalytics(selected);
+        setCurrentAnalytics(analytics);
+        processAndSendData(orgUnitsAtLevel, users, analytics);
+      } else {
+        // No dashboards selected, process without analytics
+        setCurrentAnalytics(null);
+        processAndSendData(orgUnitsAtLevel, users, null);
+      }
+    },
+    [orgUnitsAtLevel, users, fetchDashboardAnalytics, processAndSendData]
+  );
+
+  // Error state
+  const hasError = orgUnitsError || usersError || analyticsError;
 
   return (
     <div className="bg-white p-4 shadow-sm mb-4 rounded">
       <h2 className="text-lg font-semibold mb-3">
         {i18n.t("District Engagement Filters")}
       </h2>
-      <div className="grid grid-cols-1 gap-6 mb-2">
-        <SingleSelectField
-          label={i18n.t("Organization Unit Level")}
-          onChange={handleOrgUnitLevelChange}
-          selected={state.selectedOrgUnitLevel}
-          loading={orgUnitLevelsQuery.loading}
-          clearable
-          placeholder={i18n.t("Select organization unit level")}
-          dataTest="org-unit-level-selector"
-        >
-          {orgUnitLevels.map((level: OrganisationUnitLevel) => (
-            <SingleSelectOption
-              key={level.id}
-              label={`${level.displayName} (${i18n.t("Level")} ${level.level})`}
-              value={level.level.toString()}
-            />
-          ))}
-        </SingleSelectField>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+        <div>
+          <SingleSelectField
+            label={i18n.t("Organization Unit Level")}
+            onChange={handleOrgUnitLevelChange}
+            selected={state.selectedOrgUnitLevel}
+            loading={orgUnitLevelsQuery.loading}
+            clearable
+            placeholder={i18n.t("Select organization unit level")}
+            dataTest="org-unit-level-selector"
+          >
+            {orgUnitLevels.map((level) => (
+              <SingleSelectOption
+                key={level.id}
+                label={level.displayName}
+                value={level.id}
+              />
+            ))}
+          </SingleSelectField>
+        </div>
+
+        <div>
+          <MultiSelectField
+            label={i18n.t("Dashboards (Optional)")}
+            onChange={handleDashboardsChange}
+            selected={selectedDashboards}
+            filterable
+            clearable
+            placeholder={i18n.t("All dashboards or select specific ones")}
+            dataTest="dashboard-selector"
+          >
+            {dashboards.map((dashboard) => (
+              <MultiSelectOption
+                key={dashboard.id}
+                label={dashboard.displayName}
+                value={dashboard.id}
+              />
+            ))}
+          </MultiSelectField>
+        </div>
       </div>
 
-      {/* Loading and error states */}
-      {(orgUnitLevelsQuery.loading || processingData || usersQuery.loading) && (
+      {/* Loading state */}
+      {isLoading && (
         <div className="flex items-center mt-2">
           <CircularLoader small />
           <span className="ml-2 text-sm">
-            {orgUnitLevelsQuery.loading
-              ? i18n.t("Loading organization unit levels...")
-              : processingData
-                ? i18n.t("Processing district data...")
-                : i18n.t("Loading user data...")}
+            {orgUnitsLoading
+              ? i18n.t("Loading organization units...")
+              : usersLoading
+                ? i18n.t("Loading users...")
+                : analyticsLoading
+                  ? i18n.t("Loading dashboard analytics...")
+                  : i18n.t("Processing...")}
           </span>
         </div>
       )}
 
-      {(orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error) && (
+      {hasError && (
         <div className="text-red-500 mt-2 text-sm">
           {i18n.t("Error")}:{" "}
-          {
-            (orgUnitLevelsQuery.error || orgUnitsError || usersQuery.error)
-              ?.message
-          }
+          {(orgUnitsError || usersError || analyticsError)?.message}
         </div>
       )}
 

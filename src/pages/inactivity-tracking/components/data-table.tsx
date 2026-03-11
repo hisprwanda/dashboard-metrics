@@ -37,6 +37,9 @@ interface InactivityData {
   daysSinceLastLogin: number | null;
   activeStatus: string;
   assignedDashboards: number;
+  lastDashboardAccess: Date | null;
+  daysSinceDashboardAccess: number | null;
+  dashboardAccessCount: number;
 }
 
 // Map DHIS2 user data to our table format
@@ -68,9 +71,17 @@ const mapUserToTableData = (user: FilteredUser): InactivityData => {
   const roles = user.userCredentials?.userRoles || [];
   const role = roles.length > 0 ? roles[0].displayName : i18n.t("Unknown");
 
-  // Get assigned dashboards count (this would need to be implemented with real data)
-  // For now using a placeholder value based on user groups count
+  // Get assigned dashboards count (approximated from user groups)
   const assignedDashboards = user.userGroups?.length || 0;
+
+  // Dashboard access fields populated from analytics when dashboards are selected
+  const lastDashboardAccess = user.lastDashboardAccess
+    ? new Date(user.lastDashboardAccess)
+    : null;
+  const dashboardAccessCount = user.dashboardAccessCount ?? 0;
+  const daysSinceDashboardAccess = lastDashboardAccess
+    ? differenceInDays(new Date(), lastDashboardAccess)
+    : null;
 
   return {
     id: user.id,
@@ -81,6 +92,9 @@ const mapUserToTableData = (user: FilteredUser): InactivityData => {
     daysSinceLastLogin,
     activeStatus,
     assignedDashboards,
+    lastDashboardAccess,
+    daysSinceDashboardAccess,
+    dashboardAccessCount,
   };
 };
 
@@ -184,6 +198,22 @@ export default function DataTable() {
         header: i18n.t("Dashboards"),
         size: 100,
       },
+      {
+        accessorFn: (row) => row.lastDashboardAccess,
+        id: "lastDashboardAccess",
+        header: i18n.t("Last Dashboard Access"),
+        cell: ({ getValue }) => {
+          const value = getValue<Date | null>();
+          return value ? format(value, "yyyy-MM-dd") : i18n.t("Never");
+        },
+        size: 150,
+      },
+      {
+        accessorKey: "dashboardAccessCount",
+        id: "dashboardAccessCount",
+        header: i18n.t("Dashboard Accesses"),
+        size: 120,
+      },
     ],
     []
   );
@@ -213,22 +243,6 @@ export default function DataTable() {
 
       {/* Table */}
       <div className="bg-white shadow-sm">
-        {/* User Count Display */}
-        {userData.length > 0 && (
-          <div className="p-2">
-            <div className="text-sm">
-              <span className="font-semibold mr-1">
-                {i18n.t("Users found")}:
-              </span>
-              {isLoading ? (
-                <CircularLoader small />
-              ) : (
-                <span>{userData.length}</span>
-              )}
-            </div>
-          </div>
-        )}
-
         {isLoading ? (
           <div className="flex justify-center items-center p-8">
             <CircularLoader />
@@ -265,7 +279,7 @@ export default function DataTable() {
             <DataTableBody>
               {table.getRowModel().rows.length === 0 ? (
                 <DataTableRow>
-                  <DataTableCell colSpan={columns.length}>
+                  <DataTableCell colSpan={String(columns.length)}>
                     <div className="p-4 text-center">
                       {userData.length === 0
                         ? i18n.t("Select a user group to view user data")
